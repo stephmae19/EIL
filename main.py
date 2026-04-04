@@ -1,5 +1,6 @@
 # main.py
 import pygame
+import os
 from View.Scenes.StartMenu import StartMenu
 from View.Scenes.ChapterSelect import ChapterSelect
 from View.Scenes.CharacterSelection import CharacterSelection
@@ -7,16 +8,21 @@ from View.Scenes.Level import Level
 from Controller.SceneManager import SceneManager
 
 def main():
+    # Initialize pygame
     pygame.init()
 
     # Get the current display resolution
     info = pygame.display.Info()
     width, height = info.current_w, info.current_h
 
-    # Reduce height slightly so the taskbar remains visible
+    # Center the window on the screen
+    os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+    # Create a window that fills the screen but keeps taskbar and window controls visible
     screen = pygame.display.set_mode((width, height - 50), pygame.RESIZABLE)
     pygame.display.set_caption("Echoes of Whispers")
 
+    # Create SceneManager and load StartMenu
     scene_manager = SceneManager(screen)
     scene_manager.set_scene(StartMenu(screen))
 
