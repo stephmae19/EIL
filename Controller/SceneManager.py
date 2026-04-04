@@ -11,9 +11,10 @@ class SceneManager:
         self.current_scene = scene
 
     def handle_input(self, event):
-        """Delegate input events to the current scene."""
+        """Delegate input events to the current scene and return any action."""
         if self.current_scene:
-            self.current_scene.handle_input(event)
+            return self.current_scene.handle_input(event)
+        return None
 
     def update(self):
         """Update the current scene logic."""

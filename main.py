@@ -1,6 +1,7 @@
 # main.py
 import pygame
 from View.Scenes.StartMenu import StartMenu
+from View.Scenes.ChapterSelect import ChapterSelect
 from Controller.SceneManager import SceneManager
 
 def main():
@@ -24,18 +25,20 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             else:
-                # Capture action from StartMenu
                 action = scene_manager.handle_input(event)
+
+                # Handle scene transitions
                 if action == "start":
-                    print("Starting game...")  # Replace with Level scene transition
-                elif action == "continue":
-                    print("Continue game...")  # Load saved state
-                elif action == "options":
-                    print("Options menu...")   # Replace with Options scene
-                elif action == "credits":
-                    print("Credits scene...") # Replace with Credits scene
+                    chapter_select = ChapterSelect(screen)
+                    scene_manager.set_scene(chapter_select)
                 elif action == "exit":
                     running = False
+                elif action == "continue":
+                    print("Continue game...")  # Placeholder
+                elif action == "options":
+                    print("Options menu...")   # Placeholder
+                elif action == "credits":
+                    print("Credits scene...") # Placeholder
 
         # Update current scene
         scene_manager.update()
