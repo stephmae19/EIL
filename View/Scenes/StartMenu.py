@@ -4,73 +4,91 @@ import pygame
 class StartMenu:
     def __init__(self, screen):
         self.screen = screen
-        self.font = pygame.font.Font(None, 48)
 
-        # Define buttons
+        # Original design dimensions for menu box
+        self.base_width = 509
+        self.base_height = 622
+
+        # Load menu box image
+        self.menu_box_original = pygame.image.load("assets/menu options/menu_box.jpeg").convert_alpha()
+
+        # Load button images
         self.buttons = [
-            {"label": "START GAME", "action": "start"},
-            {"label": "CONTINUE", "action": "continue"},
-            {"label": "OPTIONS", "action": "options"},
-            {"label": "CREDITS", "action": "credits"},
-            {"label": "EXIT GAME", "action": "exit"},
+            {"image": pygame.image.load("assets/menu options/start_btn.jpeg").convert_alpha(), "action": "start"},
+            {"image": pygame.image.load("assets/menu options/continue_btn.jpeg").convert_alpha(), "action": "continue"},
+            {"image": pygame.image.load("assets/menu options/options_btn.jpeg").convert_alpha(), "action": "options"},
+            {"image": pygame.image.load("assets/menu options/credits_btn.jpeg").convert_alpha(), "action": "credits"},
+            {"image": pygame.image.load("assets/menu options/exit_btn.jpeg").convert_alpha(), "action": "exit"},
         ]
 
-        # Button layout
+        # Rects for scaled menu box and buttons
+        self.menu_box = None
+        self.menu_box_rect = None
         self.button_rects = []
-        self._create_layout()
 
         # Track keyboard selection
-        self.selected_index = None  # None means no keyboard selection
+        self.selected_index = None
+
+        # Initial layout
+        self._create_layout()
 
     def _create_layout(self):
-        """Create button rectangles centered on screen."""
+        """Scale menu box and position buttons based on window size."""
         screen_width, screen_height = self.screen.get_size()
-        spacing = 70
-        start_y = screen_height // 3
 
+        # Calculate scale factor relative to window
+        scale_factor = min(screen_width / self.base_width, screen_height / self.base_height)
+
+        # Apply scale but cap at original design size
+        new_width = min(int(self.base_width * scale_factor), self.base_width)
+        new_height = min(int(self.base_height * scale_factor), self.base_height)
+
+        self.menu_box = pygame.transform.smoothscale(self.menu_box_original, (new_width, new_height))
+        self.menu_box_rect = self.menu_box.get_rect(center=(screen_width // 2, screen_height // 2))
+
+        # Position buttons inside menu box
+        spacing = new_height // (len(self.buttons) + 1)
+        center_x = self.menu_box_rect.centerx
+        start_y = self.menu_box_rect.top + spacing
+
+        self.button_rects.clear()
         for i, button in enumerate(self.buttons):
-            rect = self.font.render(button["label"], True, (255, 255, 255)).get_rect(
-                center=(screen_width // 2, start_y + i * spacing)
-            )
-            self.button_rects.append((button["label"], rect, button["action"]))
+            # Scale button relative to menu box width
+            btn_width = int(new_width * 0.6)
+            btn_height = int(new_height * 0.1)
+            scaled_btn = pygame.transform.smoothscale(button["image"], (btn_width, btn_height))
+            rect = scaled_btn.get_rect(center=(center_x, start_y + i * spacing))
+            self.button_rects.append((scaled_btn, rect, button["action"]))
 
     def draw(self):
-        """Render menu buttons with hover and keyboard highlight."""
+        """Render menu box and buttons."""
         self.screen.fill((0, 0, 0))  # Black background
-        mouse_pos = pygame.mouse.get_pos()
+        self.screen.blit(self.menu_box, self.menu_box_rect)
 
-        for i, (label, rect, action) in enumerate(self.button_rects):
-            # Highlight if hovered OR keyboard-selected
-            if rect.collidepoint(mouse_pos):
-                text_surface = self.font.render(label, True, (255, 215, 0))  # Gold hover
-            elif self.selected_index == i:
-                text_surface = self.font.render(label, True, (173, 216, 230))  # Light blue keyboard highlight
+        mouse_pos = pygame.mouse.get_pos()
+        for i, (image, rect, action) in enumerate(self.button_rects):
+            if rect.collidepoint(mouse_pos) or self.selected_index == i:
+                # Slightly scale up for hover/selection
+                scaled = pygame.transform.smoothscale(image, (int(rect.width * 1.1), int(rect.height * 1.1)))
+                scaled_rect = scaled.get_rect(center=rect.center)
+                self.screen.blit(scaled, scaled_rect)
             else:
-                text_surface = self.font.render(label, True, (255, 255, 255))
-            self.screen.blit(text_surface, rect)
+                self.screen.blit(image, rect)
 
     def handle_input(self, event):
         """Check if a button is clicked or selected with keyboard."""
-        # Mouse click
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
-            for i, (label, rect, action) in enumerate(self.button_rects):
+            for i, (image, rect, action) in enumerate(self.button_rects):
                 if rect.collidepoint(mouse_pos):
-                    self.selected_index = None  # clear keyboard selection
+                    self.selected_index = None
                     return action
 
-        # Keyboard navigation
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
-                if self.selected_index is None:
-                    self.selected_index = 0
-                else:
-                    self.selected_index = (self.selected_index + 1) % len(self.button_rects)
+                self.selected_index = 0 if self.selected_index is None else (self.selected_index + 1) % len(self.button_rects)
             elif event.key == pygame.K_UP:
-                if self.selected_index is None:
-                    self.selected_index = 0
-                else:
-                    self.selected_index = (self.selected_index - 1) % len(self.button_rects)
+                self.selected_index = 0 if self.selected_index is None else (self.selected_index - 1) % len(self.button_rects)
             elif event.key == pygame.K_RETURN and self.selected_index is not None:
                 _, _, action = self.button_rects[self.selected_index]
                 return action
@@ -78,7 +96,8 @@ class StartMenu:
         return None
 
     def update(self):
-        pass
+        # Recalculate layout if window size changes
+        self._create_layout()
 
     def render(self):
         self.draw()
