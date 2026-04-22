@@ -71,8 +71,10 @@ def main():
                     if action in [1, 2, 3, 4]:
                         chosen_chapter = action
                         scene_manager.set_scene(CharacterSelection(screen))
-                    elif action == "menu":
+                    elif action == "menu" or action == "back":  # Back button
                         scene_manager.set_scene(StartMenu(screen))
+                    elif action == "start":  # Start button
+                        scene_manager.set_scene(CharacterSelection(screen))
 
                 elif isinstance(scene_manager.current_scene, CharacterSelection):
                     if action == "menu":
