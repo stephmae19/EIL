@@ -1,0 +1,153 @@
+import pygame
+import random
+import math
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# --- Configuration ---
+# Match these dimensions roughly to your image size, or slightly larger for padding
+SCREEN_WIDTH = 400
+SCREEN_HEIGHT = 400
+FPS = 60
+IMAGE_FILENAME = 'image_0.png'  # Make sure the image is in the same folder
+
+# Colors (R, G, B)
+BLACK = (10, 10, 15)  # Dark background to make the glow stand out
+TEAL_GLOW = (0, 255, 240) # The color of the magic glow
+
+# Setup Display
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Animated Spell Book Loop")
+clock = pygame.time.Clock()
+
+# --- Load and Prepare Assets ---
+try:
+    # Load the base image, preserving transparency
+    original_book_surf = pygame.image.load(IMAGE_FILENAME).convert_alpha()
+except pygame.error:
+    print(f"Error: Could not load image '{IMAGE_FILENAME}'. Make sure it's in the correct directory.")
+    sys.exit()
+
+# Get the dimensions of the book image
+book_rect = original_book_surf.get_rect()
+book_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+
+# --- Particle System Setup ---
+particles = []
+
+def create_particle():
+    """Initializes a single glowing particle."""
+    # Spawn particles slightly above the center of the book pages
+    x = book_rect.centerx + random.randint(-40, 40)
+    y = book_rect.centery - random.randint(10, 30)
+    
+    # Slight variation in teal color
+    color = (
+        max(0, TEAL_GLOW[0] - random.randint(0, 50)),
+        TEAL_GLOW[1],
+        max(0, TEAL_GLOW[2] - random.randint(0, 20))
+    )
+    
+    particle = {
+        'x': x,
+        'y': y,
+        'vx': random.uniform(-0.5, 0.5), # Slight horizontal drift
+        'vy': random.uniform(-1.0, -2.5), # Rising velocity
+        'life': random.randint(60, 120), # Lifespan in frames
+        'color': color,
+        'size': random.randint(2, 4)
+    }
+    particles.append(particle)
+
+# --- Main Animation Loop ---
+running = True
+particle_timer = 0
+
+while running:
+    # 1. Event Handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # 2. Update Game State
+    current_time_ms = pygame.time.get_ticks()
+
+    # --- A. Glow Pulse Calculation ---
+    # Use a sine wave based on time to create a smooth looping pulse
+    # Adjust '0.003' to change pulse speed
+    pulse_intensity = (math.sin(current_time_ms * 0.003) + 1) / 2 # Result is between 0.0 and 1.0
+    
+    # Map intensity (0.0 - 1.0) to alpha transparency (e.g., 50 to 200)
+    min_alpha = 50
+    max_alpha = 200
+    current_glow_alpha = min_alpha + (pulse_intensity * (max_alpha - min_alpha))
+
+    # --- B. Particle System Update ---
+    # Spawn new particles periodically
+    if particle_timer <= 0:
+        create_particle()
+        particle_timer = random.randint(5, 15) # Controls spawn rate
+    else:
+        particle_timer -= 1
+
+    # Update existing particles
+    for p in particles[:]: # Iterate over a copy to safely remove
+        p['x'] += p['vx']
+        p['y'] += p['vy']
+        p['life'] -= 1
+        
+        # Particles fade out over time
+        # You can't directly set alpha on primitive shapes in base Pygame,
+        # but we can simulate it by darkening the color, or by removing them.
+        # We'll remove them when life hits zero.
+
+        # Remove dead or off-screen particles
+        if p['life'] <= 0 or p['y'] < -50:
+            particles.remove(p)
+
+    # 3. Drawing
+    screen.fill(BLACK) # Clear screen
+
+    # --- Draw Book with Pulsing Glow ---
+    # We use a special rendering trick to overlay a tinted version of the image
+    
+    # First, draw the base book image
+    screen.blit(original_book_surf, book_rect)
+
+    # Create a copy to use for the glow effect
+    glow_overlay = original_book_surf.copy()
+    
+    # Fill the overlay with the teal color using the BLEND_RGBA_MULT flag
+    # This tints the non-transparent pixels teal.
+    glow_overlay.fill(TEAL_GLOW + (0,), special_flags=pygame.BLEND_RGBA_MULT)
+    
+    # Set the dynamic transparency for the glow overlay
+    glow_overlay.set_alpha(int(current_glow_alpha))
+    
+    # Blit the glow overlay on top
+    screen.blit(glow_overlay, book_rect)
+
+    # --- Draw Particles ---
+    for p in particles:
+        # Subtle flicker effect for particles
+        flicker = random.randint(-20, 20)
+        p_color = (
+            max(0, min(255, p['color'][0] + flicker)),
+            max(0, min(255, p['color'][1] + flicker)),
+            max(0, min(255, p['color'][2] + flicker))
+        )
+        
+        # To make particles semi-transparent, we'd need a separate surface.
+        # For simplicity in this base example, we just draw them faintly.
+        # We'll draw them as small anti-aliased circles.
+        pygame.draw.circle(screen, p_color, (int(p['x']), int(p['y'])), p['size'])
+
+    # 4. Refresh Display
+    pygame.display.flip()
+    clock.tick(FPS)
+
+# Clean up
+pygame.quit()
+sys.exit()
