@@ -11,6 +11,10 @@ def main():
     # Initialize pygame
     pygame.init()
 
+    # Load custom font
+    font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
+    game_font = pygame.font.Font(font_path, 48)  # 48 is the font size
+
     # Get the current display resolution
     info = pygame.display.Info()
     width, height = info.current_w, info.current_h
@@ -36,13 +40,11 @@ def main():
                 running = False
 
             elif event.type == pygame.VIDEORESIZE:
-                # Handle dynamic resize
                 width, height = event.w, event.h
                 screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
                 scene_manager.screen = screen
 
             elif event.type == pygame.KEYDOWN:
-                # Toggle fullscreen/windowed
                 if event.key == pygame.K_F11:
                     screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
                     scene_manager.screen = screen

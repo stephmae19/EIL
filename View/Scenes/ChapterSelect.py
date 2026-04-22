@@ -1,10 +1,14 @@
 # View/Scenes/ChapterSelect.py
 import pygame
+import os
 
 class ChapterSelect:
     def __init__(self, screen):
         self.screen = screen
-        self.font = pygame.font.Font(None, 48)
+
+        # Load custom font (VCR OSD Mono) with smaller size
+        font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
+        self.font = pygame.font.Font(font_path, 36)  # reduced from 48 to 36
 
         # Load menu box background
         self.menu_box_original = pygame.image.load("assets/scenery/plain_box.jpeg").convert_alpha()
@@ -38,11 +42,11 @@ class ChapterSelect:
         self.menu_box = pygame.transform.smoothscale(self.menu_box_original, (box_width, box_height))
         self.menu_box_rect = self.menu_box.get_rect(center=(screen_width // 2, screen_height // 2))
 
-        # Divide box into left (chapters) and right (levels)
-        left_x = self.menu_box_rect.left + 100
-        right_x = self.menu_box_rect.centerx + 100
-        start_y = self.menu_box_rect.top + 80
-        spacing = 70
+        # Divide box into left (chapters) and right (levels) with clear separation
+        left_x = self.menu_box_rect.left + 80
+        right_x = self.menu_box_rect.centerx + 60  # moved closer to center but still separated
+        start_y = self.menu_box_rect.top + 60
+        spacing = 55  # slightly tighter spacing since font is smaller
 
         # Chapter labels
         self.chapter_rects.clear()
@@ -61,7 +65,6 @@ class ChapterSelect:
                 )
                 self.level_rects.append((level, rect))
         else:
-            # Placeholder text
             placeholder = "Select a chapter to view levels"
             rect = self.font.render(placeholder, True, (180, 180, 180)).get_rect(
                 topleft=(right_x, start_y)
@@ -94,14 +97,12 @@ class ChapterSelect:
         """Handle mouse clicks and keyboard navigation."""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
-            # Check chapter clicks
             for i, (label, rect) in enumerate(self.chapter_rects):
                 if rect.collidepoint(mouse_pos):
                     self.selected_chapter = label
                     self.selected_index = None
                     self._create_layout()
                     return label
-            # Check level clicks
             for level, rect in self.level_rects:
                 if rect.collidepoint(mouse_pos) and "Select a chapter" not in level:
                     return f"{self.selected_chapter} - {level}"
