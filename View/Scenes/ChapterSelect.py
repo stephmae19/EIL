@@ -17,7 +17,7 @@ class ChapterSelect:
 
         # Load buttons
         self.back_btn_original = pygame.image.load("assets/menu options/back_btn.png").convert_alpha()
-        self.continue_btn_original = pygame.image.load("assets/menu options/confirm_btn.png").convert_alpha()
+        self.start_btn_original = pygame.image.load("assets/menu options/simple_start_btn.png").convert_alpha()
 
         # Define chapters and levels
         self.chapters = {
@@ -36,9 +36,9 @@ class ChapterSelect:
         self.level_rects = []
         self.header_rect = None
         self.back_btn = None
-        self.continue_btn = None
+        self.start_btn = None
         self.back_btn_rect = None
-        self.continue_btn_rect = None
+        self.start_btn_rect = None
         self.selected_chapter = None
         self.selected_index = None
 
@@ -114,12 +114,12 @@ class ChapterSelect:
         btn_width = box_width // 5
         btn_height = int(btn_width * 0.4)
         self.back_btn = pygame.transform.smoothscale(self.back_btn_original, (btn_width, btn_height))
-        self.continue_btn = pygame.transform.smoothscale(self.continue_btn_original, (btn_width, btn_height))
+        self.start_btn = pygame.transform.smoothscale(self.start_btn_original, (btn_width, btn_height))
 
         # Position buttons below box (moved up by 20px)
         button_y = self.menu_box_rect.bottom + 20
         self.back_btn_rect = self.back_btn.get_rect(midtop=(self.menu_box_rect.centerx - btn_width // 2 - 40, button_y))
-        self.continue_btn_rect = self.continue_btn.get_rect(midtop=(self.menu_box_rect.centerx + btn_width // 2 + 40, button_y))
+        self.start_btn_rect = self.start_btn.get_rect(midtop=(self.menu_box_rect.centerx + btn_width // 2 + 40, button_y))
 
     def draw(self):
         self.screen.fill((20, 20, 20))
@@ -154,12 +154,12 @@ class ChapterSelect:
         else:
             self.screen.blit(self.back_btn, self.back_btn_rect)
 
-        if self.continue_btn_rect.collidepoint(mouse_pos):
-            continue_hover = pygame.transform.smoothscale(self.continue_btn_original, (self.continue_btn_rect.width + 20, self.continue_btn_rect.height + 10))
-            continue_rect = continue_hover.get_rect(center=self.continue_btn_rect.center)
-            self.screen.blit(continue_hover, continue_rect)
+        if self.start_btn_rect.collidepoint(mouse_pos):
+            start_hover = pygame.transform.smoothscale(self.start_btn_original, (self.start_btn_rect.width + 20, self.start_btn_rect.height + 10))
+            start_rect = start_hover.get_rect(center=self.start_btn_rect.center)
+            self.screen.blit(start_hover, start_rect)
         else:
-            self.screen.blit(self.continue_btn, self.continue_btn_rect)
+            self.screen.blit(self.start_btn, self.start_btn_rect)
 
     def handle_input(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -167,7 +167,6 @@ class ChapterSelect:
             # Check chapter rows
             for label, rect in self.chapter_rows:
                 if rect.collidepoint(mouse_pos):
-                    # Only allow selecting the CHAPTER NAME column
                     if label not in ["Locked", "Unlocked"]:
                         self.selected_chapter = label
                         self.selected_index = None
@@ -180,19 +179,16 @@ class ChapterSelect:
             # Check button clicks
             if self.back_btn_rect.collidepoint(mouse_pos):
                 return "back"
-            if self.continue_btn_rect.collidepoint(mouse_pos):
-                return "continue"
+            if self.start_btn_rect.collidepoint(mouse_pos):
+                return "start"
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
-                self.selected_index = 0 if self.selected_index is None else (self.selected_index + 1) % len(
-                    self.chapter_rows)
+                self.selected_index = 0 if self.selected_index is None else (self.selected_index + 1) % len(self.chapter_rows)
             elif event.key == pygame.K_UP:
-                self.selected_index = 0 if self.selected_index is None else (self.selected_index - 1) % len(
-                    self.chapter_rows)
+                self.selected_index = 0 if self.selected_index is None else (self.selected_index - 1) % len(self.chapter_rows)
             elif event.key == pygame.K_RETURN and self.selected_index is not None:
                 label, _ = self.chapter_rows[self.selected_index]
-                # Only select if it's a CHAPTER NAME
                 if label not in ["Locked", "Unlocked"]:
                     self.selected_chapter = label
                     self._create_layout()
