@@ -31,6 +31,7 @@ def main():
     scene_manager.set_scene(StartMenu(screen))
 
     chosen_chapter = None
+    chosen_character = None
     running = True
     clock = pygame.time.Clock()
 
@@ -55,9 +56,10 @@ def main():
             else:
                 action = scene_manager.handle_input(event)
 
+                # --- StartMenu ---
                 if isinstance(scene_manager.current_scene, StartMenu):
                     if action == "start":
-                        scene_manager.set_scene(ChapterSelect(screen))
+                        scene_manager.set_scene(CharacterSelection(screen))
                     elif action == "exit":
                         running = False
                     elif action == "continue":
@@ -67,21 +69,23 @@ def main():
                     elif action == "credits":
                         print("Credits scene...")
 
-                elif isinstance(scene_manager.current_scene, ChapterSelect):
-                    if action in [1, 2, 3, 4]:
-                        chosen_chapter = action
-                        scene_manager.set_scene(CharacterSelection(screen))
-                    elif action == "menu" or action == "back":  # Back button
-                        scene_manager.set_scene(StartMenu(screen))
-                    elif action == "start":  # Start button
-                        scene_manager.set_scene(CharacterSelection(screen))
-
+                # --- CharacterSelection ---
                 elif isinstance(scene_manager.current_scene, CharacterSelection):
                     if action == "menu":
                         scene_manager.set_scene(StartMenu(screen))
                     elif action in ["warrior", "mage", "rogue"]:
-                        print(f"Character chosen: {action}, Chapter: {chosen_chapter}")
-                        scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter))
+                        chosen_character = action
+                        print(f"Character chosen: {chosen_character}")
+                        scene_manager.set_scene(ChapterSelect(screen))
+
+                # --- ChapterSelect ---
+                elif isinstance(scene_manager.current_scene, ChapterSelect):
+                    if action in [1, 2, 3, 4]:
+                        chosen_chapter = action
+                        print(f"Chapter chosen: {chosen_chapter}, Character: {chosen_character}")
+                        scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter, character=chosen_character))
+                    elif action == "menu" or action == "back":
+                        scene_manager.set_scene(StartMenu(screen))
 
         scene_manager.update()
         scene_manager.render()
