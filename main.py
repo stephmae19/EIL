@@ -71,21 +71,21 @@ def main():
 
                 # --- CharacterSelection ---
                 elif isinstance(scene_manager.current_scene, CharacterSelection):
-                    if action == "menu":
+                    if action == "back":
                         scene_manager.set_scene(StartMenu(screen))
-                    elif action in ["warrior", "mage", "rogue"]:
+                    elif action in ["girl", "boy"]:
                         chosen_character = action
                         print(f"Character chosen: {chosen_character}")
+                    elif action == "confirm" and chosen_character:
+                        print(f"Confirmed character: {chosen_character}")
                         scene_manager.set_scene(ChapterSelect(screen))
 
                 # --- ChapterSelect ---
                 elif isinstance(scene_manager.current_scene, ChapterSelect):
                     if isinstance(action, str) and action.startswith("CHAPTER"):
-                        # Store selected chapter name
                         chosen_chapter = action
                         print(f"Chapter selected: {chosen_chapter}")
                     elif action == "start" and chosen_chapter:
-                        # Proceed to Level only when a chapter is chosen and START is pressed
                         print(f"Starting Level with Chapter: {chosen_chapter}, Character: {chosen_character}")
                         scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter, character=chosen_character))
                     elif action in ["menu", "back"]:

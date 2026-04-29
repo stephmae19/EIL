@@ -1,28 +1,37 @@
 # View/Scenes/Level.py
 import pygame
 from Game.Game import Game
+from Model.Player import Player
+from Model.Room import Room
+from Model.Clue import Clue   # example interactive object
 
 class Level:
-    def __init__(self, screen, chapter_id=1):
+    def __init__(self, screen, chapter_id, character):
         self.screen = screen
-        self.game = Game(chapter_id)  # initialize game state for chosen chapter
-        self.font = pygame.font.Font(None, 36)
+        self.chapter_id = chapter_id
+        self.character = character
+
+        # Create player
+        self.player = Player(x=100, y=100, sprite_path="assets/Characters/player.png")
+
+        # Create a room (environment)
+        self.room = Room("Chapter Room", background="assets/Maps/chapter_bg.png")
+
+        # Add an interactive object (example: chest)
+        chest = Clue(x=300, y=200, sprite_path="assets/Objects-Items/chest.png", description="A mysterious chest")
+        self.room.add_object(chest)
+
+        # Game orchestrator
+        self.game = Game(player=self.player, rooms=[self.room])
 
     def handle_input(self, event):
-        """Delegate input to the game logic."""
+        """Pass input to game logic."""
         self.game.handle_input(event)
 
     def update(self):
-        """Run the game loop logic."""
+        """Update game state each frame."""
         self.game.run_loop()
 
     def render(self):
-        """Render the game state."""
-        self.screen.fill((30, 30, 30))  # dark background
+        """Draw everything."""
         self.game.render(self.screen)
-
-        # Example overlay: score and timer
-        score_text = self.font.render(f"Score: {self.game.score}", True, (255, 255, 255))
-        timer_text = self.font.render(f"Time: {self.game.timer.get_time()}", True, (255, 255, 255))
-        self.screen.blit(score_text, (20, 20))
-        self.screen.blit(timer_text, (20, 60))
