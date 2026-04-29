@@ -13,7 +13,7 @@ class ChapterSelect:
         self.mini_header_font = pygame.font.Font(font_path, 24)
 
         # Load menu box background
-        self.menu_box_original = pygame.image.load("assets/scenery/plain_box.jpeg").convert_alpha()
+        self.menu_box_original = pygame.image.load("assets/scenery/chapter_select_window.png").convert_alpha()
 
         # Load buttons
         self.back_btn_original = pygame.image.load("assets/menu options/back_btn.png").convert_alpha()

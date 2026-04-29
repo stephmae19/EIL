@@ -1,10 +1,16 @@
 # View/Scenes/CharacterSelection.py
 import pygame
+import os
 
 class CharacterSelection:
     def __init__(self, screen):
         self.screen = screen
-        self.font = pygame.font.Font(None, 48)
+        font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
+        self.font = pygame.font.Font(font_path, 48)
+
+        # Load background
+        self.background = pygame.image.load("assets/scenery/plain_bg.png").convert()
+        self.background_scaled = None
 
         # Define available characters
         self.characters = [
@@ -24,9 +30,14 @@ class CharacterSelection:
     def _create_layout(self):
         """Create character option rectangles centered on screen."""
         screen_width, screen_height = self.screen.get_size()
+
+        # Scale background to fit screen
+        self.background_scaled = pygame.transform.smoothscale(self.background, (screen_width, screen_height))
+
         spacing = 70
         start_y = screen_height // 3
 
+        self.character_rects.clear()
         for i, character in enumerate(self.characters):
             rect = self.font.render(character["label"], True, (255, 255, 255)).get_rect(
                 center=(screen_width // 2, start_y + i * spacing)
@@ -34,8 +45,10 @@ class CharacterSelection:
             self.character_rects.append((character["label"], rect, character["id"]))
 
     def draw(self):
-        """Render character options with hover and keyboard highlight."""
-        self.screen.fill((25, 25, 25))  # Dark background
+        """Render background and character options with hover and keyboard highlight."""
+        # Draw background
+        self.screen.blit(self.background_scaled, (0, 0))
+
         mouse_pos = pygame.mouse.get_pos()
 
         for i, (label, rect, char_id) in enumerate(self.character_rects):
@@ -76,7 +89,8 @@ class CharacterSelection:
         return None
 
     def update(self):
-        pass
+        # Recalculate layout if window size changes
+        self._create_layout()
 
     def render(self):
         self.draw()

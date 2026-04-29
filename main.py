@@ -13,7 +13,7 @@ def main():
 
     # Load custom font
     font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
-    game_font = pygame.font.Font(font_path, 48)  # 48 is the font size
+    game_font = pygame.font.Font(font_path, 48)
 
     # Get the current display resolution
     info = pygame.display.Info()
@@ -80,11 +80,15 @@ def main():
 
                 # --- ChapterSelect ---
                 elif isinstance(scene_manager.current_scene, ChapterSelect):
-                    if action in [1, 2, 3, 4]:
+                    if isinstance(action, str) and action.startswith("CHAPTER"):
+                        # Store selected chapter name
                         chosen_chapter = action
-                        print(f"Chapter chosen: {chosen_chapter}, Character: {chosen_character}")
+                        print(f"Chapter selected: {chosen_chapter}")
+                    elif action == "start" and chosen_chapter:
+                        # Proceed to Level only when a chapter is chosen and START is pressed
+                        print(f"Starting Level with Chapter: {chosen_chapter}, Character: {chosen_character}")
                         scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter, character=chosen_character))
-                    elif action == "menu" or action == "back":
+                    elif action in ["menu", "back"]:
                         scene_manager.set_scene(StartMenu(screen))
 
         scene_manager.update()
