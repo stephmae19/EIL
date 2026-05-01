@@ -25,7 +25,7 @@ class StartMenu:
 
         # Load volume sprites safely (music_1.png … music_8.png)
         self.volume_images = []
-        for i in range(1, 9):  # include 1 through 8
+        for i in range(1, 9):
             path = f"Assets/Sprite/Music/music_{i}.png"
             if os.path.exists(path):
                 self.volume_images.append(pygame.image.load(path).convert_alpha())
@@ -99,9 +99,12 @@ class StartMenu:
         for i, (image, rect, action) in enumerate(self.button_rects):
             if rect.collidepoint(mouse_pos) or self.selected_index == i:
                 hovered_index = i
-                scaled = pygame.transform.smoothscale(image, (int(rect.width * 1.1), int(rect.height * 1.1)))
-                scaled_rect = scaled.get_rect(center=rect.center)
-                self.screen.blit(scaled, scaled_rect)
+                if action != "volume":  # only non-volume buttons enlarge
+                    scaled = pygame.transform.smoothscale(image, (int(rect.width * 1.1), int(rect.height * 1.1)))
+                    scaled_rect = scaled.get_rect(center=rect.center)
+                    self.screen.blit(scaled, scaled_rect)
+                else:
+                    self.screen.blit(image, rect)
             else:
                 self.screen.blit(image, rect)
 
@@ -114,36 +117,25 @@ class StartMenu:
             for _, rect, action in self.button_rects:
                 if rect.collidepoint(event.pos):
                     if action == "options":
-                        # Switch to options menu
                         self.current_buttons = "options"
                         self._create_layout()
                         return "options"
                     elif action == "back" and self.current_buttons == "options":
-                        # Return to main menu
                         self.current_buttons = self.main_buttons
                         self._create_layout()
                         return "back"
                     elif action == "volume":
-                        # Adjust volume based on click position
                         if event.pos[0] > rect.centerx and self.volume_level < len(self.volume_images):
                             self.volume_level += 1
                         elif event.pos[0] < rect.centerx and self.volume_level > 1:
                             self.volume_level -= 1
-                        pygame.mixer.music.set_volume(self.volume_level / len(self.volume_images))
+                        # Map level 1 → mute (0.0), level 8 → full volume (1.0)
+                        volume = (self.volume_level - 1) / (len(self.volume_images) - 1)
+                        pygame.mixer.music.set_volume(volume)
                         self._create_layout()
                         return "volume"
                     else:
                         return action
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN:
-                self.selected_index = 0 if self.selected_index is None else (self.selected_index + 1) % len(self.button_rects)
-            elif event.key == pygame.K_UP:
-                self.selected_index = 0 if self.selected_index is None else (self.selected_index - 1) % len(self.button_rects)
-            elif event.key == pygame.K_RETURN and self.selected_index is not None:
-                _, _, action = self.button_rects[self.selected_index]
-                return action
-
         return None
 
     def update(self):

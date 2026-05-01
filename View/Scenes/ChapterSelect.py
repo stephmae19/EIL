@@ -9,7 +9,6 @@ class ChapterSelect:
         font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
         self.font = pygame.font.Font(font_path, 28)
         self.header_font = pygame.font.Font(font_path, 40)
-        self.mini_header_font = pygame.font.Font(font_path, 24)
 
         # Load menu box background
         self.menu_box_original = pygame.image.load("assets/scenery/chapter_select_window.png").convert_alpha()
@@ -18,19 +17,21 @@ class ChapterSelect:
         self.back_btn_original = pygame.image.load("assets/menu options/back_btn.png").convert_alpha()
         self.start_btn_original = pygame.image.load("assets/menu options/simple_start_btn.png").convert_alpha()
 
+        # Load book icon
+        self.book_icon_original = pygame.image.load("assets/objects-items/book.png").convert_alpha()
+        self.book_icon = None
+
         # Define chapters and levels
         self.chapters = {
             "CHAPTER 1: THE BEGINNING": ["Level 1", "Level 2", "Level 3"],
             "CHAPTER 2: THE WHISPERS": ["Level 1", "Level 2"],
             "CHAPTER 3: THE PUZZLES": ["Level 1", "Level 2", "Level 3", "Level 4"],
             "CHAPTER 4: THE REVELATION": ["Level 1", "Level 2"],
-            "BACK TO MENU": []
         }
 
         # Layout state
         self.menu_box = None
         self.menu_box_rect = None
-        self.chapter_header = []
         self.chapter_rows = []
         self.level_rects = []
         self.header_rect = None
@@ -39,13 +40,27 @@ class ChapterSelect:
         self.back_btn_rect = None
         self.start_btn_rect = None
         self.selected_chapter = None
-        self.selected_index = None
 
-        # Load hover sound
+        # Hover sound
         self.hover_sound = pygame.mixer.Sound("sounds/button_hover.mp3")
-        self.last_hovered = None  # Track last hovered element
+        self.last_hovered = None
 
         self._create_layout()
+
+    def _wrap_text(self, text, font, max_width):
+        """Split text into multiple lines that fit within max_width."""
+        words = text.split(" ")
+        lines, current_line = [], ""
+        for word in words:
+            test_line = current_line + (" " if current_line else "") + word
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+        return lines
 
     def _create_layout(self):
         screen_width, screen_height = self.screen.get_size()
@@ -56,6 +71,10 @@ class ChapterSelect:
         self.menu_box = pygame.transform.smoothscale(self.menu_box_original, (box_width, box_height))
         self.menu_box_rect = self.menu_box.get_rect(center=(screen_width // 2, screen_height // 2))
 
+        # Resize book icon
+        icon_size = 64
+        self.book_icon = pygame.transform.smoothscale(self.book_icon_original, (icon_size, icon_size))
+
         # Margins
         margin_x, margin_y = 40, 40
         inner_left = self.menu_box_rect.left + margin_x
@@ -63,37 +82,36 @@ class ChapterSelect:
         inner_top = self.menu_box_rect.top + margin_y
         inner_bottom = self.menu_box_rect.bottom - margin_y
 
+        # Divide into left (chapters) and right (levels)
+        mid_x = self.menu_box_rect.centerx
+        left_x = inner_left
+        right_x = mid_x + 30
+        start_y = inner_top + 60
+        spacing = 70
+
         # Header
         header_surface = self.header_font.render("CHAPTERS & LEVELS", True, (255, 255, 255))
         self.header_rect = header_surface.get_rect(midtop=(self.menu_box_rect.centerx, inner_top))
         self.header_surface = header_surface
 
-        # Chapter/Level layout
-        left_x = inner_left
-        right_x = self.menu_box_rect.centerx + 30
-        start_y = self.header_rect.bottom + 20
-        spacing = 50
-
-        # Mini header
-        name_width = int((right_x - left_x) * 0.7)
-        self.chapter_header = [
-            ("CHAPTER NAME", self.mini_header_font.render("CHAPTER NAME", True, (200, 200, 200)).get_rect(topleft=(left_x, start_y))),
-            ("STATUS", self.mini_header_font.render("STATUS", True, (200, 200, 200)).get_rect(topleft=(left_x + name_width, start_y)))
-        ]
-
-        # Chapter rows
+        # Chapter rows (left side)
         self.chapter_rows.clear()
         for i, chapter in enumerate(self.chapters.keys()):
-            name_label = chapter
-            status_label = "Unlocked" if self.selected_chapter == chapter else "Locked"
+            row_y = start_y + i * spacing
+            book_rect = self.book_icon.get_rect(topleft=(left_x, row_y))
 
-            row_y = start_y + 40 + i * spacing
-            self.chapter_rows.append((name_label, self.font.render(name_label, True, (255, 255, 255)).get_rect(topleft=(left_x, row_y))))
-            self.chapter_rows.append((status_label, self.font.render(status_label, True, (255, 255, 255)).get_rect(topleft=(left_x + name_width, row_y))))
+            wrapped_lines = self._wrap_text(chapter, self.font, 250)
+            text_surfaces = []
+            for j, line in enumerate(wrapped_lines):
+                surf = self.font.render(line, True, (255, 255, 255))
+                rect = surf.get_rect(topleft=(book_rect.right + 10, row_y + j * 30))
+                text_surfaces.append((surf, rect))
 
-        # Levels
+            self.chapter_rows.append((book_rect, text_surfaces, chapter))
+
+        # Levels (right side)
         self.level_rects.clear()
-        if self.selected_chapter and self.chapters[self.selected_chapter]:
+        if self.selected_chapter:
             for i, level in enumerate(self.chapters[self.selected_chapter]):
                 rect = self.font.render(level, True, (255, 255, 255)).get_rect(topleft=(right_x, start_y + i * spacing))
                 if rect.bottom <= inner_bottom:
@@ -101,7 +119,7 @@ class ChapterSelect:
         else:
             placeholder = "Select a chapter to view levels"
             placeholder_surface = self.font.render(placeholder, True, (180, 180, 180))
-            rect = placeholder_surface.get_rect(midtop=(right_x + (inner_right - right_x) // 2, start_y))
+            rect = placeholder_surface.get_rect(topleft=(right_x, start_y))
             self.level_rects.append((placeholder, rect))
             self.placeholder_surface = placeholder_surface
 
@@ -123,19 +141,15 @@ class ChapterSelect:
         mouse_pos = pygame.mouse.get_pos()
         hovered = None
 
-        # Mini header
-        for label, rect in self.chapter_header:
-            text_surface = self.mini_header_font.render(label, True, (200, 200, 200))
-            self.screen.blit(text_surface, rect)
+        # Draw chapters (left side)
+        for book_rect, text_surfaces, chapter in self.chapter_rows:
+            self.screen.blit(self.book_icon, book_rect)
+            for surf, rect in text_surfaces:
+                self.screen.blit(surf, rect)
+                if rect.collidepoint(mouse_pos):
+                    hovered = chapter
 
-        # Chapter rows
-        for label, rect in self.chapter_rows:
-            text_surface = self.font.render(label, True, (255, 255, 255))
-            self.screen.blit(text_surface, rect)
-            if rect.collidepoint(mouse_pos) and label not in ["Locked", "Unlocked"]:
-                hovered = label
-
-        # Levels
+        # Draw levels (right side)
         for level, rect in self.level_rects:
             if "Select a chapter" in level:
                 self.screen.blit(self.placeholder_surface, rect)
@@ -162,7 +176,6 @@ class ChapterSelect:
         else:
             self.screen.blit(self.start_btn, self.start_btn_rect)
 
-        # Play hover sound only when entering a new element
         if hovered is not None and hovered != self.last_hovered:
             self.hover_sound.play()
         self.last_hovered = hovered
@@ -170,39 +183,25 @@ class ChapterSelect:
     def handle_input(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
-            # Check chapter rows
-            for label, rect in self.chapter_rows:
-                if rect.collidepoint(mouse_pos) and label not in ["Locked", "Unlocked"]:
-                    self.selected_chapter = label
-                    self.selected_index = None
-                    self._create_layout()
-                    return label
+            # Check chapter clicks
+            for _, text_surfaces, chapter in self.chapter_rows:
+                for _, rect in text_surfaces:
+                    if rect.collidepoint(mouse_pos):
+                        self.selected_chapter = chapter
+                        self._create_layout()
+                        return chapter
             # Check level clicks
             for level, rect in self.level_rects:
                 if rect.collidepoint(mouse_pos) and "Select a chapter" not in level:
                     return f"{self.selected_chapter} - {level}"
-            # Check button clicks
+            # Buttons
             if self.back_btn_rect.collidepoint(mouse_pos):
                 return "back"
             if self.start_btn_rect.collidepoint(mouse_pos):
                 return "start"
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN:
-                self.selected_index = 0 if self.selected_index is None else (self.selected_index + 1) % len(self.chapter_rows)
-            elif event.key == pygame.K_UP:
-                self.selected_index = 0 if self.selected_index is None else (self.selected_index - 1) % len(self.chapter_rows)
-            elif event.key == pygame.K_RETURN and self.selected_index is not None:
-                label, _ = self.chapter_rows[self.selected_index]
-                if label not in ["Locked", "Unlocked"]:
-                    self.selected_chapter = label
-                    self._create_layout()
-                    return label
-
         return None
 
     def update(self):
-        # Rebuild layout if needed
         self._create_layout()
 
     def render(self):
