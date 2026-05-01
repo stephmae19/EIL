@@ -1,4 +1,3 @@
-# main.py
 import pygame
 import os
 from View.Scenes.StartMenu import StartMenu
@@ -10,6 +9,16 @@ from Controller.SceneManager import SceneManager
 def main():
     # Initialize pygame
     pygame.init()
+    pygame.mixer.init()  # Initialize mixer for audio
+
+    # Load and play background music
+    music_path = os.path.join("sounds", "bg_music.mp3")
+    if os.path.exists(music_path):
+        pygame.mixer.music.load(music_path)
+        pygame.mixer.music.set_volume(0.5)  # Adjust volume (0.0 to 1.0)
+        pygame.mixer.music.play(-1)         # -1 means infinite loop
+    else:
+        print("Background music file not found:", music_path)
 
     # Load custom font
     font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
