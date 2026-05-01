@@ -9,7 +9,7 @@ class CharacterSelection:
         self.scene_manager = scene_manager
         font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
         self.font = pygame.font.Font(font_path, 48)
-        self.small_font = pygame.font.Font(font_path, 32)  # smaller font for labels
+        self.small_font = pygame.font.Font(font_path, 32)
 
         # Load full background
         self.background = pygame.image.load("assets/scenery/plain_bg.png").convert()
@@ -33,15 +33,15 @@ class CharacterSelection:
         self.boy_image = pygame.image.load("assets/characters/boy_char.png").convert_alpha()
 
         self.chosen_character = None
+        self.warning_message = None  # Show feedback when confirm pressed without selection
 
         # Load hover sound
         self.hover_sound = pygame.mixer.Sound("sounds/button_hover.mp3")
-        self.last_hovered = None  # Track last hovered element
+        self.last_hovered = None
 
         self._create_layout()
 
     def _scale_image_proportionally(self, image, box_size):
-        """Scale image proportionally to fit inside box without stretching."""
         img_w, img_h = image.get_size()
         scale = min((box_size - 20) / img_w, (box_size - 20) / img_h)
         new_size = (int(img_w * scale), int(img_h * scale))
@@ -51,12 +51,10 @@ class CharacterSelection:
         screen_width, screen_height = self.screen.get_size()
         self.background_scaled = pygame.transform.smoothscale(self.background, (screen_width, screen_height))
 
-        # Square window
         square_size = int(min(screen_width, screen_height) * 0.6)
         self.window_scaled = pygame.transform.smoothscale(self.window_image, (square_size, square_size))
         self.window_rect = self.window_scaled.get_rect(center=(screen_width // 2, screen_height // 2))
 
-        # Buttons inside window
         btn_width = square_size // 3
         btn_height = int(btn_width * 0.4)
         self.back_btn = pygame.transform.smoothscale(self.back_btn_original, (btn_width, btn_height))
@@ -67,13 +65,11 @@ class CharacterSelection:
         self.back_btn_rect = self.back_btn.get_rect(center=(self.window_rect.centerx - spacing_x, button_y))
         self.confirm_btn_rect = self.confirm_btn.get_rect(center=(self.window_rect.centerx + spacing_x, button_y))
 
-        # Character boxes inside window
         box_size = square_size // 3
         box_y = self.window_rect.top + 120
         self.girl_box = pygame.Rect(self.window_rect.centerx - box_size - 50, box_y, box_size, box_size)
         self.boy_box = pygame.Rect(self.window_rect.centerx + 50, box_y, box_size, box_size)
 
-        # Scale character images proportionally
         self.girl_image_scaled = self._scale_image_proportionally(self.girl_image, box_size)
         self.boy_image_scaled = self._scale_image_proportionally(self.boy_image, box_size)
 
@@ -84,7 +80,6 @@ class CharacterSelection:
         mouse_pos = pygame.mouse.get_pos()
         hovered = None
 
-        # Header text
         header_text = "SELECT YOUR EXPLORER"
         max_width = self.window_rect.width - 40
         header_surface = self.font.render(header_text, True, (255, 255, 255))
@@ -94,7 +89,6 @@ class CharacterSelection:
         header_rect = header_surface.get_rect(center=(self.window_rect.centerx, self.window_rect.top + 50))
         self.screen.blit(header_surface, header_rect)
 
-        # Character boxes
         for box, image, char_id, label_lines in [
             (self.girl_box, self.girl_image_scaled, "girl", ["FEMALE", "EXPLORER"]),
             (self.boy_box, self.boy_image_scaled, "boy", ["MALE", "EXPLORER"])
@@ -115,7 +109,6 @@ class CharacterSelection:
                 label_rect = label_surface.get_rect(center=(box.centerx, box.bottom + 30 + i * line_spacing))
                 self.screen.blit(label_surface, label_rect)
 
-        # Back button
         if self.back_btn_rect.collidepoint(mouse_pos):
             back_hover = pygame.transform.smoothscale(self.back_btn_original,
                                                       (self.back_btn_rect.width + 20, self.back_btn_rect.height + 10))
@@ -125,7 +118,6 @@ class CharacterSelection:
         else:
             self.screen.blit(self.back_btn, self.back_btn_rect)
 
-        # Confirm button
         if self.confirm_btn_rect.collidepoint(mouse_pos):
             confirm_hover = pygame.transform.smoothscale(self.confirm_btn_original,
                                                          (self.confirm_btn_rect.width + 20, self.confirm_btn_rect.height + 10))
@@ -135,7 +127,11 @@ class CharacterSelection:
         else:
             self.screen.blit(self.confirm_btn, self.confirm_btn_rect)
 
-        # Play hover sound only when entering a new element
+        if self.warning_message:
+            warning_surface = self.small_font.render(self.warning_message, True, (255, 0, 0))
+            warning_rect = warning_surface.get_rect(center=(self.window_rect.centerx, self.confirm_btn_rect.top - 40))
+            self.screen.blit(warning_surface, warning_rect)
+
         if hovered is not None and hovered != self.last_hovered:
             self.hover_sound.play()
         self.last_hovered = hovered
@@ -145,9 +141,11 @@ class CharacterSelection:
             mouse_pos = event.pos
             if self.girl_box.collidepoint(mouse_pos):
                 self.chosen_character = "girl"
+                self.warning_message = None
                 return "girl"
             if self.boy_box.collidepoint(mouse_pos):
                 self.chosen_character = "boy"
+                self.warning_message = None
                 return "boy"
             if self.back_btn_rect.collidepoint(mouse_pos):
                 if self.scene_manager:
@@ -156,8 +154,10 @@ class CharacterSelection:
             if self.confirm_btn_rect.collidepoint(mouse_pos):
                 if self.chosen_character and self.scene_manager:
                     self.scene_manager.set_scene(ChapterSelect(self.screen))
-                return "confirm"
-
+                    return "confirm"
+                else:
+                    self.warning_message = "Please select a character first!"
+                    return None
         return None
 
     def update(self):

@@ -9,14 +9,14 @@ from Controller.SceneManager import SceneManager
 def main():
     # Initialize pygame
     pygame.init()
-    pygame.mixer.init()  # Initialize mixer for audio
+    pygame.mixer.init()
 
     # Load and play background music
     music_path = os.path.join("sounds", "bg_music.mp3")
     if os.path.exists(music_path):
         pygame.mixer.music.load(music_path)
-        pygame.mixer.music.set_volume(0.5)  # Adjust volume (0.0 to 1.0)
-        pygame.mixer.music.play(-1)         # -1 means infinite loop
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
     else:
         print("Background music file not found:", music_path)
 
@@ -24,18 +24,18 @@ def main():
     font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
     game_font = pygame.font.Font(font_path, 48)
 
-    # Get the current display resolution
+    # Get display resolution
     info = pygame.display.Info()
     width, height = info.current_w, info.current_h
 
-    # Center the window on the screen
+    # Center window
     os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-    # Create a window that fills the screen but keeps taskbar and window controls visible
+    # Create window
     screen = pygame.display.set_mode((width, height - 50), pygame.RESIZABLE)
     pygame.display.set_caption("Echoes of Whispers")
 
-    # Create SceneManager and load StartMenu
+    # Scene manager
     scene_manager = SceneManager(screen)
     scene_manager.set_scene(StartMenu(screen))
 
@@ -68,7 +68,7 @@ def main():
                 # --- StartMenu ---
                 if isinstance(scene_manager.current_scene, StartMenu):
                     if action == "start":
-                        scene_manager.set_scene(CharacterSelection(screen))
+                        scene_manager.set_scene(CharacterSelection(screen, scene_manager))
                     elif action == "exit":
                         running = False
                     elif action == "continue":
@@ -85,9 +85,12 @@ def main():
                     elif action in ["girl", "boy"]:
                         chosen_character = action
                         print(f"Character chosen: {chosen_character}")
-                    elif action == "confirm" and chosen_character:
-                        print(f"Confirmed character: {chosen_character}")
-                        scene_manager.set_scene(ChapterSelect(screen))
+                    elif action == "confirm":
+                        if chosen_character:
+                            print(f"Confirmed character: {chosen_character}")
+                            scene_manager.set_scene(ChapterSelect(screen))
+                        else:
+                            print("Confirm clicked but no character selected.")
 
                 # --- ChapterSelect ---
                 elif isinstance(scene_manager.current_scene, ChapterSelect):
@@ -97,7 +100,11 @@ def main():
                     elif action == "start" and chosen_chapter:
                         print(f"Starting Level with Chapter: {chosen_chapter}, Character: {chosen_character}")
                         scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter, character=chosen_character))
-                    elif action in ["menu", "back"]:
+                    elif action == "back":
+                        # Back goes to CharacterSelection
+                        scene_manager.set_scene(CharacterSelection(screen, scene_manager))
+                    elif action == "menu":
+                        # Explicit menu action goes to StartMenu
                         scene_manager.set_scene(StartMenu(screen))
 
         scene_manager.update()
