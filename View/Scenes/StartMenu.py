@@ -1,4 +1,3 @@
-# View/Scenes/StartMenu.py
 import pygame
 
 class StartMenu:
@@ -28,6 +27,10 @@ class StartMenu:
         self.menu_box_rect = None
         self.button_rects = []
         self.selected_index = None
+
+        # Load hover sound
+        self.hover_sound = pygame.mixer.Sound("sounds/button_hover.mp3")
+        self.last_hovered_index = None  # Track last hovered button
 
         self._create_layout()
 
@@ -70,14 +73,22 @@ class StartMenu:
         self.screen.blit(self.menu_box, self.menu_box_rect)
 
         mouse_pos = pygame.mouse.get_pos()
+        hovered_index = None
+
         for i, (image, rect, action) in enumerate(self.button_rects):
             if rect.collidepoint(mouse_pos) or self.selected_index == i:
+                hovered_index = i
                 # Slightly enlarge on hover/selection
                 scaled = pygame.transform.smoothscale(image, (int(rect.width * 1.1), int(rect.height * 1.1)))
                 scaled_rect = scaled.get_rect(center=rect.center)
                 self.screen.blit(scaled, scaled_rect)
             else:
                 self.screen.blit(image, rect)
+
+        # Play hover sound only when entering a new button
+        if hovered_index is not None and hovered_index != self.last_hovered_index:
+            self.hover_sound.play()
+        self.last_hovered_index = hovered_index
 
     def handle_input(self, event):
         """Handle mouse clicks and keyboard navigation."""
@@ -91,7 +102,7 @@ class StartMenu:
             if event.key == pygame.K_DOWN:
                 self.selected_index = 0 if self.selected_index is None else (self.selected_index + 1) % len(self.button_rects)
             elif event.key == pygame.K_UP:
-                self.selected_index = 0 if self.    selected_index is None else (self.selected_index - 1) % len(self.button_rects)
+                self.selected_index = 0 if self.selected_index is None else (self.selected_index - 1) % len(self.button_rects)
             elif event.key == pygame.K_RETURN and self.selected_index is not None:
                 _, _, action = self.button_rects[self.selected_index]
                 return action

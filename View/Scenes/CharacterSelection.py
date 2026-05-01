@@ -1,4 +1,3 @@
-# View/Scenes/CharacterSelection.py
 import pygame
 import os
 from View.Scenes.StartMenu import StartMenu
@@ -34,6 +33,10 @@ class CharacterSelection:
         self.boy_image = pygame.image.load("assets/characters/boy_char.png").convert_alpha()
 
         self.chosen_character = None
+
+        # Load hover sound
+        self.hover_sound = pygame.mixer.Sound("sounds/button_hover.mp3")
+        self.last_hovered = None  # Track last hovered element
 
         self._create_layout()
 
@@ -79,8 +82,9 @@ class CharacterSelection:
         self.screen.blit(self.window_scaled, self.window_rect)
 
         mouse_pos = pygame.mouse.get_pos()
+        hovered = None
 
-        # Header text (resize if too wide)
+        # Header text
         header_text = "SELECT YOUR EXPLORER"
         max_width = self.window_rect.width - 40
         header_surface = self.font.render(header_text, True, (255, 255, 255))
@@ -90,22 +94,21 @@ class CharacterSelection:
         header_rect = header_surface.get_rect(center=(self.window_rect.centerx, self.window_rect.top + 50))
         self.screen.blit(header_surface, header_rect)
 
-        # Draw character boxes + labels
+        # Character boxes
         for box, image, char_id, label_lines in [
             (self.girl_box, self.girl_image_scaled, "girl", ["FEMALE", "EXPLORER"]),
             (self.boy_box, self.boy_image_scaled, "boy", ["MALE", "EXPLORER"])
         ]:
-            pygame.draw.rect(self.screen, (92, 64, 52), box)  # fill color #5C4034
+            pygame.draw.rect(self.screen, (92, 64, 52), box)
             border_color = (255, 215, 0) if self.chosen_character == char_id else (0, 0, 0)
-            if box.collidepoint(mouse_pos):  # hover effect
+            if box.collidepoint(mouse_pos):
                 border_color = (173, 216, 230)
+                hovered = char_id
             pygame.draw.rect(self.screen, border_color, box, 2)
 
-            # Center character image
             img_rect = image.get_rect(center=box.center)
             self.screen.blit(image, img_rect)
 
-            # Render each line of label below the box
             line_spacing = 35
             for i, line in enumerate(label_lines):
                 label_surface = self.small_font.render(line, True, (255, 255, 255))
@@ -118,6 +121,7 @@ class CharacterSelection:
                                                       (self.back_btn_rect.width + 20, self.back_btn_rect.height + 10))
             back_rect = back_hover.get_rect(center=self.back_btn_rect.center)
             self.screen.blit(back_hover, back_rect)
+            hovered = "back"
         else:
             self.screen.blit(self.back_btn, self.back_btn_rect)
 
@@ -127,25 +131,28 @@ class CharacterSelection:
                                                          (self.confirm_btn_rect.width + 20, self.confirm_btn_rect.height + 10))
             confirm_rect = confirm_hover.get_rect(center=self.confirm_btn_rect.center)
             self.screen.blit(confirm_hover, confirm_rect)
+            hovered = "confirm"
         else:
             self.screen.blit(self.confirm_btn, self.confirm_btn_rect)
+
+        # Play hover sound only when entering a new element
+        if hovered is not None and hovered != self.last_hovered:
+            self.hover_sound.play()
+        self.last_hovered = hovered
 
     def handle_input(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
-            # Character box clicks
             if self.girl_box.collidepoint(mouse_pos):
                 self.chosen_character = "girl"
                 return "girl"
             if self.boy_box.collidepoint(mouse_pos):
                 self.chosen_character = "boy"
                 return "boy"
-            # Back button
             if self.back_btn_rect.collidepoint(mouse_pos):
                 if self.scene_manager:
                     self.scene_manager.set_scene(StartMenu(self.screen))
                 return "back"
-            # Confirm button
             if self.confirm_btn_rect.collidepoint(mouse_pos):
                 if self.chosen_character and self.scene_manager:
                     self.scene_manager.set_scene(ChapterSelect(self.screen))
