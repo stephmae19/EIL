@@ -1,0 +1,99 @@
+import pygame
+
+# --- Configuration ---
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+FPS = 60
+
+# Sprite Sheet Details (Adjust these based on your actual file dimensions)
+# Based on your image, it's 5 columns and 5 rows.
+ROWS = 5
+COLS = 5
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        # Load the sheet and get dimensions
+        self.sprite_sheet = pygame.image.load('spritesheet.png').convert_alpha()
+        sheet_rect = self.sprite_sheet.get_rect()
+        
+        self.frame_width = sheet_rect.width // COLS
+        self.frame_height = sheet_rect.height // ROWS
+        
+        # Extract frames
+        self.walk_frames = []
+        for r in range(ROWS):
+            for c in range(COLS):
+                # Grab a sub-surface (one frame)
+                rect = pygame.Rect(c * self.frame_width, r * self.frame_height, 
+                                   self.frame_width, self.frame_height)
+                frame = self.sprite_sheet.subsurface(rect)
+                self.walk_frames.append(frame)
+
+        # Animation State
+        self.index = 0
+        self.image = self.walk_frames[self.index]
+        self.rect = self.image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        
+        self.speed = 5
+        self.animation_speed = 0.2  # Control how fast the legs move
+        self.current_frame = 0.0
+        self.facing_right = True
+        self.is_moving = False
+
+    def handle_input(self):
+        keys = pygame.key.get_pressed()
+        self.is_moving = False
+        
+        if keys[pygame.K_LEFT]:
+            self.rect.x -= self.speed
+            self.facing_right = False
+            self.is_moving = True
+        elif keys[pygame.K_RIGHT]:
+            self.rect.x += self.speed
+            self.facing_right = True
+            self.is_moving = True
+
+    def animate(self):
+        if self.is_moving:
+            # Cycle through frames
+            self.current_frame += self.animation_speed
+            if self.current_frame >= len(self.walk_frames):
+                self.current_frame = 0
+            
+            self.image = self.walk_frames[int(self.current_frame)]
+        else:
+            # Idle: just show the first frame
+            self.image = self.walk_frames[0]
+
+        # Flip image if moving left
+        if not self.facing_right:
+            self.image = pygame.transform.flip(self.image, True, False)
+
+    def update(self):
+        self.handle_input()
+        self.animate()
+
+# --- Main Game Loop ---
+pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+clock = pygame.time.Clock()
+
+player = Player()
+all_sprites = pygame.sprite.Group(player)
+
+running = True
+while running:
+    screen.fill((30, 30, 30)) # Dark background
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    all_sprites.update()
+    all_sprites.draw(screen)
+
+    pygame.display.flip()
+    clock.tick(FPS)
+
+pygame.quit()
