@@ -1,0 +1,121 @@
+import pygame
+import sys
+
+# --- Configuration ---
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+FPS = 60
+ROWS = 5
+COLS = 5
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        
+        # Load the sheet using the requested filename
+        try:
+            self.sprite_sheet = pygame.image.load('player(1).jpg').convert()
+        except pygame.error as e:
+            print(f"Unable to load image! Error: {e}")
+            pygame.quit()
+            sys.exit()
+
+        # Set black as transparent
+        self.sprite_sheet.set_colorkey((0, 0, 0))
+        
+        sheet_rect = self.sprite_sheet.get_rect()
+        self.frame_width = sheet_rect.width // COLS
+        self.frame_height = sheet_rect.height // ROWS
+        
+        # Slicing the sheet
+        self.walk_frames = []
+        for r in range(ROWS):
+            for c in range(COLS):
+                rect = pygame.Rect(c * self.frame_width, r * self.frame_height, 
+                                   self.frame_width, self.frame_height)
+                frame = self.sprite_sheet.subsurface(rect)
+                self.walk_frames.append(frame)
+
+        # State
+        self.current_frame = 0.0
+        self.image = self.walk_frames[0]
+        self.rect = self.image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        
+        self.speed = 5
+        self.animation_speed = 0.2  
+        self.facing_right = True
+        self.is_moving = False
+        self.direction = 0  # 1 for right, -1 for left, 0 for idle
+
+    def handle_input(self):
+        """Checks for key presses and sets movement state."""
+        keys = pygame.key.get_pressed()
+        self.is_moving = False
+        self.direction = 0
+        
+        if keys[pygame.K_LEFT]:
+            self.direction = -1
+            self.facing_right = False
+            self.is_moving = True
+        elif keys[pygame.K_RIGHT]:
+            self.direction = 1
+            self.facing_right = True
+            self.is_moving = True
+
+    def move(self):
+        """Dedicated movement function to handle position updates."""
+        if self.is_moving:
+            self.rect.x += self.direction * self.speed
+            
+            # --- Optional: Screen Boundaries ---
+            if self.rect.left < 0:
+                self.rect.left = 0
+            if self.rect.right > SCREEN_WIDTH:
+                self.rect.right = SCREEN_WIDTH
+
+    def animate(self):
+        """Cycles through walk frames or resets to idle."""
+        if self.is_moving:
+            self.current_frame += self.animation_speed
+            if self.current_frame >= len(self.walk_frames):
+                self.current_frame = 0
+            new_image = self.walk_frames[int(self.current_frame)]
+        else:
+            new_image = self.walk_frames[0]
+
+        # Handle mirroring
+        if not self.facing_right:
+            self.image = pygame.transform.flip(new_image, True, False)
+        else:
+            self.image = new_image
+
+    def update(self):
+        """The standard Sprite update method."""
+        self.handle_input()
+        self.move()     # <--- Our new function
+        self.animate()
+
+# --- Main Game Loop ---
+pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Player Movement Logic")
+clock = pygame.time.Clock()
+
+player_instance = Player()
+all_sprites = pygame.sprite.Group(player_instance)
+
+running = True
+while running:
+    screen.fill((50, 150, 50)) 
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    all_sprites.update()
+    all_sprites.draw(screen)
+
+    pygame.display.flip()
+    clock.tick(FPS)
+
+pygame.quit()
