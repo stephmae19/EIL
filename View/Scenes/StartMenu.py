@@ -23,7 +23,7 @@ class StartMenu:
             {"image": pygame.image.load("Assets/Menu Options/exit_btn.jpeg").convert_alpha(), "action": "exit"},
         ]
 
-        # Load volume spritesheet (music_volume.png, 1020x273, 3x3 grid)
+        # Load volume spritesheet (music_volume.png, 3x3 grid)
         spritesheet = pygame.image.load("Assets/Sprite/Music/music_volume.png").convert_alpha()
         frame_width, frame_height = 340, 91
         cols, rows = 3, 3
@@ -34,7 +34,7 @@ class StartMenu:
                 frame = spritesheet.subsurface(rect)
                 self.volume_frames.append(frame)
 
-        # Original clickable slider area offsets (before scaling)
+        # Slider clickable offsets (original frame size)
         self.inner_x_offset = 53
         self.inner_y_offset = 32
         self.slider_width = 265
@@ -42,10 +42,18 @@ class StartMenu:
         self.frame_width = frame_width
         self.frame_height = frame_height
 
-        self.volume_level = 4  # start mid-level (0–8)
+        self.volume_level = 4
         self.dragging = False
 
-        # Back button for options menu
+        # Load SFX toggle spritesheet (sfx.png, 2 frames)
+        sfx_sheet = pygame.image.load("Assets/Sprite/Music/sfx.png").convert_alpha()
+        self.sfx_frames = [
+            sfx_sheet.subsurface(pygame.Rect(0, 0, 150, 100)),   # ON
+            sfx_sheet.subsurface(pygame.Rect(150, 0, 150, 100)) # OFF
+        ]
+        self.sfx_on = True  # start with SFX enabled
+
+        # Back button
         self.back_btn = pygame.image.load("Assets/Menu Options/back_btn.png").convert_alpha()
 
         # Current button set
@@ -58,6 +66,10 @@ class StartMenu:
         # Hover sound
         self.hover_sound = pygame.mixer.Sound("sounds/button_hover.mp3")
         self.last_hovered_index = None
+
+        # Load custom font
+        font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
+        self.ui_font = pygame.font.Font(font_path, 28)
 
         self._create_layout()
 
@@ -74,11 +86,11 @@ class StartMenu:
 
         spacing = new_height // (len(self.main_buttons) + 1)
         center_x = self.menu_box_rect.centerx
-        start_y = self.menu_box_rect.top + spacing
 
         self.button_rects.clear()
 
         if self.current_buttons == self.main_buttons:
+            start_y = self.menu_box_rect.top + spacing
             # Layout main buttons
             for i, button in enumerate(self.main_buttons):
                 btn_width = int(new_width * 0.6)
@@ -87,22 +99,39 @@ class StartMenu:
                 rect = scaled_btn.get_rect(center=(center_x, start_y + i * spacing))
                 self.button_rects.append((scaled_btn, rect, button["action"]))
         else:
-            # Layout options menu: volume slider + back
+            # Options menu: add 20px padding at the top
+            start_y = self.menu_box_rect.top + spacing + 50
+
             vol_width = int(new_width * 0.6)
             vol_height = int(new_height * 0.15)
             vol_image = pygame.transform.smoothscale(self.volume_frames[self.volume_level], (vol_width, vol_height))
             vol_rect = vol_image.get_rect(center=(center_x, start_y))
             self.button_rects.append((vol_image, vol_rect, "volume"))
 
-            # Save scale factors for clickable area
+            # Save scale factors for slider clickable area
             self.vol_scale_x = vol_width / self.frame_width
             self.vol_scale_y = vol_height / self.frame_height
 
+            # SFX toggle button below volume
+            scale_factor = 0.8
+            sfx_image = self.sfx_frames[0 if self.sfx_on else 1]
+            sfx_scaled = pygame.transform.smoothscale(
+                sfx_image, (int(150 * scale_factor), int(100 * scale_factor))
+            )
+            sfx_rect = sfx_scaled.get_rect(center=(center_x, start_y + spacing * 2))
+            self.button_rects.append((sfx_scaled, sfx_rect, "sfx"))
+
+            # Back button below SFX
             back_width = int(new_width * 0.4)
             back_height = int(new_height * 0.1)
             back_scaled = pygame.transform.smoothscale(self.back_btn, (back_width, back_height))
-            back_rect = back_scaled.get_rect(center=(center_x, start_y + spacing * 2))
+            back_rect = back_scaled.get_rect(center=(center_x, start_y + spacing * 3))
             self.button_rects.append((back_scaled, back_rect, "back"))
+
+            # Store rects for text placement
+            self.volume_rect = vol_rect
+            self.sfx_rect = sfx_rect
+
 
     def draw(self):
         self.screen.blit(self.background_scaled, (0, 0))
@@ -114,7 +143,7 @@ class StartMenu:
         for i, (image, rect, action) in enumerate(self.button_rects):
             if rect.collidepoint(mouse_pos) or self.selected_index == i:
                 hovered_index = i
-                if action != "volume":  # only non-volume buttons enlarge
+                if action not in ("volume", "sfx"):  # only non-volume/sfx buttons enlarge
                     scaled = pygame.transform.smoothscale(image, (int(rect.width * 1.1), int(rect.height * 1.1)))
                     scaled_rect = scaled.get_rect(center=rect.center)
                     self.screen.blit(scaled, scaled_rect)
@@ -123,7 +152,19 @@ class StartMenu:
             else:
                 self.screen.blit(image, rect)
 
-        if hovered_index is not None and hovered_index != self.last_hovered_index:
+        # Labels above volume and sfx buttons
+        if self.current_buttons != self.main_buttons:
+            music_text = self.ui_font.render("MUSIC VOLUME", True, (255, 255, 255))
+            sfx_text = self.ui_font.render("SOUND EFFECTS", True, (255, 255, 255))
+
+            music_rect = music_text.get_rect(center=(self.volume_rect.centerx, self.volume_rect.top - 25))
+            sfx_rect = sfx_text.get_rect(center=(self.sfx_rect.centerx, self.sfx_rect.top - 25))
+
+            self.screen.blit(music_text, music_rect)
+            self.screen.blit(sfx_text, sfx_rect)
+
+        # Play hover sound only if SFX is enabled
+        if hovered_index is not None and hovered_index != self.last_hovered_index and self.sfx_on:
             self.hover_sound.play()
         self.last_hovered_index = hovered_index
 
@@ -146,14 +187,21 @@ class StartMenu:
                         scaled_slider_w = int(self.slider_width * self.vol_scale_x)
                         scaled_slider_h = int(self.slider_height * self.vol_scale_y)
 
-                        inner_rect = pygame.Rect(rect.left + scaled_inner_x,
-                                                 rect.top + scaled_inner_y,
-                                                 scaled_slider_w,
-                                                 scaled_slider_h)
+                        inner_rect = pygame.Rect(
+                            rect.left + scaled_inner_x,
+                            rect.top + scaled_inner_y,
+                            scaled_slider_w,
+                            scaled_slider_h
+                        )
                         if inner_rect.collidepoint(event.pos):
                             self.dragging = True
                             self.update_volume(event.pos[0], inner_rect)
                             return "volume"
+                    elif action == "sfx":
+                        # Toggle SFX on/off
+                        self.sfx_on = not self.sfx_on
+                        self._create_layout()
+                        return "sfx"
                     else:
                         return action
 
@@ -168,10 +216,12 @@ class StartMenu:
                     scaled_slider_w = int(self.slider_width * self.vol_scale_x)
                     scaled_slider_h = int(self.slider_height * self.vol_scale_y)
 
-                    inner_rect = pygame.Rect(rect.left + scaled_inner_x,
-                                             rect.top + scaled_inner_y,
-                                             scaled_slider_w,
-                                             scaled_slider_h)
+                    inner_rect = pygame.Rect(
+                        rect.left + scaled_inner_x,
+                        rect.top + scaled_inner_y,
+                        scaled_slider_w,
+                        scaled_slider_h
+                    )
                     self.update_volume(event.pos[0], inner_rect)
                     return "volume"
 
@@ -192,3 +242,4 @@ class StartMenu:
 
     def render(self):
         self.draw()
+
