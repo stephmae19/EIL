@@ -3,9 +3,9 @@ import sys
 import os
 
 # --- 1. YOUR FILENAMES ---
-WALK_FILE = "player_walk.jpg.jpg" 
-IDLE_FILE = "player_idle.jpg.jpg"
-BG_FILE = "received_836993658930381.webp"
+WALK_FILE = "assets/characters/player_walk.jpeg"
+IDLE_FILE = "assets/characters/player_idle.jpeg"
+BG_FILE = "assets/maps/chapter1_level1.png"
 
 # --- 2. EASY TWEAK VARIABLES ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74 
