@@ -14,7 +14,7 @@ class Player(pygame.sprite.Sprite):
         
         try:
             # .convert() is good, but .convert_alpha() is better if you switch to PNG later
-            self.sprite_sheet = pygame.image.load('player(1).jpg').convert()
+            self.sprite_sheet = pygame.image.load('assets/characters/player_walk.jpeg').convert()
         except pygame.error as e:
             print(f"Error: Could not find 'player(1).jpg' in the folder. {e}")
             pygame.quit()
