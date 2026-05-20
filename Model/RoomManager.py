@@ -1,6 +1,4 @@
 # Model/RoomManager.py
-import os
-from pytmx.util_pygame import load_pygame
 from Model.Room import Room
 from Model.Whisper import Whisper
 from Model.Clue import Clue
@@ -52,45 +50,40 @@ class RoomManager:
         self.current_room = None
 
         if chapter_id == 1:
-            # Load TMX map for Chapter 1 Level 1
-            map_file = os.path.join("assets", "maps", "chapter 1", "level 1", "ch1_lvl1.tmx")
-            tmx_data = load_pygame(map_file)
+            # Example Chapter 1: Library Mystery
+            library = Room("Library")
+            hallway = Room("Hallway")
+            secret_chamber = Room("Secret Chamber")
 
-            # Create Room linked to TMX
-            level1 = Room("Chapter1_Level1", tmx_data)
+            # Add interactive elements
+            library.add_whisper(Whisper("The shelves hide secrets...", (300, 200)))
+            clue = Clue("A torn page with strange symbols", (400, 250))
+            library.add_clue(clue)
+            library.add_puzzle(Puzzle("What word unlocks the door?", "knowledge", clues_required=[clue]))
 
-            # Parse objects from TMX (Objects layer)
-            for obj in tmx_data.objects:
-                obj_pos = (obj.x, obj.y)
-                if obj.type == "book":
-                    level1.add_clue(Clue(obj.name, obj_pos))
-                elif obj.type == "puzzle":
-                    level1.add_puzzle(Puzzle(obj.name, "solution", clues_required=[]))
-                elif obj.type == "door":
-                    level1.add_whisper(Whisper("The door creaks ominously...", obj_pos))
-                elif obj.type == "light":
-                    level1.add_whisper(Whisper("A flickering lamp lights the way...", obj_pos))
-                elif obj.type == "manuscript":
-                    level1.add_clue(Clue(f"Manuscript: {obj.name}", obj_pos))
-                elif obj.type == "web":
-                    level1.add_whisper(Whisper("Cobwebs cling to the corners...", obj_pos))
-                elif obj.type == "table":
-                    level1.add_whisper(Whisper(f"A sturdy {obj.name} stands here.", obj_pos))
-                # Extend with other classes as needed
+            # Register rooms
+            self.add_room(library)
+            self.add_room(hallway)
+            self.add_room(secret_chamber)
 
-            self.add_room(level1)
-            self.set_current_room("Chapter1_Level1")
+            self.set_current_room("Library")
 
         elif chapter_id == 2:
-            # Example placeholder for Chapter 2
-            map_file = os.path.join("assets", "maps", "chapter 2", "level 1", "ch2_lvl1.tmx")
-            if os.path.exists(map_file):
-                tmx_data = load_pygame(map_file)
-                level2 = Room("Chapter2_Level1", tmx_data)
-                self.add_room(level2)
-                self.set_current_room("Chapter2_Level1")
-            else:
-                print("Chapter 2 map not found.")
+            # Example Chapter 2: Haunted Garden
+            garden = Room("Garden")
+            fountain = Room("Fountain")
+            crypt = Room("Crypt")
+
+            garden.add_whisper(Whisper("The roses whisper of sorrow...", (500, 300)))
+            clue = Clue("Rusty key with strange markings", (600, 350))
+            garden.add_clue(clue)
+            garden.add_puzzle(Puzzle("Which flower blooms at midnight?", "rose", clues_required=[clue]))
+
+            self.add_room(garden)
+            self.add_room(fountain)
+            self.add_room(crypt)
+
+            self.set_current_room("Garden")
 
         else:
             print(f"Chapter {chapter_id} not defined.")

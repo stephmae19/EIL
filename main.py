@@ -5,7 +5,6 @@ from View.Scenes.ChapterSelect import ChapterSelect
 from View.Scenes.CharacterSelection import CharacterSelection
 from View.Scenes.Level import Level
 from Controller.SceneManager import SceneManager
-from pytmx.util_pygame import load_pygame
 
 def main():
     # Initialize pygame
