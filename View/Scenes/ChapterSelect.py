@@ -119,9 +119,11 @@ class ChapterSelect:
                 rect = surf.get_rect(topleft=(book_rect.right + 10, row_y + j * 30))
                 text_surfaces.append((surf, rect))
 
-            status_surface = self.font.render("Unlocked" if self.selected_chapter == chapter else "Locked", True, (255, 255, 255))
+            status_surface = self.font.render(
+                "Unlocked" if chapter == "CHAPTER 1: THE BEGINNING" else "Locked",
+                True, (255, 255, 255)
+            )
             status_rect = status_surface.get_rect(topleft=(left_x + 340, row_y))
-
             self.chapter_rows.append((book_rect, text_surfaces, status_surface, status_rect, chapter))
 
         # Levels
