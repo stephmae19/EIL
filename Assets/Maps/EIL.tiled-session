@@ -2,16 +2,16 @@
     "activeFile": "chapter 1/level 1/ch1_lvl1.tmx",
     "expandedProjectPaths": [
         "chapter 1/level 1",
-        ".",
-        "chapter 1"
+        "chapter 1",
+        "."
     ],
     "fileStates": {
         "chapter 1/level 1/ch1_lvl1.tmx": {
             "scale": 0.75,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 773.3333333333333,
-                "y": 270.6666666666667
+                "x": 961.3333333333333,
+                "y": 526.6666666666667
             }
         },
         "chapter 1/level 1/ground.tsx": {
@@ -35,7 +35,9 @@
             "scaleInEditor": 1
         }
     },
+    "last.exportedFilePath": "C:/Users/K/PycharmProjects/EIL/Assets/Maps/chapter 1/level 1",
     "last.imagePath": "C:/Users/K/PycharmProjects/EIL/Assets/Tiles/tiles",
+    "map.lastUsedExportFilter": "CSV files (*.csv)",
     "map.lastUsedFormat": "tmx",
     "map.width": 60,
     "openFiles": [
