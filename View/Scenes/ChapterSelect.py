@@ -124,7 +124,6 @@ class ChapterSelect:
                 True, (255, 255, 255)
             )
             status_rect = status_surface.get_rect(topleft=(left_x + 340, row_y))
-
             self.chapter_rows.append((book_rect, text_surfaces, status_surface, status_rect, chapter))
 
         # Levels
