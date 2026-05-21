@@ -12,8 +12,16 @@ def main():
     pygame.init()
     pygame.mixer.init()
 
+    # --- Display Setup (must come before convert_alpha) ---
+    info = pygame.display.Info()
+    width, height = info.current_w, info.current_h
+    os.environ['SDL_VIDEO_CENTERED'] = '1'
+    screen = pygame.display.set_mode((width, height - 50), pygame.RESIZABLE)
+    pygame.display.set_caption("Echoes of Whispers")
+
     # --- Preload Assets ---
     assets = AssetLoader()
+
     # Background music
     music_path = os.path.join("Sounds", "bg_music.mp3")
     if os.path.exists(music_path):
@@ -30,17 +38,10 @@ def main():
 
     # Characters (example preload)
     assets.load("Assets/Characters/player_walk.jpeg", (40, 40))
-    assets.load("Assets/Characters/girl.png", (40, 40))
-    assets.load("Assets/Characters/boy.png", (40, 40))
+    assets.load("Assets/Characters/girl_char.png", (40, 40))
+    assets.load("Assets/Characters/boy_char.png", (40, 40))
 
-    # --- Display Setup ---
-    info = pygame.display.Info()
-    width, height = info.current_w, info.current_h
-    os.environ['SDL_VIDEO_CENTERED'] = '1'
-    screen = pygame.display.set_mode((width, height - 50), pygame.RESIZABLE)
-    pygame.display.set_caption("Echoes of Whispers")
-
-    # Scene manager
+    # --- Scene Manager ---
     scene_manager = SceneManager(screen)
     scene_manager.set_scene(StartMenu(screen))
 

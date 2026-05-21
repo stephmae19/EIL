@@ -11,7 +11,7 @@ class Level:
         self.chapter_id = chapter_id
         self.character = character
 
-        # Create player
+        # Create player (spritesheet animation)
         self.player = Player(x=100, y=100, sprite_path="Assets/Characters/player_walk.jpeg")
 
         # RoomManager handles TMX maps and interactive objects
@@ -26,13 +26,17 @@ class Level:
                                  view_tiles_w=35, view_tiles_h=20)
 
     def handle_input(self, event):
-        """Pass input to game logic."""
+        """Pass input to game logic and player."""
         self.game.handle_input(event)
+        self.player.handle_input(event)
 
     def update(self):
         """Update game state each frame."""
         self.game.run_loop()
         self.room_manager.update(self.player)
+
+        # Update player (movement + animation)
+        self.player.update()
 
         # Update camera to follow player
         if self.room_manager.current_room and self.room_manager.current_room.tmx_data:
@@ -44,17 +48,12 @@ class Level:
         """Draw everything: map + player + UI."""
         self.renderer.clear()
 
-        # Draw current room (delegates to Room.render)
-        self.room_manager.render(self.screen)
+        # Draw current room
+        self.room_manager.render(self.renderer)
 
-        # Draw player
-        if self.player.sprite:
-            self.renderer.draw_sprite(self.player.sprite, self.player.rect)
-        else:
-            self.renderer.draw_rect(self.player.color, self.player.rect)
+        # Draw player (animated frame)
+        self.renderer.draw_sprite(self.player.image, self.player.rect)
 
-        # Optional: draw UI (health, inventory, etc.)
+        # UI
         self.renderer.draw_text(f"Health: {self.player.health}", (20, 20), size=24, color=(255, 0, 0))
-
-        # Scale and update display
         self.renderer.update_display()

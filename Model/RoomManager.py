@@ -1,9 +1,20 @@
 import os
 from pytmx.util_pygame import load_pygame
 from Model.Room import Room
-from Model.Entity import Clue, Whisper, Puzzle   # now imported from Entity.py
+from Model.Entity import Clue, Whisper, Puzzle   # imported from Entity.py
 
 class RoomManager:
+    # Factory mapping for TMX object types → entity classes
+    ENTITY_MAP = {
+        "book": lambda obj: Clue(obj.name, (obj.x, obj.y)),
+        "manuscript": lambda obj: Clue(f"Manuscript: {obj.name}", (obj.x, obj.y)),
+        "puzzle": lambda obj: Puzzle(obj.name, "solution", clues_required=[]),
+        "door": lambda obj: Whisper("The door creaks ominously...", (obj.x, obj.y)),
+        "light": lambda obj: Whisper("A flickering lamp lights the way...", (obj.x, obj.y)),
+        "web": lambda obj: Whisper("Cobwebs cling to the corners...", (obj.x, obj.y)),
+        "table": lambda obj: Whisper(f"A sturdy {obj.name} stands here.", (obj.x, obj.y)),
+    }
+
     def __init__(self):
         """
         Manages multiple rooms and transitions between them.
@@ -11,7 +22,6 @@ class RoomManager:
         self.rooms = {}          # Dictionary of room_name -> Room
         self.current_room = None
         self.tmx_data = None     # Store TMX data for later use
-
         self.setup()
 
     def setup(self):
@@ -29,22 +39,14 @@ class RoomManager:
         # Create a Room linked to TMX
         level1 = Room("Chapter1_Level1", self.tmx_data)
 
-        # Factory mapping for TMX object types → entity classes
-        ENTITY_MAP = {
-            "book": lambda obj: Clue(obj.name, (obj.x, obj.y)),
-            "manuscript": lambda obj: Clue(f"Manuscript: {obj.name}", (obj.x, obj.y)),
-            "puzzle": lambda obj: Puzzle(obj.name, "solution", clues_required=[]),
-            "door": lambda obj: Whisper("The door creaks ominously...", (obj.x, obj.y)),
-            "light": lambda obj: Whisper("A flickering lamp lights the way...", (obj.x, obj.y)),
-            "web": lambda obj: Whisper("Cobwebs cling to the corners...", (obj.x, obj.y)),
-            "table": lambda obj: Whisper(f"A sturdy {obj.name} stands here.", (obj.x, obj.y)),
-        }
-
         # Parse objects from TMX using factory
         for obj in self.tmx_data.objects:
-            if obj.type in ENTITY_MAP:
-                entity = ENTITY_MAP[obj.type](obj)
+            if obj.type in RoomManager.ENTITY_MAP:
+                entity = RoomManager.ENTITY_MAP[obj.type](obj)
                 level1.add_entity(entity)
+            elif obj.type == "spawn":
+                # Special case: player spawn point
+                level1.spawn_point = (obj.x, obj.y)
 
         self.add_room(level1)
         self.set_current_room("Chapter1_Level1")
@@ -92,6 +94,14 @@ class RoomManager:
             if os.path.exists(map_file):
                 tmx_data = load_pygame(map_file)
                 level2 = Room("Chapter2_Level1", tmx_data)
+
+                for obj in tmx_data.objects:
+                    if obj.type in RoomManager.ENTITY_MAP:
+                        entity = RoomManager.ENTITY_MAP[obj.type](obj)
+                        level2.add_entity(entity)
+                    elif obj.type == "spawn":
+                        level2.spawn_point = (obj.x, obj.y)
+
                 self.add_room(level2)
                 self.set_current_room("Chapter2_Level1")
             else:
