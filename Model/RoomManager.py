@@ -13,6 +13,48 @@ class RoomManager:
         """
         self.rooms = {}          # Dictionary of room_name -> Room
         self.current_room = None
+        self.tmx_data = None     # Store TMX data for later use
+
+        self.setup()
+
+    def setup(self):
+        """
+        Initial setup: load the default map if available.
+        """
+        map_file = os.path.join("Assets", "MAPS", "chapter 1", "level 1", "ch1_lvl1.tmx")
+
+        if not os.path.exists(map_file):
+            print("Map file not found:", map_file)
+            return
+
+        # Load TMX data
+        self.tmx_data = load_pygame(map_file)
+        print("Loaded map:", self.tmx_data)
+
+        # Create a Room linked to TMX
+        level1 = Room("Chapter1_Level1", self.tmx_data)
+
+        # Parse objects from TMX
+        for obj in self.tmx_data.objects:
+            obj_pos = (obj.x, obj.y)
+            if obj.type == "book":
+                level1.add_clue(Clue(obj.name, obj_pos))
+            elif obj.type == "puzzle":
+                level1.add_puzzle(Puzzle(obj.name, "solution", clues_required=[]))
+            elif obj.type == "door":
+                level1.add_whisper(Whisper("The door creaks ominously...", obj_pos))
+            elif obj.type == "light":
+                level1.add_whisper(Whisper("A flickering lamp lights the way...", obj_pos))
+            elif obj.type == "manuscript":
+                level1.add_clue(Clue(f"Manuscript: {obj.name}", obj_pos))
+            elif obj.type == "web":
+                level1.add_whisper(Whisper("Cobwebs cling to the corners...", obj_pos))
+            elif obj.type == "table":
+                level1.add_whisper(Whisper(f"A sturdy {obj.name} stands here.", obj_pos))
+            # Extend with other object types as needed
+
+        self.add_room(level1)
+        self.set_current_room("Chapter1_Level1")
 
     def add_room(self, room: Room):
         """Add a room to the manager."""
@@ -52,14 +94,14 @@ class RoomManager:
         self.current_room = None
 
         if chapter_id == 1:
-            # Load TMX map for Chapter 1 Level 1
-            map_file = os.path.join("assets", "maps", "chapter 1", "level 1", "ch1_lvl1.tmx")
-            tmx_data = load_pygame(map_file)
+            map_file = os.path.join("Assets", "MAPS", "chapter 1", "level 1", "ch1_lvl1.tmx")
+            if not os.path.exists(map_file):
+                print("Chapter 1 map not found:", map_file)
+                return
 
-            # Create Room linked to TMX
+            tmx_data = load_pygame(map_file)
             level1 = Room("Chapter1_Level1", tmx_data)
 
-            # Parse objects from TMX (Objects layer)
             for obj in tmx_data.objects:
                 obj_pos = (obj.x, obj.y)
                 if obj.type == "book":
@@ -76,14 +118,12 @@ class RoomManager:
                     level1.add_whisper(Whisper("Cobwebs cling to the corners...", obj_pos))
                 elif obj.type == "table":
                     level1.add_whisper(Whisper(f"A sturdy {obj.name} stands here.", obj_pos))
-                # Extend with other classes as needed
 
             self.add_room(level1)
             self.set_current_room("Chapter1_Level1")
 
         elif chapter_id == 2:
-            # Example placeholder for Chapter 2
-            map_file = os.path.join("assets", "maps", "chapter 2", "level 1", "ch2_lvl1.tmx")
+            map_file = os.path.join("Assets", "MAPS", "chapter 2", "level 1", "ch2_lvl1.tmx")
             if os.path.exists(map_file):
                 tmx_data = load_pygame(map_file)
                 level2 = Room("Chapter2_Level1", tmx_data)

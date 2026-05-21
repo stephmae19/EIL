@@ -3,6 +3,7 @@ import pygame
 from Model.Timer import Timer
 from Model.Player import Player
 from Model.RoomManager import RoomManager
+from Controller.InputHandler import InputHandler
 
 class Game:
     def __init__(self, chapter_id=1, player=None):
@@ -26,6 +27,8 @@ class Game:
                 y=spawn_y,
                 sprite_path="assets/Characters/player.png"
             )
+
+        self.input_handler = InputHandler(self.player)
 
     def _get_spawn_point(self):
         """Look for an object with class 'player' in the TMX spawn layer."""
@@ -52,9 +55,8 @@ class Game:
         self.player.render(screen)
 
     def handle_input(self, event):
-        """Process player input."""
         if self.game_state == "running":
-            self.player.handle_input(event)
+            self.input_handler.process_event(event)
 
         # Example pause toggle
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:

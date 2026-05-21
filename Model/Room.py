@@ -42,24 +42,20 @@ class Room:
 
     # --- Internal TMX Rendering ---
     def _render_layers(self):
-        """Draw TMX layers in correct order: ground → wall → objects."""
+        """Draw TMX layers in correct order: ground → walls → objects."""
         self.map_surface.fill(self.color)
 
-        # Render each layer by name
         for layer in self.tmx_data.visible_layers:
             if hasattr(layer, "tiles"):
-                # Draw tiles layer
-                for x, y, tile in layer.tiles():
+                # Tile layer
+                for x, y, gid in layer:
+                    tile = self.tmx_data.get_tile_image_by_gid(gid)
                     if tile:
                         self.map_surface.blit(
                             tile,
                             (x * self.tmx_data.tilewidth, y * self.tmx_data.tileheight)
                         )
-            elif hasattr(layer, "name"):
-                # You can add special handling per layer name if needed
-                if layer.name.lower() == "objects":
-                    # Objects layer can be drawn separately or skipped if handled via tmx_data.objects
-                    pass
+            # Object layers are handled separately via self.tmx_data.objects
 
     # --- Update Logic ---
     def update(self, player):

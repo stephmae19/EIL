@@ -39,11 +39,16 @@ class Renderer:
         self.camera_x = max(0, min(self.camera_x, map_width - self.virtual_width))
         self.camera_y = max(0, min(self.camera_y, map_height - self.virtual_height))
 
+    def get_camera_offset(self):
+        """Return current camera offset as a tuple (x, y)."""
+        return (self.camera_x, self.camera_y)
+
     def draw_map(self, tmx_data):
         """Draw TMX map layers in correct order: ground → wall → objects."""
         for layer in tmx_data.visible_layers:
             if hasattr(layer, "tiles"):
-                for x, y, tile in layer.tiles():
+                for x, y, gid in layer:
+                    tile = tmx_data.get_tile_image_by_gid(gid)
                     if tile:
                         pos = (
                             x * tmx_data.tilewidth - self.camera_x,

@@ -2,8 +2,6 @@
 import pygame
 from Game.Game import Game
 from Model.Player import Player
-from Model.Room import Room
-from Model.Clue import Clue   # example interactive object
 from Model.RoomManager import RoomManager
 from View.Renderer import Renderer
 
@@ -14,7 +12,7 @@ class Level:
         self.character = character
 
         # Create player
-        self.player = Player(x=100, y=100, sprite_path="assets/Characters/player_walk.jpeg")
+        self.player = Player(x=100, y=100, sprite_path="Assets/Characters/player_walk.jpeg")
 
         # RoomManager handles TMX maps and interactive objects
         self.room_manager = RoomManager()
@@ -42,14 +40,12 @@ class Level:
             map_height = self.room_manager.current_room.tmx_data.height * self.room_manager.current_room.tmx_data.tileheight
             self.renderer.set_camera(self.player.rect, map_width, map_height)
 
-
     def render(self):
         """Draw everything: map + player + UI."""
         self.renderer.clear()
 
-        # Draw TMX map layers
-        if self.room_manager.current_room and self.room_manager.current_room.tmx_data:
-            self.renderer.draw_map(self.room_manager.current_room.tmx_data)
+        # Draw current room (delegates to Room.render)
+        self.room_manager.render(self.screen)
 
         # Draw player
         if self.player.sprite:
