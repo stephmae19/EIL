@@ -22,34 +22,41 @@ class RoomManager:
         self.rooms = {}          # Dictionary of room_name -> Room
         self.current_room = None
         self.tmx_data = None     # Store TMX data for later use
-        self.setup()
 
-    def setup(self):
-        """Initial setup: load the default map if available."""
-        map_file = os.path.join("Assets", "Maps", "chapter 1", "level 1", "ch1_lvl1.tmx")
+    # --- Generic Map Loader ---
+    def load_map(self, chapter_id: int, level_id: int):
+        """Load a specific map by chapter and level ID."""
+        map_file = os.path.join(
+            "Assets", "Maps", f"chapter{chapter_id}", f"level{level_id}", f"ch{chapter_id}_lvl{level_id}.tmx"
+        )
 
         if not os.path.exists(map_file):
             print("Map file not found:", map_file)
-            return
+            return None
 
         # Load TMX data
-        self.tmx_data = load_pygame(map_file)
-        print("Loaded map:", self.tmx_data)
+        tmx_data = load_pygame(map_file)
+        print("Loaded map:", map_file)
 
         # Create a Room linked to TMX
-        level1 = Room("Chapter1_Level1", self.tmx_data)
+        room_name = f"Chapter{chapter_id}_Level{level_id}"
+        room = Room(room_name, tmx_data)
 
         # Parse objects from TMX using factory
-        for obj in self.tmx_data.objects:
+        for obj in tmx_data.objects:
             if obj.type in RoomManager.ENTITY_MAP:
                 entity = RoomManager.ENTITY_MAP[obj.type](obj)
-                level1.add_entity(entity)
+                room.add_entity(entity)
             elif obj.type == "spawn":
-                # Special case: player spawn point
-                level1.spawn_point = (obj.x, obj.y)
+                room.spawn_point = (obj.x, obj.y)
+            elif obj.type == "collision":
+                # Collision rects handled in Room
+                rect = (obj.x, obj.y, obj.width, obj.height)
+                room.collision_rects.append(rect)
 
-        self.add_room(level1)
-        self.set_current_room("Chapter1_Level1")
+        self.add_room(room)
+        self.set_current_room(room_name)
+        return room
 
     def add_room(self, room: Room):
         """Add a room to the manager."""
@@ -82,30 +89,7 @@ class RoomManager:
 
     # --- Chapter Loader ---
     def load_chapter(self, chapter_id: int):
-        """Build and load a sequence of rooms for a given chapter."""
+        """Load the first level of a given chapter."""
         self.rooms.clear()
         self.current_room = None
-
-        if chapter_id == 1:
-            self.setup()
-
-        elif chapter_id == 2:
-            map_file = os.path.join("Assets", "Maps", "chapter 2", "level 1", "ch2_lvl1.tmx")
-            if os.path.exists(map_file):
-                tmx_data = load_pygame(map_file)
-                level2 = Room("Chapter2_Level1", tmx_data)
-
-                for obj in tmx_data.objects:
-                    if obj.type in RoomManager.ENTITY_MAP:
-                        entity = RoomManager.ENTITY_MAP[obj.type](obj)
-                        level2.add_entity(entity)
-                    elif obj.type == "spawn":
-                        level2.spawn_point = (obj.x, obj.y)
-
-                self.add_room(level2)
-                self.set_current_room("Chapter2_Level1")
-            else:
-                print("Chapter 2 map not found.")
-
-        else:
-            print(f"Chapter {chapter_id} not defined.")
+        self.load_map(chapter_id, 1)
