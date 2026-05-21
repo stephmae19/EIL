@@ -5,14 +5,17 @@ from View.Scenes.ChapterSelect import ChapterSelect
 from View.Scenes.CharacterSelection import CharacterSelection
 from View.Scenes.Level import Level
 from Controller.SceneManager import SceneManager
+from Model.AssetLoader import AssetLoader   # new loader
 
 def main():
     # Initialize pygame
     pygame.init()
     pygame.mixer.init()
 
-    # Load and play background music
-    music_path = os.path.join("sounds", "bg_music.mp3")
+    # --- Preload Assets ---
+    assets = AssetLoader()
+    # Background music
+    music_path = os.path.join("Sounds", "bg_music.mp3")
     if os.path.exists(music_path):
         pygame.mixer.music.load(music_path)
         pygame.mixer.music.set_volume(0.5)
@@ -20,18 +23,20 @@ def main():
     else:
         print("Background music file not found:", music_path)
 
-    # Load custom font
-    font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
+    # Fonts
+    font_path = os.path.join("Assets", "Font", "VCR_OSD_MONO_1.001.ttf")
     game_font = pygame.font.Font(font_path, 48)
+    assets.cache["game_font"] = game_font
 
-    # Get display resolution
+    # Characters (example preload)
+    assets.load("Assets/Characters/player_walk.jpeg", (40, 40))
+    assets.load("Assets/Characters/girl.png", (40, 40))
+    assets.load("Assets/Characters/boy.png", (40, 40))
+
+    # --- Display Setup ---
     info = pygame.display.Info()
     width, height = info.current_w, info.current_h
-
-    # Center window
     os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-    # Create window
     screen = pygame.display.set_mode((width, height - 50), pygame.RESIZABLE)
     pygame.display.set_caption("Echoes of Whispers")
 
@@ -101,10 +106,8 @@ def main():
                         print(f"Starting Level with Chapter: {chosen_chapter}, Character: {chosen_character}")
                         scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter, character=chosen_character))
                     elif action == "back":
-                        # Back goes to CharacterSelection
                         scene_manager.set_scene(CharacterSelection(screen, scene_manager))
                     elif action == "menu":
-                        # Explicit menu action goes to StartMenu
                         scene_manager.set_scene(StartMenu(screen))
 
         scene_manager.update()

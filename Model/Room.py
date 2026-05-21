@@ -4,17 +4,15 @@ import pygame
 class Room:
     def __init__(self, name="Room", tmx_data=None, color=(100, 100, 150)):
         """
-        Room can be initialized with TMX map data (from pytmx).
+        Room initialized with TMX map data (from pytmx).
         """
         self.name = name
         self.color = color
         self.tmx_data = tmx_data
 
-        # Interactive elements
-        self.whispers = []
-        self.clues = []
-        self.puzzles = []
-        self.objects = []  # walls, exits, enemies, etc.
+        # Interactive elements (all share update/draw polymorphism)
+        self.entities = []   # Clue, Whisper, Puzzle, etc.
+        self.objects = []    # walls, exits, enemies
 
         # Pre-render map layers if TMX provided
         if self.tmx_data:
@@ -27,14 +25,16 @@ class Room:
             self.map_surface = None
 
     # --- Management Methods ---
-    def add_whisper(self, whisper):
-        self.whispers.append(whisper)
+    def add_entity(self, entity):
+        """Add any interactive entity (Clue, Whisper, Puzzle)."""
+        self.entities.append(entity)
 
-    def add_clue(self, clue):
-        self.clues.append(clue)
+    def remove_entity(self, entity):
+        if entity in self.entities:
+            self.entities.remove(entity)
 
-    def add_puzzle(self, puzzle):
-        self.puzzles.append(puzzle)
+    def add_object(self, obj):
+        self.objects.append(obj)
 
     def remove_object(self, obj):
         if obj in self.objects:
@@ -42,12 +42,11 @@ class Room:
 
     # --- Internal TMX Rendering ---
     def _render_layers(self):
-        """Draw TMX layers in correct order: ground → walls → objects."""
+        """Pre-render TMX layers once: ground → walls → objects."""
         self.map_surface.fill(self.color)
 
         for layer in self.tmx_data.visible_layers:
             if hasattr(layer, "tiles"):
-                # Tile layer
                 for x, y, gid in layer:
                     tile = self.tmx_data.get_tile_image_by_gid(gid)
                     if tile:
@@ -55,45 +54,22 @@ class Room:
                             tile,
                             (x * self.tmx_data.tilewidth, y * self.tmx_data.tileheight)
                         )
-            # Object layers are handled separately via self.tmx_data.objects
+        # Object layers handled separately via self.tmx_data.objects
 
     # --- Update Logic ---
     def update(self, player):
-        """Update room state each frame."""
-        for whisper in self.whispers:
-            if whisper.check_trigger(player.position):
-                text = whisper.reveal()
-                if text:
-                    print(f"Whisper: {text}")
-
-        for clue in self.clues:
-            if not clue.collected and player.rect.colliderect(clue.rect):
-                clue.collect(player)
-                print(f"Collected clue: {clue.description}")
-
-        for puzzle in self.puzzles:
-            if puzzle.is_solved():
-                continue
-            if puzzle.clues_required and all(c in player.inventory for c in puzzle.clues_required):
-                print(f"Puzzle ready: {puzzle.question}")
+        """Update all entities in the room."""
+        for entity in self.entities:
+            entity.update(player)   # polymorphic call
 
     # --- Rendering ---
-    def render(self, screen):
-        """Draw the TMX map layers and interactive elements."""
+    def render(self, renderer, camera_offset=(0, 0)):
+        """Draw the TMX map and all entities with camera offset."""
         if self.map_surface:
-            screen.blit(self.map_surface, (0, 0))
+            renderer.virtual_surface.blit(self.map_surface, (-camera_offset[0], -camera_offset[1]))
         else:
-            screen.fill(self.color)
+            renderer.virtual_surface.fill(self.color)
 
-        # Draw clues
-        for clue in self.clues:
-            clue.draw(screen)
-
-        # Draw whispers (optional visual indicator)
-        for whisper in self.whispers:
-            whisper.draw(screen)
-
-        # Draw puzzle markers (optional)
-        for puzzle in self.puzzles:
-            if not puzzle.is_solved():
-                pygame.draw.circle(screen, (255, 255, 0), (100, 100), 10)
+        # Draw all entities polymorphically
+        for entity in self.entities:
+            entity.draw(renderer.virtual_surface, camera_offset)
