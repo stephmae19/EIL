@@ -10,9 +10,10 @@ class Room:
         self.color = color
         self.tmx_data = tmx_data
 
-        # Interactive elements (all share update/draw polymorphism)
-        self.entities = []   # Clue, Whisper, Puzzle, etc.
-        self.objects = []    # walls, exits, enemies
+        # Interactive elements
+        self.entities = []        # Clue, Whisper, Puzzle, etc.
+        self.objects = []         # enemies, exits, etc.
+        self.collision_rects = [] # walls/obstacles parsed from TMX
 
         # Pre-render map layers if TMX provided
         if self.tmx_data:
@@ -21,6 +22,7 @@ class Room:
                  self.tmx_data.height * self.tmx_data.tileheight)
             )
             self._render_layers()
+            self._parse_collision_objects()
         else:
             self.map_surface = None
 
@@ -56,6 +58,13 @@ class Room:
                         )
         # Object layers handled separately via self.tmx_data.objects
 
+    def _parse_collision_objects(self):
+        """Parse TMX objects of type 'collision' into rects."""
+        for obj in self.tmx_data.objects:
+            if obj.type == "collision":
+                rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
+                self.collision_rects.append(rect)
+
     # --- Update Logic ---
     def update(self, player):
         """Update all entities in the room."""
@@ -73,3 +82,8 @@ class Room:
         # Draw all entities polymorphically
         for entity in self.entities:
             entity.draw(renderer.virtual_surface, camera_offset)
+
+        # Optional: debug draw collision rects (useful for testing)
+        # for rect in self.collision_rects:
+        #     debug_rect = rect.move(-camera_offset[0], -camera_offset[1])
+        #     pygame.draw.rect(renderer.virtual_surface, (255, 0, 0), debug_rect, 2)
