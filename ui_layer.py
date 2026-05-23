@@ -9,20 +9,18 @@ class UILayer:
         self.font = pygame.font.SysFont("arial", 24, bold=True)
 
         # --- UI CONFIG ---
-        # Adjust widths and positions here
         self.ui_config = {
-            "health": {"width": 250, "x": 20, "y": 20},       # health bar width & position
-            "insanity": {"width": 250, "x": 20, "y": 80},     # insanity bar width & position
-            "timer": {"width": 300, "x": 1700, "y": 10}  # timer bar width & position
+            "health": {"width": 350, "x": 20, "y": 20},
+            "insanity": {"width": 350, "x": 20, "y": 80},
+            "timer": {"width": 300, "x": 1750, "y": 10}
         }
 
         # --- Health hearts setup ---
         self.max_hearts = 5
         self.hearts = self.max_hearts
 
-        # Load health bar frames
         self.health_frames = []
-        for i in range(1, 7):  # 1 → 6
+        for i in range(1, 7):
             path = os.path.join("Assets", "Sprite", "Gameplay", f"health_{i:02}.png")
             if os.path.exists(path):
                 frame = pygame.image.load(path).convert_alpha()
@@ -40,7 +38,6 @@ class UILayer:
             self.timer_bar = pygame.Surface((300, 50))
             self.timer_bar.fill((100, 100, 100))
 
-        # Scale timer bar while keeping aspect ratio
         tw = self.ui_config["timer"]["width"]
         th = int(self.timer_bar.get_height() * (tw / self.timer_bar.get_width()))
         self.timer_bar = pygame.transform.smoothscale(self.timer_bar, (tw, th))
@@ -76,14 +73,12 @@ class UILayer:
 
             self.insanity_frames = self.insanity_frames[:frame_count]
 
-            # Scale insanity bar with aspect ratio
             iw = self.ui_config["insanity"]["width"]
             ih = int(frame_height * (iw / frame_width))
             self.bar_width, self.bar_height = iw, ih
             self.insanity_x = self.ui_config["insanity"]["x"]
             self.insanity_y = self.ui_config["insanity"]["y"]
 
-        # --- Insanity drain settings ---
         self.last_drain = time.time()
         self.drain_rate = 1.0
         self.drain_amount = 1
@@ -100,7 +95,6 @@ class UILayer:
         frame_index = min(self.hearts + 1, len(self.health_frames)) - 1
         current_frame = self.health_frames[frame_index]
 
-        # Scale health bar with aspect ratio
         hw = self.ui_config["health"]["width"]
         hh = int(current_frame.get_height() * (hw / current_frame.get_width()))
         current_frame = pygame.transform.smoothscale(current_frame, (hw, hh))
@@ -108,9 +102,8 @@ class UILayer:
         rect = current_frame.get_rect(topleft=(self.ui_config["health"]["x"], self.ui_config["health"]["y"]))
         self.screen.blit(current_frame, rect)
 
-        text = self.font.render(f"Health: {self.hearts}/{self.max_hearts}", True, (255, 0, 0))
-        text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
-        self.screen.blit(text, text_rect)
+        # ✅ Store rect so we can position insanity bar with padding
+        self.health_rect = rect
         return rect
 
     # ---------------- INSANITY BAR ----------------
@@ -135,7 +128,7 @@ class UILayer:
                 pygame.quit()
                 sys.exit()
 
-    def draw_insanity_bar(self):
+    def draw_insanity_bar(self, padding=10):
         if not self.insanity_frames:
             return None
 
@@ -144,20 +137,17 @@ class UILayer:
             self.insanity_frames[self.insanity_level],
             (self.bar_width, self.bar_height)
         )
-        rect = current_frame.get_rect(topleft=(self.insanity_x, self.insanity_y))
-        self.screen.blit(current_frame, rect)
 
-        text = self.font.render(f"Insanity: {self.insanity_level}", True, (255, 255, 255))
-        text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
-        self.screen.blit(text, text_rect)
+        # ✅ Position insanity bar below health bar with padding
+        x = self.ui_config["insanity"]["x"]
+        y = self.health_rect.bottom + padding
+        rect = current_frame.get_rect(topleft=(x, y))
+        self.screen.blit(current_frame, rect)
         return rect
 
     # ---------------- DRAW ALL ----------------
     def draw(self, player):
         self.draw_health_bar()
-
-        inv_text = self.font.render("Inventory [I]", True, (255, 255, 255))
-        self.screen.blit(inv_text, (20, 50))
 
         manuscripts_text = self.font.render(f"Manuscripts: {player.manuscripts_found}", True, (255, 215, 0))
         self.screen.blit(manuscripts_text, (20, 110))
@@ -211,7 +201,6 @@ class UILayer:
             self.update_insanity(event.pos[0], inner_rect)
 
     def update_insanity(self, mouse_x, inner_rect):
-        """Update insanity level based on slider position."""
         relative_x = mouse_x - inner_rect.left
         percent = relative_x / inner_rect.width
         percent = max(0.0, min(1.0, percent))
