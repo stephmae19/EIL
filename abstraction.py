@@ -1,4 +1,13 @@
 # abstraction.py
+
+'''
+# --- Demonstration of abstraction ---
+player.attack()        # Player investigates a clue
+player.special_skill() # Player solves a hidden puzzle
+enemy.attack()         # Enemy attacks with dark blast
+enemy.special_skill()  # Enemy uses Shadow Cloak
+'''
+
 import pygame
 import sys
 import os
@@ -93,6 +102,13 @@ class Player(Character):
         self.last_update = pygame.time.get_ticks()
         self.frame_duration = 1000 // 12
         self.hit_timer = 0
+
+    # --- Abstract Methods Implementation ---
+    def attack(self):
+        print(f"{self.name} investigates a clue...")
+
+    def special_skill(self):
+        print(f"{self.name} solves a hidden puzzle!")
 
     def load_frames(self, filename, rows, cols, is_player=True):
         if not os.path.exists(filename):
@@ -222,6 +238,15 @@ class Enemy(Character):
         self.frame_duration = 1000 // 8
         self.attack_cooldown = pygame.time.get_ticks() + 2000
         self.has_fired = False
+
+    # --- Abstract Methods Implementation ---
+    def attack(self):
+        print(f"{self.name} attacks with dark blast!")
+
+    def special_skill(self):
+        print(f"{self.name} uses Shadow Cloak to vanish!")
+
+    # (keep the rest of Enemy methods: load_frames, update, etc.)
 
     def load_frames(self, filename, rows, cols):
         if not os.path.exists(filename):
