@@ -204,10 +204,10 @@ class Player(Character):
 
     # --- Abstract Methods Implementation ---
     def attack(self):
-        print(f"{self.name} attacks with sword slash!")
+        print(f"{self.name} investigates a clue")
 
     def special_skill(self):
-        print(f"{self.name} uses Power Dash!")
+        print(f"{self.name} solves a hidden puzzle")
 
 
 class Enemy(Character):
