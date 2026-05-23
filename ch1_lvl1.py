@@ -193,25 +193,25 @@ floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 # --- Adaptive Interactive Objects ---
 interactive_objects = [
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.10),
-        y=int(floor_y - SCREEN_HEIGHT * 0.18),
-        width=int(SCREEN_WIDTH * 0.10),
-        height=int(SCREEN_HEIGHT * 0.28),
+        x=int(SCREEN_WIDTH * 0.067),
+        y=int(floor_y - SCREEN_HEIGHT * 0.35),
+        width=int(SCREEN_WIDTH * 0.18),
+        height=int(SCREEN_HEIGHT * 0.45),
         has_manuscript=False,
         prompt="I got locked out."
     ),
     InteractiveObject(
         x=int(SCREEN_WIDTH * 0.45),
         y=int(floor_y - SCREEN_HEIGHT * 0.05),
-        width=int(SCREEN_WIDTH * 0.15),
+        width=int(SCREEN_WIDTH * 0.21),
         height=int(SCREEN_HEIGHT * 0.14),
         has_manuscript=False,
         prompt="Some dusty table."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.77),
+        x=int(SCREEN_WIDTH * 0.79),
         y=int(floor_y - SCREEN_HEIGHT * 0.25),
-        width=int(SCREEN_WIDTH * 0.16),
+        width=int(SCREEN_WIDTH * 0.167),
         height=int(SCREEN_HEIGHT * 0.21),
         has_manuscript=False,
         prompt="Looks like it's missing something..."
@@ -239,7 +239,7 @@ player = Player(
     floor_y,
     x=int(SCREEN_WIDTH * 0.10),
     y=int(SCREEN_HEIGHT * 0.56),
-    scale=SCREEN_HEIGHT / 1080  # scales proportionally to resolution
+    scale=(SCREEN_HEIGHT / 1080) * 1.5   # adaptive + manual multiplier
 )
 
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -269,7 +269,7 @@ while True:
                 if player.rect.colliderect(obj.rect):
                     found = True
                     if obj.already_searched:
-                        feedback_msg = "You already searched this object."
+                        feedback_msg = "You already searched this part."
                         feedback_timer = now + 2000
                     elif obj.has_manuscript:
                         obj.already_searched = True
