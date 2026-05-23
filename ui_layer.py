@@ -132,12 +132,6 @@ class UILayer:
         return rect
 
     def draw(self, player):
-        # --- Health bar ---
-        pygame.draw.rect(self.screen, (255, 0, 0),
-                         (self.health_x, self.health_y, self.health_width, self.health_height))
-        pygame.draw.rect(self.screen, (0, 255, 0),
-                         (self.health_x, self.health_y, player.health, self.health_height))
-
         # --- Inventory button ---
         inv_text = self.font.render("Inventory [I]", True, (255, 255, 255))
         self.screen.blit(inv_text, (20, 50))
