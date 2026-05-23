@@ -2,6 +2,8 @@
     "activeFile": "chapter 1/level 1/ch1_lvl1.tmx",
     "expandedProjectPaths": [
         "chapter 1/level 1",
+        "chapter1",
+        "chapter1/level1",
         "chapter 1",
         "."
     ],
@@ -33,6 +35,24 @@
             "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
+        },
+        "chapter1/level1/ch1_lvl1.tmx": {
+            "scale": 0.75,
+            "selectedLayer": -1,
+            "viewCenter": {
+                "x": 1424,
+                "y": 270.66666666666663
+            }
+        },
+        "chapter1/level1/ground.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "chapter1/level1/objects.tsx": {
+            "scaleInDock": 1
+        },
+        "chapter1/level1/wall.tsx": {
+            "scaleInDock": 1
         }
     },
     "last.exportedFilePath": "C:/Users/K/PycharmProjects/EIL/Assets/Maps/chapter 1/level 1",
@@ -41,11 +61,13 @@
     "map.lastUsedFormat": "tmx",
     "map.width": 60,
     "openFiles": [
-        "chapter 1/level 1/ch1_lvl1.tmx",
-        "chapter 1/level 1/objects.tsx"
+        "chapter1/level1/ch1_lvl1.tmx",
+        "chapter1/level1/ground.tsx"
     ],
     "project": "EIL.tiled-project",
     "recentFiles": [
+        "chapter1/level1/ground.tsx",
+        "chapter1/level1/ch1_lvl1.tmx",
         "chapter 1/level 1/objects.tsx",
         "chapter 1/level 1/ch1_lvl1.tmx",
         "chapter 1/level 1/spawn.tsx",

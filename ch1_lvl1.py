@@ -190,17 +190,58 @@ else:
 MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
 floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 
-# Interactive objects
+# --- Adaptive Interactive Objects ---
 interactive_objects = [
-    InteractiveObject(x=200, y=floor_y - 200, width=200, height=300, has_manuscript=False, prompt="I got locked out."),
-    InteractiveObject(x=900, y=floor_y - 50, width=300, height=150, has_manuscript=False, prompt="Some dusty table."),
-    InteractiveObject(x=1515, y=floor_y - 270, width=320, height=225, has_manuscript=False, prompt="Looks like it's missing something..."),
-    InteractiveObject(x=1800, y=floor_y - 200, width=220, height=280, has_manuscript=True, prompt="Glowing manuscript shelf"),
-    InteractiveObject(x=2300, y=floor_y - 200, width=160, height=240, has_manuscript=False, prompt="Just decoration"),
+    InteractiveObject(
+        x=int(SCREEN_WIDTH * 0.10),
+        y=int(floor_y - SCREEN_HEIGHT * 0.18),
+        width=int(SCREEN_WIDTH * 0.10),
+        height=int(SCREEN_HEIGHT * 0.28),
+        has_manuscript=False,
+        prompt="I got locked out."
+    ),
+    InteractiveObject(
+        x=int(SCREEN_WIDTH * 0.45),
+        y=int(floor_y - SCREEN_HEIGHT * 0.05),
+        width=int(SCREEN_WIDTH * 0.15),
+        height=int(SCREEN_HEIGHT * 0.14),
+        has_manuscript=False,
+        prompt="Some dusty table."
+    ),
+    InteractiveObject(
+        x=int(SCREEN_WIDTH * 0.77),
+        y=int(floor_y - SCREEN_HEIGHT * 0.25),
+        width=int(SCREEN_WIDTH * 0.16),
+        height=int(SCREEN_HEIGHT * 0.21),
+        has_manuscript=False,
+        prompt="Looks like it's missing something..."
+    ),
+    InteractiveObject(
+        x=int(SCREEN_WIDTH * 0.91),
+        y=int(floor_y - SCREEN_HEIGHT * 0.18),
+        width=int(SCREEN_WIDTH * 0.11),
+        height=int(SCREEN_HEIGHT * 0.26),
+        has_manuscript=True,
+        prompt="Glowing manuscript shelf"
+    ),
+    InteractiveObject(
+        x=int(SCREEN_WIDTH * 1.16),
+        y=int(floor_y - SCREEN_HEIGHT * 0.18),
+        width=int(SCREEN_WIDTH * 0.08),
+        height=int(SCREEN_HEIGHT * 0.22),
+        has_manuscript=False,
+        prompt="Just decoration"
+    ),
 ]
 
+# --- Adaptive Player Initialization ---
+player = Player(
+    floor_y,
+    x=int(SCREEN_WIDTH * 0.10),
+    y=int(SCREEN_HEIGHT * 0.56),
+    scale=SCREEN_HEIGHT / 1080  # scales proportionally to resolution
+)
 
-player = Player(floor_y, x=200, y=610, scale=1.5)
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT)
 
 # ✅ UI Layer
