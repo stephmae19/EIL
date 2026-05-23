@@ -1,4 +1,3 @@
-# Model/Timer.py
 import pygame
 
 class Timer:
@@ -27,7 +26,28 @@ class Timer:
     def resume(self):
         """Resume the timer."""
         if self.paused:
-            # Adjust start time so elapsed time continues correctly
             paused_duration = pygame.time.get_ticks() - self.pause_ticks
             self.start_ticks += paused_duration
             self.paused = False
+
+    # --- Operator Overloading ---
+    def __add__(self, other):
+        """Combine two timers: sum of elapsed times."""
+        if isinstance(other, Timer):
+            return self.get_time() + other.get_time()
+        return NotImplemented
+
+    def __sub__(self, other):
+        """Subtract timers: difference in elapsed times."""
+        if isinstance(other, Timer):
+            return abs(self.get_time() - other.get_time())
+        return NotImplemented
+
+    def __gt__(self, other):
+        """Compare timers: greater if this timer has more elapsed time."""
+        if isinstance(other, Timer):
+            return self.get_time() > other.get_time()
+        return NotImplemented
+
+    def __str__(self):
+        return f"Timer elapsed: {self.get_time()}s"

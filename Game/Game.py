@@ -37,7 +37,6 @@ class Game:
             for obj in self.room_manager.current_room.tmx_data.objects:
                 if obj.type == "spawn":
                     return obj.x, obj.y
-        # Fallback if no spawn found
         return 100, 100
 
     def run_loop(self):
@@ -57,11 +56,44 @@ class Game:
         if self.game_state == "running":
             self.input_handler.process_event(event)
 
-        # Pause toggle
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.game_state = "paused" if self.game_state == "running" else "running"
 
     def check_win_condition(self):
-        """Check if the player has met win conditions."""
+        """Default win condition: score reaches 100."""
         if self.score >= 100:
             self.game_state = "won"
+
+
+# --- Method Overriding Examples ---
+class PuzzleGame(Game):
+    """PuzzleGame overrides win condition to check if all puzzles are solved."""
+    def check_win_condition(self):
+        if all(entity.solved for entity in self.room_manager.current_room.entities if hasattr(entity, "solved")):
+            print("All puzzles solved! You win!")
+            self.game_state = "won"
+
+
+class TimedGame(Game):
+    """TimedGame overrides run_loop to enforce a countdown timer."""
+    def run_loop(self):
+        if self.game_state == "running":
+            self.timer.update()
+            self.player.update()
+            self.room_manager.update(self.player)
+
+            if self.timer.remaining_time <= 0:
+                print("Time's up! You lost.")
+                self.game_state = "lost"
+            else:
+                self.check_win_condition()
+
+
+class ExplorationGame(Game):
+    """ExplorationGame overrides render to show exploration-specific HUD."""
+    def render(self, screen):
+        super().render(screen)
+        # Add exploration HUD overlay
+        font = pygame.font.SysFont("Arial", 24)
+        text = font.render(f"Exploring: {self.room_manager.current_room.name}", True, (255, 255, 255))
+        screen.blit(text, (20, 20))

@@ -4,14 +4,13 @@ import sys
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-ROWS = 5   # number of rows in the spritesheet
-COLS = 5   # number of columns in the spritesheet
+ROWS = 5
+COLS = 5
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x=100, y=100, sprite_path="Assets/Characters/player_walk.jpeg", start_room=None):
         super().__init__()
 
-        # --- Load sprite sheet ---
         try:
             self.sprite_sheet = pygame.image.load(sprite_path).convert()
         except pygame.error as e:
@@ -19,10 +18,8 @@ class Player(pygame.sprite.Sprite):
             pygame.quit()
             sys.exit()
 
-        # Treat black background as transparent
         self.sprite_sheet.set_colorkey((0, 0, 0))
 
-        # Slice into frames
         sheet_rect = self.sprite_sheet.get_rect()
         self.frame_width = sheet_rect.width // COLS
         self.frame_height = sheet_rect.height // ROWS
@@ -35,7 +32,6 @@ class Player(pygame.sprite.Sprite):
                 frame = self.sprite_sheet.subsurface(rect)
                 self.walk_frames.append(frame)
 
-        # Animation state
         self.current_frame = 0.0
         self.image = self.walk_frames[0]
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -50,6 +46,41 @@ class Player(pygame.sprite.Sprite):
         # Stats
         self.health = 100
         self.inventory = []
+
+    # --- Method Overloading Examples ---
+    def move(self, speed=None, direction=None):
+        """Move with optional speed and direction overrides."""
+        if speed is not None:
+            self.speed = speed
+        if direction is not None:
+            self.direction = direction
+            self.is_moving = True
+
+        if self.is_moving:
+            self.rect.x += self.direction * self.speed
+            if self.rect.left < 0:
+                self.rect.left = 0
+            if self.rect.right > SCREEN_WIDTH:
+                self.rect.right = SCREEN_WIDTH
+
+    def interact(self, item=None):
+        """Interact with environment or optional item."""
+        if item:
+            print(f"Player interacts with {item}.")
+            if item in self.inventory:
+                print(f"{item} is already in inventory.")
+            else:
+                self.add_item(item)
+                print(f"{item} added to inventory.")
+        else:
+            print("Player interacts with the environment.")
+
+    def examine(self, target=None):
+        """Examine surroundings or a specific target."""
+        if target:
+            print(f"Player examines {target}.")
+        else:
+            print("Player looks around the room.")
 
     # --- Input Handling ---
     def handle_input(self, event):
@@ -67,19 +98,9 @@ class Player(pygame.sprite.Sprite):
             if event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_a, pygame.K_d):
                 self.stop_movement()
 
-    # --- Movement controls ---
     def stop_movement(self):
         self.is_moving = False
         self.direction = 0
-
-    def move(self):
-        if self.is_moving:
-            self.rect.x += self.direction * self.speed
-            # Clamp to screen bounds
-            if self.rect.left < 0:
-                self.rect.left = 0
-            if self.rect.right > SCREEN_WIDTH:
-                self.rect.right = SCREEN_WIDTH
 
     def animate(self):
         old_center = self.rect.center
@@ -91,21 +112,17 @@ class Player(pygame.sprite.Sprite):
         else:
             new_image = self.walk_frames[0]
 
-        # Flip if facing left
         if not self.facing_right:
             self.image = pygame.transform.flip(new_image, True, False)
         else:
             self.image = new_image
 
-        # Keep rect consistent
         self.rect = self.image.get_rect(center=old_center)
 
-    # --- Update Logic ---
     def update(self):
         self.move()
         self.animate()
 
-    # --- Rendering ---
     def render(self, screen):
         screen.blit(self.image, self.rect)
 
@@ -117,7 +134,6 @@ class Player(pygame.sprite.Sprite):
         if item in self.inventory:
             self.inventory.remove(item)
 
-    # --- Combat / Health ---
     def take_damage(self, amount):
         self.health -= amount
         print(f"Player took {amount} damage. Health: {self.health}")

@@ -1,4 +1,3 @@
-# Model/Room.py
 import pygame
 
 class Room:
@@ -12,10 +11,9 @@ class Room:
 
         # Interactive elements
         self.entities = []        # Clue, Whisper, Puzzle, etc.
-        self.objects = []         # enemies, exits, etc.
+        self.objects = []         # exits, doors, etc.
         self.collision_rects = [] # walls/obstacles parsed from TMX
 
-        # Pre-render map layers if TMX provided
         if self.tmx_data:
             self.map_surface = pygame.Surface(
                 (self.tmx_data.width * self.tmx_data.tilewidth,
@@ -28,7 +26,6 @@ class Room:
 
     # --- Management Methods ---
     def add_entity(self, entity):
-        """Add any interactive entity (Clue, Whisper, Puzzle)."""
         self.entities.append(entity)
 
     def remove_entity(self, entity):
@@ -42,11 +39,33 @@ class Room:
         if obj in self.objects:
             self.objects.remove(obj)
 
+    # --- Method Overloading Examples ---
+    def describe(self, detail_level=None):
+        """Describe the room with optional detail level."""
+        if detail_level == "short":
+            print(f"You are in {self.name}.")
+        elif detail_level == "long":
+            print(f"This is {self.name}, containing {len(self.entities)} entities and {len(self.objects)} objects.")
+        else:
+            print(f"Room: {self.name} (default description).")
+
+    def interact(self, target=None):
+        """Interact with the room itself or a specific target."""
+        if target:
+            print(f"You interact with {target} inside {self.name}.")
+        else:
+            print(f"You explore the room {self.name}.")
+
+    def move(self, destination=None):
+        """Move to another room or just wander inside."""
+        if destination:
+            print(f"You move from {self.name} to {destination}.")
+        else:
+            print(f"You wander around inside {self.name}.")
+
     # --- Internal TMX Rendering ---
     def _render_layers(self):
-        """Pre-render TMX layers once: ground → walls → objects."""
         self.map_surface.fill(self.color)
-
         for layer in self.tmx_data.visible_layers:
             if hasattr(layer, "tiles"):
                 for x, y, gid in layer:
@@ -56,10 +75,8 @@ class Room:
                             tile,
                             (x * self.tmx_data.tilewidth, y * self.tmx_data.tileheight)
                         )
-        # Object layers handled separately via self.tmx_data.objects
 
     def _parse_collision_objects(self):
-        """Parse TMX objects of type 'collision' into rects."""
         for obj in self.tmx_data.objects:
             if obj.type == "collision":
                 rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
@@ -67,23 +84,15 @@ class Room:
 
     # --- Update Logic ---
     def update(self, player):
-        """Update all entities in the room."""
         for entity in self.entities:
-            entity.update(player)   # polymorphic call
+            entity.update(player)
 
     # --- Rendering ---
     def render(self, renderer, camera_offset=(0, 0)):
-        """Draw the TMX map and all entities with camera offset."""
         if self.map_surface:
             renderer.virtual_surface.blit(self.map_surface, (-camera_offset[0], -camera_offset[1]))
         else:
             renderer.virtual_surface.fill(self.color)
 
-        # Draw all entities polymorphically
         for entity in self.entities:
             entity.draw(renderer.virtual_surface, camera_offset)
-
-        # Optional: debug draw collision rects (useful for testing)
-        # for rect in self.collision_rects:
-        #     debug_rect = rect.move(-camera_offset[0], -camera_offset[1])
-        #     pygame.draw.rect(renderer.virtual_surface, (255, 0, 0), debug_rect, 2)
