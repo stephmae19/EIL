@@ -58,17 +58,15 @@ class UILayer:
 
             self.insanity_frames = self.insanity_frames[:frame_count]
 
-            # Scale factors
+            # ✅ Keep original size
             self.bar_width = 600
             self.bar_height = 150
             self.scale_x = self.bar_width / frame_width
             self.scale_y = self.bar_height / frame_height
 
-            # Slider offsets
-            self.inner_x_offset = 40
-            self.inner_y_offset = 20
-            self.slider_width = frame_width - 80
-            self.slider_height = frame_height - 40
+            # ✅ Position: top-left corner
+            self.insanity_x = 20
+            self.insanity_y = 10
 
         # --- Insanity drain settings ---
         self.last_drain = time.time()
@@ -116,17 +114,17 @@ class UILayer:
             self.insanity_frames[self.insanity_level],
             (self.bar_width, self.bar_height)
         )
-        rect = current_frame.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+        rect = current_frame.get_rect(topleft=(self.insanity_x, self.insanity_y))
         self.screen.blit(current_frame, rect)
 
-        # Label
-        text = self.font.render(f"Insanity Level: {self.insanity_level}", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(rect.centerx, rect.top - 30))
+        # Label above bar
+        text = self.font.render(f"Insanity: {self.insanity_level}", True, (255, 255, 255))
+        text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
         self.screen.blit(text, text_rect)
 
-        # Hearts display
+        # Hearts below bar
         hearts_text = self.font.render(f"Hearts: {self.hearts}", True, (255, 0, 0))
-        hearts_rect = hearts_text.get_rect(center=(rect.centerx, rect.bottom + 30))
+        hearts_rect = hearts_text.get_rect(midtop=(rect.centerx, rect.bottom + 5))
         self.screen.blit(hearts_text, hearts_rect)
 
         return rect
