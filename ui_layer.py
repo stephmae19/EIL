@@ -8,11 +8,19 @@ class UILayer:
         self.screen = screen
         self.font = pygame.font.SysFont("arial", 24, bold=True)
 
+        # --- UI CONFIG ---
+        # Adjust widths and positions here
+        self.ui_config = {
+            "health": {"width": 250, "x": 20, "y": 20},       # health bar width & position
+            "insanity": {"width": 250, "x": 20, "y": 80},     # insanity bar width & position
+            "timer": {"width": 300, "x": 1700, "y": 10}  # timer bar width & position
+        }
+
         # --- Health hearts setup ---
         self.max_hearts = 5
-        self.hearts = self.max_hearts   # ✅ player starts with 5 hearts
+        self.hearts = self.max_hearts
 
-        # Load health bar frames (health_01.png = empty, health_06.png = full)
+        # Load health bar frames
         self.health_frames = []
         for i in range(1, 7):  # 1 → 6
             path = os.path.join("Assets", "Sprite", "Gameplay", f"health_{i:02}.png")
@@ -20,7 +28,6 @@ class UILayer:
                 frame = pygame.image.load(path).convert_alpha()
                 self.health_frames.append(frame)
             else:
-                # fallback: simple red rect
                 surf = pygame.Surface((200, 40))
                 surf.fill((200, 0, 0))
                 self.health_frames.append(surf)
@@ -29,11 +36,15 @@ class UILayer:
         asset_path = os.path.join("Assets", "health-sanity bar-timer", "timer_bar.png")
         if os.path.exists(asset_path):
             self.timer_bar = pygame.image.load(asset_path).convert_alpha()
-            self.timer_rect = self.timer_bar.get_rect(midtop=(self.screen.get_width() // 2, 10))
         else:
             self.timer_bar = pygame.Surface((300, 50))
             self.timer_bar.fill((100, 100, 100))
-            self.timer_rect = self.timer_bar.get_rect(midtop=(self.screen.get_width() // 2, 10))
+
+        # Scale timer bar while keeping aspect ratio
+        tw = self.ui_config["timer"]["width"]
+        th = int(self.timer_bar.get_height() * (tw / self.timer_bar.get_width()))
+        self.timer_bar = pygame.transform.smoothscale(self.timer_bar, (tw, th))
+        self.timer_rect = self.timer_bar.get_rect(midtop=(self.ui_config["timer"]["x"], self.ui_config["timer"]["y"]))
 
         font_path = os.path.join("Assets", "FONT", "VCR_OSD_MONO_1.001.ttf")
         if os.path.exists(font_path):
@@ -41,21 +52,20 @@ class UILayer:
         else:
             self.timer_font = pygame.font.SysFont("arial", 36)
 
-        # Timer settings
         self.countdown_seconds = 300
         self.start_time = time.time()
 
         # --- Insanity bar setup ---
         insanity_path = os.path.join("Assets", "Sprite", "gameplay", "insanity.png")
         self.insanity_frames = []
-        self.insanity_level = 55   # ✅ start full (frame 55)
+        self.insanity_level = 55
         self.dragging = False
 
         if os.path.exists(insanity_path):
             insanity_sheet = pygame.image.load(insanity_path).convert_alpha()
             frame_width, frame_height = 397, 90
-            cols = 1985 // frame_width   # 5
-            rows = 1080 // frame_height  # 12
+            cols = 1985 // frame_width
+            rows = 1080 // frame_height
             frame_count = 56
 
             for row in range(rows):
@@ -66,21 +76,18 @@ class UILayer:
 
             self.insanity_frames = self.insanity_frames[:frame_count]
 
-            # ✅ Keep original size
-            self.bar_width = 600
-            self.bar_height = 150
-            self.scale_x = self.bar_width / frame_width
-            self.scale_y = self.bar_height / frame_height
-
-            # ✅ Position: below health bar
-            self.insanity_x = 20
-            self.insanity_y = 80
+            # Scale insanity bar with aspect ratio
+            iw = self.ui_config["insanity"]["width"]
+            ih = int(frame_height * (iw / frame_width))
+            self.bar_width, self.bar_height = iw, ih
+            self.insanity_x = self.ui_config["insanity"]["x"]
+            self.insanity_y = self.ui_config["insanity"]["y"]
 
         # --- Insanity drain settings ---
         self.last_drain = time.time()
-        self.drain_rate = 1.0   # seconds per drain tick
-        self.drain_amount = 1   # frames lost per tick
-        self.click_penalty = 5  # frames lost per E key press
+        self.drain_rate = 1.0
+        self.drain_amount = 1
+        self.click_penalty = 5
 
     def reset_timer(self, new_seconds=None):
         self.start_time = time.time()
@@ -89,21 +96,21 @@ class UILayer:
 
     # ---------------- HEALTH BAR ----------------
     def draw_health_bar(self):
-        # Clamp hearts between 0–5
         self.hearts = max(0, min(self.hearts, self.max_hearts))
-        # Pick correct frame (health_01 = empty, health_06 = full)
-        frame_index = self.hearts + 1
-        frame_index = min(frame_index, len(self.health_frames)) - 1
+        frame_index = min(self.hearts + 1, len(self.health_frames)) - 1
         current_frame = self.health_frames[frame_index]
 
-        rect = current_frame.get_rect(topleft=(20, 20))
+        # Scale health bar with aspect ratio
+        hw = self.ui_config["health"]["width"]
+        hh = int(current_frame.get_height() * (hw / current_frame.get_width()))
+        current_frame = pygame.transform.smoothscale(current_frame, (hw, hh))
+
+        rect = current_frame.get_rect(topleft=(self.ui_config["health"]["x"], self.ui_config["health"]["y"]))
         self.screen.blit(current_frame, rect)
 
-        # Label above health bar
         text = self.font.render(f"Health: {self.hearts}/{self.max_hearts}", True, (255, 0, 0))
         text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
         self.screen.blit(text, text_rect)
-
         return rect
 
     # ---------------- INSANITY BAR ----------------
@@ -143,23 +150,18 @@ class UILayer:
         text = self.font.render(f"Insanity: {self.insanity_level}", True, (255, 255, 255))
         text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
         self.screen.blit(text, text_rect)
-
         return rect
 
     # ---------------- DRAW ALL ----------------
     def draw(self, player):
-        # Health bar first
         self.draw_health_bar()
 
-        # Inventory button
         inv_text = self.font.render("Inventory [I]", True, (255, 255, 255))
         self.screen.blit(inv_text, (20, 50))
 
-        # Manuscripts count
         manuscripts_text = self.font.render(f"Manuscripts: {player.manuscripts_found}", True, (255, 215, 0))
         self.screen.blit(manuscripts_text, (20, 110))
 
-        # Timer bar
         elapsed = time.time() - self.start_time
         remaining = max(0, self.countdown_seconds - int(elapsed))
         minutes, seconds = divmod(remaining, 60)
@@ -176,24 +178,21 @@ class UILayer:
             pygame.quit()
             sys.exit()
 
-        # Insanity bar below health bar
         self.drain_insanity()
         self.draw_insanity_bar()
 
     # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
-        """Process mouse input for insanity bar slider."""
         bar_rect = self.draw_insanity_bar()
         if not bar_rect:
             return
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            # Example slider rect (adjust offsets if needed)
             inner_rect = pygame.Rect(
-                bar_rect.left + int(50 * self.scale_x),
-                bar_rect.top + int(20 * self.scale_y),
-                int(100 * self.scale_x),
-                int(30 * self.scale_y)
+                bar_rect.left + int(50 * (self.bar_width / 397)),
+                bar_rect.top + int(20 * (self.bar_height / 90)),
+                int(100 * (self.bar_width / 397)),
+                int(30 * (self.bar_height / 90))
             )
             if inner_rect.collidepoint(event.pos):
                 self.dragging = True
@@ -204,10 +203,10 @@ class UILayer:
 
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             inner_rect = pygame.Rect(
-                bar_rect.left + int(50 * self.scale_x),
-                bar_rect.top + int(20 * self.scale_y),
-                int(100 * self.scale_x),
-                int(30 * self.scale_y)
+                bar_rect.left + int(50 * (self.bar_width / 397)),
+                bar_rect.top + int(20 * (self.bar_height / 90)),
+                int(100 * (self.bar_width / 397)),
+                int(30 * (self.bar_height / 90))
             )
             self.update_insanity(event.pos[0], inner_rect)
 
