@@ -7,7 +7,7 @@ screen = pygame.display.set_mode((600, 400))
 pygame.display.set_caption("Volume Slider Example")
 
 # Load spritesheet
-spritesheet = pygame.image.load("assets/sprite/music/music_volume.png").convert_alpha()
+spritesheet = pygame.image.load("../Assets/Sprite/Music/music_volume.png").convert_alpha()
 
 # Frame dimensions (3x3 grid = 9 frames)
 frame_width = 340
