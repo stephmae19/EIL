@@ -1,4 +1,3 @@
-# ch1_lvl1.py
 import pygame
 import sys
 import os
@@ -12,17 +11,6 @@ BG_FILE = "Assets/Maps/chapter1/level1/ch1_lvl1.png"
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
 JPG_BLACK_TOLERANCE = 25
-
-# --- Base Resolution (design reference) ---
-BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-
-
-def scale_x(value, screen_w):
-    return int(value / BASE_WIDTH * screen_w)
-
-
-def scale_y(value, screen_h):
-    return int(value / BASE_HEIGHT * screen_h)
 
 
 class Camera:
@@ -50,16 +38,19 @@ class Camera:
 
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250, has_manuscript=False, prompt="Press 'E' to interact"):
+        # ✅ General rectangle for any interactive object
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
         self.already_searched = False
-        self.prompt = prompt
+        self.prompt = prompt   # ✅ Custom text per object
 
     def resize(self, new_width, new_height):
+        """Resize the interactive object rectangle."""
         self.rect.width = new_width
         self.rect.height = new_height
 
     def move(self, new_x, new_y):
+        """Move the interactive object to a new position."""
         self.rect.x = new_x
         self.rect.y = new_y
 
@@ -67,8 +58,9 @@ class InteractiveObject:
 class Player(pygame.sprite.Sprite):
     def __init__(self, floor_y, x=400, y=None, scale=0.45):
         super().__init__()
-        self.scale = scale
+        self.scale = scale  # ✅ adjustable scale factor
 
+        # Load frames with transparency and scaling
         self.walk_frames = self.load_frames(WALK_FILE, 5, 5)
         self.idle_frames = self.load_frames(IDLE_FILE, 5, 5)
 
@@ -76,7 +68,9 @@ class Player(pygame.sprite.Sprite):
         self.frame_index = 0
         self.image = self.current_frames[self.frame_index]
 
+        # ✅ adjustable position
         if y is None:
+            # Default: place at floor level
             self.rect = self.image.get_rect(midbottom=(x, floor_y))
         else:
             self.rect = self.image.get_rect(topleft=(x, y))
@@ -90,6 +84,7 @@ class Player(pygame.sprite.Sprite):
         self.is_running = False
 
         self.manuscripts_found = 0
+
         self.health = 100
 
         self.last_update = pygame.time.get_ticks()
@@ -102,6 +97,8 @@ class Player(pygame.sprite.Sprite):
             return [surf]
 
         sheet = pygame.image.load(filename).convert_alpha()
+
+        # Apply transparency to almost-black pixels
         sheet = sheet.copy()
         width, height = sheet.get_size()
         for x in range(width):
@@ -110,11 +107,13 @@ class Player(pygame.sprite.Sprite):
                 if r < JPG_BLACK_TOLERANCE and g < JPG_BLACK_TOLERANCE and b < JPG_BLACK_TOLERANCE:
                     sheet.set_at((x, y), (r, g, b, 0))
 
+        # Slice into frames
         w, h = sheet.get_width() // cols, sheet.get_height() // rows
         frames = []
         for r in range(rows):
             for c in range(cols):
                 frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
+                # ✅ use scale factor
                 scaled_frame = pygame.transform.scale(frame, (int(w * self.scale), int(h * self.scale)))
                 frames.append(scaled_frame)
         return frames
@@ -130,6 +129,7 @@ class Player(pygame.sprite.Sprite):
         else:
             self.speed = self.walk_speed
 
+        # Movement: A/D and Arrow keys
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.rect.x -= self.speed
             self.facing_right = False
@@ -173,19 +173,12 @@ screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
 clock = pygame.time.Clock()
 
-# Scaling factors
-scale_factor_w = SCREEN_WIDTH / BASE_WIDTH
-scale_factor_h = SCREEN_HEIGHT / BASE_HEIGHT
-
-# Fonts scaled
-ui_font_size = int(28 * scale_factor_h)
-feedback_font_size = int(24 * scale_factor_h)
-
-ui_font = pygame.font.SysFont("arial", ui_font_size, bold=True)
-feedback_font = pygame.font.SysFont("arial", feedback_font_size, italic=True)
+ui_font = pygame.font.SysFont("arial", 28, bold=True)
+feedback_font = pygame.font.SysFont("arial", 24, italic=True)
 
 # Background
 if not os.path.exists(BG_FILE):
+    bg_image = pygame.Surface((SCREEN_WIDTH * 2, SCREEN_HEIGHT))
     bg_image = pygame.Surface((SCREEN_WIDTH * 2, SCREEN_HEIGHT))
     bg_image.fill((50, 50, 80))
 else:
@@ -197,31 +190,24 @@ else:
 MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
 floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 
-# Interactive objects scaled
+# Interactive objects
 interactive_objects = [
-    InteractiveObject(x=scale_x(200, SCREEN_WIDTH), y=floor_y - scale_y(200, SCREEN_HEIGHT),
-                      width=scale_x(200, SCREEN_WIDTH), height=scale_y(300, SCREEN_HEIGHT),
-                      has_manuscript=False, prompt="I got locked out."),
-    InteractiveObject(x=scale_x(900, SCREEN_WIDTH), y=floor_y - scale_y(50, SCREEN_HEIGHT),
-                      width=scale_x(300, SCREEN_WIDTH), height=scale_y(150, SCREEN_HEIGHT),
-                      has_manuscript=False, prompt="Some dusty table."),
-    InteractiveObject(x=scale_x(1515, SCREEN_WIDTH), y=floor_y - scale_y(270, SCREEN_HEIGHT),
-                      width=scale_x(320, SCREEN_WIDTH), height=scale_y(225, SCREEN_HEIGHT),
-                      has_manuscript=False, prompt="Looks like it's missing something..."),
-    InteractiveObject(x=scale_x(1800, SCREEN_WIDTH), y=floor_y - scale_y(200, SCREEN_HEIGHT),
-                      width=scale_x(220, SCREEN_WIDTH), height=scale_y(280, SCREEN_HEIGHT),
-                      has_manuscript=True, prompt="Glowing manuscript shelf"),
-    InteractiveObject(x=scale_x(2300, SCREEN_WIDTH), y=floor_y - scale_y(200, SCREEN_HEIGHT),
-                      width=scale_x(160, SCREEN_WIDTH), height=scale_y(240, SCREEN_HEIGHT),
-                      has_manuscript=False, prompt="Just decoration"),
+    InteractiveObject(x=200, y=floor_y - 200, width=200, height=300, has_manuscript=False, prompt="I got locked out."),
+    InteractiveObject(x=900, y=floor_y - 50, width=300, height=150, has_manuscript=False, prompt="Some dusty table."),
+    InteractiveObject(x=1515, y=floor_y - 270, width=320, height=225, has_manuscript=False, prompt="Looks like it's missing something..."),
+    InteractiveObject(x=1800, y=floor_y - 200, width=220, height=280, has_manuscript=True, prompt="Glowing manuscript shelf"),
+    InteractiveObject(x=2300, y=floor_y - 200, width=160, height=240, has_manuscript=False, prompt="Just decoration"),
 ]
 
-# Player scaled
-player = Player(floor_y, x=scale_x(200, SCREEN_WIDTH), y=scale_y(610, SCREEN_HEIGHT),
-                scale=SCREEN_WIDTH / BASE_WIDTH)
+
+player = Player(floor_y, x=200, y=610, scale=1.5)
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT)
 
+# ✅ UI Layer
 ui_layer = UILayer(screen)
+
+feedback_msg = ""
+feedback_timer = 0
 
 feedback_msg = ""
 feedback_timer = 0
@@ -251,15 +237,18 @@ while True:
                         feedback_timer = now + 3000
                     else:
                         obj.already_searched = True
-                        feedback_msg = obj.prompt
+                        feedback_msg = obj.prompt  # ✅ show object-specific text only after pressing E
                         feedback_timer = now + 2000
                     break
             if not found:
                 feedback_msg = "There is nothing to interact with here."
                 feedback_timer = now + 1500
+            pass
 
-            # UI input handling
+            # ✅ UI input handling
             ui_layer.handle_input(event)
+
+            # ✅ Apply insanity penalty on E press
             ui_layer.click_insanity_loss()
 
     # Update
@@ -271,32 +260,30 @@ while True:
     screen.blit(bg_image, (camera.camera.x, camera.camera.y))
 
     for obj in interactive_objects:
-        # Debug box scaled thickness
-        line_thickness = max(1, int(2 * scale_factor_w))
-        pygame.draw.rect(screen, (0, 255, 0), camera.apply_rect(obj.rect), line_thickness)
+        # ✅ Debug box
+        pygame.draw.rect(screen, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
         if player.rect.colliderect(obj.rect):
             prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
-            prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx,
-                                                         obj.rect.top - int(20 * scale_factor_h)))
+            prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
             screen.blit(prompt_text, camera.apply_rect(prompt_rect))
 
     # Draw player
     screen.blit(player.image, camera.apply(player))
 
-    # Manuscripts UI text (top-right corner)
+    # Manuscripts UI text
     ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
-    screen.blit(ui_text, (SCREEN_WIDTH - int(280 * scale_factor_w), int(20 * scale_factor_h)))
+    screen.blit(ui_text, (SCREEN_WIDTH - 280, 20))
 
-    # Feedback message (bottom-center)
+    # Feedback message
     if now < feedback_timer:
         msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
-        msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2,
-                                                SCREEN_HEIGHT - int(50 * scale_factor_h)))
+        msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
         screen.blit(msg_surface, msg_rect)
 
-    # UI overlay last
+    # ✅ Draw UI overlay last
     ui_layer.draw(player)
 
     pygame.display.flip()
     clock.tick(60)
+
