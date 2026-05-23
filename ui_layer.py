@@ -12,10 +12,18 @@ class UILayer:
         self.max_hearts = 5
         self.hearts = self.max_hearts   # ✅ player starts with 5 hearts
 
-        # --- Health bar setup ---
-        self.health_width = 200
-        self.health_height = 20
-        self.health_x, self.health_y = 20, 20
+        # Load health bar frames (health_01.png = empty, health_06.png = full)
+        self.health_frames = []
+        for i in range(1, 7):  # 1 → 6
+            path = os.path.join("Assets", "Sprite", "Gameplay", f"health_{i:02}.png")
+            if os.path.exists(path):
+                frame = pygame.image.load(path).convert_alpha()
+                self.health_frames.append(frame)
+            else:
+                # fallback: simple red rect
+                surf = pygame.Surface((200, 40))
+                surf.fill((200, 0, 0))
+                self.health_frames.append(surf)
 
         # --- Timer bar setup ---
         asset_path = os.path.join("Assets", "health-sanity bar-timer", "timer_bar.png")
@@ -64,9 +72,9 @@ class UILayer:
             self.scale_x = self.bar_width / frame_width
             self.scale_y = self.bar_height / frame_height
 
-            # ✅ Position: top-left corner
+            # ✅ Position: below health bar
             self.insanity_x = 20
-            self.insanity_y = 10
+            self.insanity_y = 80
 
         # --- Insanity drain settings ---
         self.last_drain = time.time()
@@ -79,8 +87,27 @@ class UILayer:
         if new_seconds is not None:
             self.countdown_seconds = new_seconds
 
+    # ---------------- HEALTH BAR ----------------
+    def draw_health_bar(self):
+        # Clamp hearts between 0–5
+        self.hearts = max(0, min(self.hearts, self.max_hearts))
+        # Pick correct frame (health_01 = empty, health_06 = full)
+        frame_index = self.hearts + 1
+        frame_index = min(frame_index, len(self.health_frames)) - 1
+        current_frame = self.health_frames[frame_index]
+
+        rect = current_frame.get_rect(topleft=(20, 20))
+        self.screen.blit(current_frame, rect)
+
+        # Label above health bar
+        text = self.font.render(f"Health: {self.hearts}/{self.max_hearts}", True, (255, 0, 0))
+        text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
+        self.screen.blit(text, text_rect)
+
+        return rect
+
+    # ---------------- INSANITY BAR ----------------
     def drain_insanity(self):
-        """Shrink insanity bar over time."""
         now = time.time()
         if now - self.last_drain >= self.drain_rate:
             self.insanity_level -= self.drain_amount
@@ -88,16 +115,14 @@ class UILayer:
             self.check_insanity()
 
     def click_insanity_loss(self):
-        """Lose more insanity when pressing E."""
         self.insanity_level -= self.click_penalty
         self.check_insanity()
 
     def check_insanity(self):
-        """Check if insanity is depleted and handle heart loss."""
         if self.insanity_level <= 0:
             self.hearts -= 1
             if self.hearts > 0:
-                self.insanity_level = len(self.insanity_frames) - 1  # reset bar to full
+                self.insanity_level = len(self.insanity_frames) - 1
             else:
                 print("Game Over!")
                 pygame.quit()
@@ -107,9 +132,7 @@ class UILayer:
         if not self.insanity_frames:
             return None
 
-        # Clamp level
         self.insanity_level = max(0, min(self.insanity_level, len(self.insanity_frames) - 1))
-
         current_frame = pygame.transform.smoothscale(
             self.insanity_frames[self.insanity_level],
             (self.bar_width, self.bar_height)
@@ -117,34 +140,29 @@ class UILayer:
         rect = current_frame.get_rect(topleft=(self.insanity_x, self.insanity_y))
         self.screen.blit(current_frame, rect)
 
-        # Label above bar
         text = self.font.render(f"Insanity: {self.insanity_level}", True, (255, 255, 255))
         text_rect = text.get_rect(midtop=(rect.centerx, rect.top - 20))
         self.screen.blit(text, text_rect)
 
-        # Hearts below bar
-        hearts_text = self.font.render(f"Hearts: {self.hearts}", True, (255, 0, 0))
-        hearts_rect = hearts_text.get_rect(midtop=(rect.centerx, rect.bottom + 5))
-        self.screen.blit(hearts_text, hearts_rect)
-
         return rect
 
+    # ---------------- DRAW ALL ----------------
     def draw(self, player):
-        # --- Inventory button ---
+        # Health bar first
+        self.draw_health_bar()
+
+        # Inventory button
         inv_text = self.font.render("Inventory [I]", True, (255, 255, 255))
         self.screen.blit(inv_text, (20, 50))
 
-        # --- Manuscripts count ---
+        # Manuscripts count
         manuscripts_text = self.font.render(f"Manuscripts: {player.manuscripts_found}", True, (255, 215, 0))
-        self.screen.blit(manuscripts_text, (20, 80))
+        self.screen.blit(manuscripts_text, (20, 110))
 
-        # --- Timer bar ---
+        # Timer bar
         elapsed = time.time() - self.start_time
         remaining = max(0, self.countdown_seconds - int(elapsed))
-
-        # ✅ Format as MM:SS
-        minutes = remaining // 60
-        seconds = remaining % 60
+        minutes, seconds = divmod(remaining, 60)
         time_str = f"{minutes:02}:{seconds:02}"
 
         self.screen.blit(self.timer_bar, self.timer_rect)
@@ -153,28 +171,29 @@ class UILayer:
         text_rect.x += 17
         self.screen.blit(timer_text, text_rect)
 
-        # ✅ End game if timer runs out
         if remaining <= 0:
             print("Time's up! Game Over!")
             pygame.quit()
             sys.exit()
 
-        # --- Insanity bar ---
+        # Insanity bar below health bar
         self.drain_insanity()
-        bar_rect = self.draw_insanity_bar()
-        return bar_rect
+        self.draw_insanity_bar()
 
+    # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
+        """Process mouse input for insanity bar slider."""
         bar_rect = self.draw_insanity_bar()
         if not bar_rect:
             return
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Example slider rect (adjust offsets if needed)
             inner_rect = pygame.Rect(
-                bar_rect.left + int(self.inner_x_offset * self.scale_x),
-                bar_rect.top + int(self.inner_y_offset * self.scale_y),
-                int(self.slider_width * self.scale_x),
-                int(self.slider_height * self.scale_y)
+                bar_rect.left + int(50 * self.scale_x),
+                bar_rect.top + int(20 * self.scale_y),
+                int(100 * self.scale_x),
+                int(30 * self.scale_y)
             )
             if inner_rect.collidepoint(event.pos):
                 self.dragging = True
@@ -185,9 +204,16 @@ class UILayer:
 
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             inner_rect = pygame.Rect(
-                bar_rect.left + int(self.inner_x_offset * self.scale_x),
-                bar_rect.top + int(self.inner_y_offset * self.scale_y),
-                int(self.slider_width * self.scale_x),
-                int(self.slider_height * self.scale_y)
+                bar_rect.left + int(50 * self.scale_x),
+                bar_rect.top + int(20 * self.scale_y),
+                int(100 * self.scale_x),
+                int(30 * self.scale_y)
             )
             self.update_insanity(event.pos[0], inner_rect)
+
+    def update_insanity(self, mouse_x, inner_rect):
+        """Update insanity level based on slider position."""
+        relative_x = mouse_x - inner_rect.left
+        percent = relative_x / inner_rect.width
+        percent = max(0.0, min(1.0, percent))
+        self.insanity_level = int(percent * (len(self.insanity_frames) - 1))
