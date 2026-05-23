@@ -10,12 +10,12 @@ screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("Countdown Timer")
 
 # Load timer bar image (no scaling/stretching)
-asset_path = os.path.join(os.path.dirname(__file__), "assets/health-sanity bar-timer/timer_bar.png")
+asset_path = os.path.join(os.path.dirname(__file__), "../Assets/HEALTH-SANITY BAR-TIMER/timer_bar.png")
 timer_bar = pygame.image.load(asset_path).convert_alpha()
 bar_rect = timer_bar.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
 
 # Load custom font
-font_path = os.path.join("Assets", "FONT", "VCR_OSD_MONO_1.001.ttf")
+font_path = os.path.join("../Assets", "FONT", "VCR_OSD_MONO_1.001.ttf")
 ui_font = pygame.font.Font(font_path, 36)
 
 # Timer settings

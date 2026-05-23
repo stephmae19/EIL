@@ -8,7 +8,7 @@ screen = pygame.display.set_mode((1000, 600))
 pygame.display.set_caption("Insanity Bar Demo")
 
 # Load insanity spritesheet (56 frames, each 397x90)
-insanity_sheet = pygame.image.load("Assets/Sprite/gameplay/insanity.png").convert_alpha()
+insanity_sheet = pygame.image.load("../Assets/Sprite/Gameplay/insanity.png").convert_alpha()
 frame_width, frame_height = 397, 90
 cols = 1985 // frame_width   # 5
 rows = 1080 // frame_height  # 12

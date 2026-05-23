@@ -7,8 +7,8 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_FPS = 60 
 
-WALK_FILE = "assets/characters/player_walk.jpeg"
-IDLE_FILE = "assets/characters/player_idle.jpeg"
+WALK_FILE = "../Assets/CHARACTERS/player_walk.jpeg"
+IDLE_FILE = "../Assets/CHARACTERS/player_idle.jpeg"
 
 class Camera:
     def __init__(self, width, height):

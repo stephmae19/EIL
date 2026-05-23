@@ -8,7 +8,7 @@ screen = pygame.display.set_mode((1000, 600))
 pygame.display.set_caption("Health Bar Click Demo")
 
 # Load health spritesheet
-health_sheet = pygame.image.load("Assets/Sprite/gameplay/health.png").convert_alpha()
+health_sheet = pygame.image.load("../Assets/Sprite/Gameplay/health.png").convert_alpha()
 
 # Each frame is 397x90
 frame_width, frame_height = 397, 90
