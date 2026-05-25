@@ -238,8 +238,8 @@ interactive_objects = [
 player = Player(
     floor_y,
     x=int(SCREEN_WIDTH * 0.10),
-    y=int(SCREEN_HEIGHT * 0.56),
-    scale=(SCREEN_HEIGHT / 1080) * 1.5   # adaptive + manual multiplier
+    y=int(SCREEN_HEIGHT * 0.59),
+    scale=(SCREEN_HEIGHT / 1080) * 1.65   # adaptive + manual multiplier
 )
 
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT)
