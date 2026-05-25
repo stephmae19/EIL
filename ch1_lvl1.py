@@ -10,6 +10,7 @@ BG_FILE = "Assets/Maps/chapter1/level1/ch1_lvl1.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
+FLOOR_HEIGHT_PERCENTAGE = 0.74
 JPG_BLACK_TOLERANCE = 25
 
 
@@ -193,15 +194,15 @@ floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 # --- Adaptive Interactive Objects ---
 interactive_objects = [
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.067),
+        x=int(SCREEN_WIDTH * 0.14),
         y=int(floor_y - SCREEN_HEIGHT * 0.35),
-        width=int(SCREEN_WIDTH * 0.18),
+        width=int(SCREEN_WIDTH * 0.15),
         height=int(SCREEN_HEIGHT * 0.45),
         has_manuscript=False,
         prompt="I got locked out."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.45),
+        x=int(SCREEN_WIDTH * 0.64),
         y=int(floor_y - SCREEN_HEIGHT * 0.05),
         width=int(SCREEN_WIDTH * 0.21),
         height=int(SCREEN_HEIGHT * 0.14),
@@ -209,28 +210,28 @@ interactive_objects = [
         prompt="Some dusty table."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.79),
+        x=int(SCREEN_WIDTH * 1.07),
         y=int(floor_y - SCREEN_HEIGHT * 0.25),
-        width=int(SCREEN_WIDTH * 0.167),
+        width=int(SCREEN_WIDTH * 0.2),
         height=int(SCREEN_HEIGHT * 0.21),
         has_manuscript=False,
         prompt="Looks like it's missing something..."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.91),
-        y=int(floor_y - SCREEN_HEIGHT * 0.18),
-        width=int(SCREEN_WIDTH * 0.11),
-        height=int(SCREEN_HEIGHT * 0.26),
-        has_manuscript=True,
-        prompt="Glowing manuscript shelf"
+        x=int(SCREEN_WIDTH * 1.45),
+        y=int(floor_y - SCREEN_HEIGHT * 0.06),
+        width=int(SCREEN_WIDTH * 0.34),
+        height=int(SCREEN_HEIGHT * 0.16),
+        has_manuscript=False,
+        prompt="There's a paper, but I can't read it since the room is bit dark."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 1.16),
+        x=int(SCREEN_WIDTH * 2.1),
         y=int(floor_y - SCREEN_HEIGHT * 0.18),
         width=int(SCREEN_WIDTH * 0.08),
         height=int(SCREEN_HEIGHT * 0.22),
         has_manuscript=False,
-        prompt="Just decoration"
+        prompt="There must be something in this room. I can't leave yet."
     ),
 ]
 

@@ -37,7 +37,7 @@ def main():
     assets.cache["game_font"] = game_font
 
     # Characters (example preload)
-    assets.load("Assets/Characters/player_walk.jpeg", (40, 40))
+    assets.load("Assets/Characters/player_walk.png", (40, 40))
     assets.load("Assets/Characters/girl_char.png", (40, 40))
     assets.load("Assets/Characters/boy_char.png", (40, 40))
 
