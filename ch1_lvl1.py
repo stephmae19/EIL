@@ -194,42 +194,42 @@ floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 # --- Adaptive Interactive Objects ---
 interactive_objects = [
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.14),
-        y=int(floor_y - SCREEN_HEIGHT * 0.35),
-        width=int(SCREEN_WIDTH * 0.15),
-        height=int(SCREEN_HEIGHT * 0.45),
+        x=int(SCREEN_WIDTH * (150/1920)),
+        y=int(floor_y - SCREEN_HEIGHT * (370/1080)),
+        width=int(SCREEN_WIDTH * (300/1920)),
+        height=int(SCREEN_HEIGHT * (470/1080)),
         has_manuscript=False,
         prompt="I got locked out."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.64),
-        y=int(floor_y - SCREEN_HEIGHT * 0.05),
-        width=int(SCREEN_WIDTH * 0.21),
-        height=int(SCREEN_HEIGHT * 0.14),
+        x=int(SCREEN_WIDTH * (900/1920)),
+        y=int(floor_y - SCREEN_HEIGHT * (30/1080)),
+        width=int(SCREEN_WIDTH * (300/1920)),
+        height=int(SCREEN_HEIGHT * (150/1080)),
         has_manuscript=False,
         prompt="Some dusty table."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 1.07),
-        y=int(floor_y - SCREEN_HEIGHT * 0.25),
-        width=int(SCREEN_WIDTH * 0.2),
-        height=int(SCREEN_HEIGHT * 0.21),
+        x=int(SCREEN_WIDTH * (1520/1920)),
+        y=int(floor_y - SCREEN_HEIGHT * (250/1080)),
+        width=int(SCREEN_WIDTH * (300/1920)),
+        height=int(SCREEN_HEIGHT * (350/1920)),
         has_manuscript=False,
         prompt="Looks like it's missing something..."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 1.45),
-        y=int(floor_y - SCREEN_HEIGHT * 0.06),
-        width=int(SCREEN_WIDTH * 0.34),
-        height=int(SCREEN_HEIGHT * 0.16),
+        x=int(SCREEN_WIDTH * (2100/1920)),
+        y=int(floor_y - SCREEN_HEIGHT * (30/1080)),
+        width=int(SCREEN_WIDTH * (480/1920)),
+        height=int(SCREEN_HEIGHT * (150/1080)),
         has_manuscript=False,
         prompt="There's a paper, but I can't read it since the room is bit dark."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 2.1),
-        y=int(floor_y - SCREEN_HEIGHT * 0.18),
-        width=int(SCREEN_WIDTH * 0.08),
-        height=int(SCREEN_HEIGHT * 0.22),
+        x=int(SCREEN_WIDTH * (3000/1920)),
+        y=int(floor_y - SCREEN_HEIGHT * (150/1080)),
+        width=int(SCREEN_WIDTH * (100/1920)),
+        height=int(SCREEN_HEIGHT * (200/1080)),
         has_manuscript=False,
         prompt="There must be something in this room. I can't leave yet."
     ),
