@@ -62,7 +62,7 @@ class CharacterSelection:
         self.confirm_btn = pygame.transform.smoothscale(self.confirm_btn_original, (btn_width, btn_height))
 
         button_y = self.window_rect.bottom - btn_height - 20
-        spacing_x = 100
+        spacing_x = 150  # increased spacing between buttons
         self.back_btn_rect = self.back_btn.get_rect(center=(self.window_rect.centerx - spacing_x, button_y))
         self.confirm_btn_rect = self.confirm_btn.get_rect(center=(self.window_rect.centerx + spacing_x, button_y))
 
