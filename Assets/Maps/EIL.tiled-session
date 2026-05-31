@@ -79,6 +79,7 @@
         "chapter 1/level 1/wall.tsx",
         "chapter 1/level 1/ground.tsx"
     ],
+    "resizeMap.removeObjects": false,
     "tileset.lastUsedFormat": "tsx",
     "tileset.type": 0
 }
