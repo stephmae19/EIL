@@ -342,7 +342,18 @@ def run_level():
         # Feedback message
         if now < feedback_timer:
             msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
-            msg_rect = msg_surface.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT - 50))
+
+            # --- Adaptive horizontal offset ---
+            # Positive values push right, negative push left
+            SUBTITLE_OFFSET_X = 40  # adjust this value to move horizontally
+            SUBTITLE_OFFSET_Y = 280  # vertical offset from bottom
+
+            msg_rect = msg_surface.get_rect(
+                center=(
+                    BASE_WIDTH // 2 + int(SUBTITLE_OFFSET_X * scale_x),
+                    BASE_HEIGHT - int(SUBTITLE_OFFSET_Y * scale_y)
+                )
+            )
             game_surface.blit(msg_surface, msg_rect)
 
         # ✅ Draw UI overlay last
