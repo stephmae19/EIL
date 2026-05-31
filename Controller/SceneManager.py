@@ -45,9 +45,13 @@ class SceneManager:
 
             mx, my = event.pos
             if (x_offset <= mx < x_offset + scaled_w) and (y_offset <= my < y_offset + scaled_h):
+                # remap to internal surface coordinates
                 adj_x = (mx - x_offset) / scale
                 adj_y = (my - y_offset) / scale
                 event.pos = (adj_x, adj_y)
+
+                # ✅ update last_mouse_pos here
+                self.current_scene.last_mouse_pos = event.pos
             else:
                 return None  # ignore clicks outside game area
 
