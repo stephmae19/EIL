@@ -1,3 +1,4 @@
+# startmenu.py
 import pygame
 import os
 
@@ -132,14 +133,28 @@ class StartMenu:
             self.volume_rect = vol_rect
             self.sfx_rect = sfx_rect
 
+    def _map_mouse(self, pos):
+        """Convert window mouse coords back to internal surface coords."""
+        mx, my = pos
+        win_w, win_h = pygame.display.get_surface().get_size()
+        scale = min(win_w / 1920, win_h / 1080)  # match your BASE_WIDTH/BASE_HEIGHT
+        scaled_w = int(1920 * scale)
+        scaled_h = int(1080 * scale)
+        x_offset = (win_w - scaled_w) // 2
+        y_offset = (win_h - scaled_h) // 2
+
+        if x_offset <= mx < x_offset + scaled_w and y_offset <= my < y_offset + scaled_h:
+            return ((mx - x_offset) / scale, (my - y_offset) / scale)
+        return None
 
     def draw(self):
         self.screen.blit(self.background_scaled, (0, 0))
         self.screen.blit(self.menu_box, self.menu_box_rect)
 
-        mouse_pos = pygame.mouse.get_pos()
-        hovered_index = None
+        raw_mouse = pygame.mouse.get_pos()
+        mouse_pos = self._map_mouse(raw_mouse) or (-1, -1)  # ignore if outside
 
+        hovered_index = None
         for i, (image, rect, action) in enumerate(self.button_rects):
             if rect.collidepoint(mouse_pos) or self.selected_index == i:
                 hovered_index = i
@@ -169,6 +184,13 @@ class StartMenu:
         self.last_hovered_index = hovered_index
 
     def handle_input(self, event):
+        # ✅ Map event.pos back to internal surface coords
+        if hasattr(event, "pos"):
+            mapped = self._map_mouse(event.pos)
+            if mapped:
+                event.pos = mapped
+            else:
+                return None  # ignore clicks outside game area
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for image, rect, action in self.button_rects:
                 if rect.collidepoint(event.pos):
