@@ -1,4 +1,4 @@
-# credits.py
+# View/Scenes/Credits.py
 import pygame
 import sys
 import os

@@ -1,6 +1,7 @@
 # View/Scenes/StartMenu.py
 import pygame
 import os
+from View.Scenes.Credits import run_credits
 
 class StartMenu:
     def __init__(self, screen):
@@ -168,6 +169,9 @@ class StartMenu:
                         self.current_buttons = self.main_buttons
                         self._create_layout()
                         return "back"
+                    elif action == "credits":
+                        run_credits()  # ✅ Connect to Credits.py
+                        return "credits"
                     elif action == "volume":
                         inner_rect = pygame.Rect(
                             rect.left + int(self.inner_x_offset * self.vol_scale_x),
@@ -185,6 +189,7 @@ class StartMenu:
                         return "sfx"
                     else:
                         return action
+
 
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = False
