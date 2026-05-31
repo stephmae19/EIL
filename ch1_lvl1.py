@@ -321,19 +321,19 @@ def run_level():
         player.update(MAP_WIDTH)
         camera.update(player)
 
-        # Draw
-        screen.fill((0, 0, 0))
-        screen.blit(bg_image, (camera.camera.x, camera.camera.y))
+        # --- Render everything to internal surface ---
+        game_surface.fill((0, 0, 0))
+        game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
         for obj in interactive_objects:
-            pygame.draw.rect(screen, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+            pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
             if player.rect.colliderect(obj.rect):
                 prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                 prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
-                screen.blit(prompt_text, camera.apply_rect(prompt_rect))
+                game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
         # Draw player
-        screen.blit(player.image, camera.apply(player))
+        game_surface.blit(player.image, camera.apply(player))
 
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
@@ -347,6 +347,19 @@ def run_level():
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
+
+        # --- Scale & Blit to window with aspect ratio preserved ---
+        window_width, window_height = screen.get_size()
+        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
+        scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
+
+        scaled_surface = pygame.transform.smoothscale(game_surface, (scaled_w, scaled_h))
+
+        x_offset = (window_width - scaled_w) // 2
+        y_offset = (window_height - scaled_h) // 2
+
+        screen.fill((0, 0, 0))  # black padding
+        screen.blit(scaled_surface, (x_offset, y_offset))
 
         pygame.display.flip()
         clock.tick(60)
