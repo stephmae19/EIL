@@ -1,3 +1,4 @@
+# ChapterSelect.py
 import pygame
 import os
 from ch1_lvl1 import run_level   # ✅ import the level
@@ -161,7 +162,9 @@ class ChapterSelect:
         self.screen.blit(self.status_header, self.status_header_rect)
         self.screen.blit(self.levels_header, self.levels_header_rect)
 
-        mouse_pos = pygame.mouse.get_pos()
+        mouse_pos = getattr(self, "last_mouse_pos", None)
+        if mouse_pos is None:
+            return  # skip hover if not set yet
         hovered = None
 
         # Draw chapters

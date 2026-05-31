@@ -1,3 +1,4 @@
+# characterSelection.py
 import pygame
 import os
 from View.Scenes.StartMenu import StartMenu
@@ -77,7 +78,9 @@ class CharacterSelection:
         self.screen.blit(self.background_scaled, (0, 0))
         self.screen.blit(self.window_scaled, self.window_rect)
 
-        mouse_pos = pygame.mouse.get_pos()
+        mouse_pos = getattr(self, "last_mouse_pos", None)
+        if mouse_pos is None:
+            return  # skip drawing hover if not set yet
         hovered = None
 
         header_text = "SELECT YOUR EXPLORER"
