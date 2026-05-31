@@ -345,7 +345,7 @@ def run_level():
 
             # --- Adaptive horizontal offset ---
             # Positive values push right, negative push left
-            SUBTITLE_OFFSET_X = 40  # adjust this value to move horizontally
+            SUBTITLE_OFFSET_X = 0  # adjust this value to move horizontally
             SUBTITLE_OFFSET_Y = 280  # vertical offset from bottom
 
             msg_rect = msg_surface.get_rect(
