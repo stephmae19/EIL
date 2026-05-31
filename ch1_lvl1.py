@@ -269,7 +269,7 @@ player = Player(
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 
 # ✅ UI Layer
-ui_layer = UILayer(screen)
+ui_layer = UILayer(game_surface)
 
 feedback_msg = ""
 feedback_timer = 0

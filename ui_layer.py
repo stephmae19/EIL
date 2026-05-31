@@ -5,9 +5,12 @@ import time
 import sys
 
 class UILayer:
-    def __init__(self, screen):
-        self.screen = screen
+    def __init__(self, surface):
+        self.surface = surface
         self.font = pygame.font.SysFont("arial", 24, bold=True)
+
+        # Default scale info (updated later by SceneManager or run_level)
+        self.scale_info = {"scale": 1, "x_offset": 0, "y_offset": 0, "win_size": (1920, 1080)}
 
         # --- UI CONFIG ---
         self.ui_config = {
@@ -19,7 +22,6 @@ class UILayer:
         # --- Health hearts setup ---
         self.max_hearts = 5
         self.hearts = self.max_hearts
-
         self.health_frames = []
         for i in range(1, 7):
             path = os.path.join("Assets", "Sprite", "Gameplay", f"health_{i:02}.png")
@@ -85,6 +87,10 @@ class UILayer:
         self.drain_amount = 1
         self.click_penalty = 5
 
+    def set_scale_info(self, scale_info):
+        """Update scale info from SceneManager so UI adapts to window size."""
+        self.scale_info = scale_info
+
     def reset_timer(self, new_seconds=None):
         self.start_time = time.time()
         if new_seconds is not None:
@@ -101,7 +107,7 @@ class UILayer:
         current_frame = pygame.transform.smoothscale(current_frame, (hw, hh))
 
         rect = current_frame.get_rect(topleft=(self.ui_config["health"]["x"], self.ui_config["health"]["y"]))
-        self.screen.blit(current_frame, rect)
+        self.surface.blit(current_frame, rect)
 
         # ✅ Store rect so we can position insanity bar with padding
         self.health_rect = rect
@@ -143,7 +149,7 @@ class UILayer:
         x = self.ui_config["insanity"]["x"]
         y = self.health_rect.bottom + padding
         rect = current_frame.get_rect(topleft=(x, y))
-        self.screen.blit(current_frame, rect)
+        self.surface.blit(current_frame, rect)
         return rect
 
     # ---------------- DRAW ALL ----------------
@@ -151,18 +157,18 @@ class UILayer:
         self.draw_health_bar()
 
         manuscripts_text = self.font.render(f"Manuscripts: {player.manuscripts_found}", True, (255, 215, 0))
-        self.screen.blit(manuscripts_text, (20, 110))
+        self.surface.blit(manuscripts_text, (20, 110))
 
         elapsed = time.time() - self.start_time
         remaining = max(0, self.countdown_seconds - int(elapsed))
         minutes, seconds = divmod(remaining, 60)
         time_str = f"{minutes:02}:{seconds:02}"
 
-        self.screen.blit(self.timer_bar, self.timer_rect)
+        self.surface.blit(self.timer_bar, self.timer_rect)
         timer_text = self.timer_font.render(time_str, True, (255, 255, 255))
         text_rect = timer_text.get_rect(center=self.timer_rect.center)
         text_rect.x += 17
-        self.screen.blit(timer_text, text_rect)
+        self.surface.blit(timer_text, text_rect)
 
         if remaining <= 0:
             print("Time's up! Game Over!")
