@@ -190,47 +190,53 @@ else:
 MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
 floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 
+# --- Scaling ratios based on design resolution ---
+DESIGN_WIDTH = 1920
+DESIGN_HEIGHT = 1080
+scale_x = SCREEN_WIDTH / DESIGN_WIDTH
+scale_y = SCREEN_HEIGHT / DESIGN_HEIGHT
+
 # --- Adaptive Interactive Objects ---
 interactive_objects = [
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.067),
-        y=int(floor_y - SCREEN_HEIGHT * 0.35),
-        width=int(SCREEN_WIDTH * 0.18),
-        height=int(SCREEN_HEIGHT * 0.45),
+        x=int(150 * scale_x),
+        y=int(floor_y - (370 * scale_y)),
+        width=int(300 * scale_x),
+        height=int(470 * scale_y),
         has_manuscript=False,
         prompt="I got locked out."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.45),
-        y=int(floor_y - SCREEN_HEIGHT * 0.05),
-        width=int(SCREEN_WIDTH * 0.21),
-        height=int(SCREEN_HEIGHT * 0.14),
+        x=int(900 * scale_x),
+        y=int(floor_y - (30 * scale_y)),
+        width=int(300 * scale_x),
+        height=int(150 * scale_y),
         has_manuscript=False,
         prompt="Some dusty table."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.79),
-        y=int(floor_y - SCREEN_HEIGHT * 0.25),
-        width=int(SCREEN_WIDTH * 0.167),
-        height=int(SCREEN_HEIGHT * 0.21),
+        x=int(1520 * scale_x),
+        y=int(floor_y - (250 * scale_y)),
+        width=int(300 * scale_x),
+        height=int(350 * scale_y),
         has_manuscript=False,
         prompt="Looks like it's missing something..."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 0.91),
-        y=int(floor_y - SCREEN_HEIGHT * 0.18),
-        width=int(SCREEN_WIDTH * 0.11),
-        height=int(SCREEN_HEIGHT * 0.26),
-        has_manuscript=True,
-        prompt="Glowing manuscript shelf"
+        x=int(2100 * scale_x),
+        y=int(floor_y - (30 * scale_y)),
+        width=int(480 * scale_x),
+        height=int(150 * scale_y),
+        has_manuscript=False,
+        prompt="There's a paper, but I can't read it since the room is bit dark."
     ),
     InteractiveObject(
-        x=int(SCREEN_WIDTH * 1.16),
-        y=int(floor_y - SCREEN_HEIGHT * 0.18),
-        width=int(SCREEN_WIDTH * 0.08),
-        height=int(SCREEN_HEIGHT * 0.22),
+        x=int(3000 * scale_x),
+        y=int(floor_y - (150 * scale_y)),
+        width=int(100 * scale_x),
+        height=int(200 * scale_y),
         has_manuscript=False,
-        prompt="Just decoration"
+        prompt="There must be something in this room. I can't leave yet."
     ),
 ]
 
