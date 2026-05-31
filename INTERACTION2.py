@@ -3,10 +3,10 @@ import sys
 import os
 
 # --- 1. EXACT FILENAMES ---
-WALK_FILE = "player_walk.jpg.jpg" 
-IDLE_FILE = "player_idle.jpg.jpg"
-BG_FILE = "received_836993658930381.webp"
-ENEMY_FILE = "692179759_1338677191657438_512528723751180050_n.jpg"
+WALK_FILE = "Assets/CHARACTERS/player_walk.png"
+IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
+BG_FILE = "Assets/Maps/chapter1_level1.png"
+ENEMY_FILE = "Assets/CHARACTERS/entity.jpeg"
 
 # --- 2. TWEAK VARIABLES ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74 

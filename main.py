@@ -15,7 +15,7 @@ def main():
     pygame.init()
     pygame.mixer.init()
 
-    # --- Display Setup ---
+    # --- Display Setupd ---
     info = pygame.display.Info()
     native_width, native_height = info.current_w, info.current_h
     os.environ['SDL_VIDEO_CENTERED'] = '1'
