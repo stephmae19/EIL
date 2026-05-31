@@ -143,27 +143,42 @@ class ChapterSelect:
         # Levels
         self.level_rects.clear()
         if self.selected_chapter:
-            # Smaller icon size
-            icon_size = 48
-            padding_x = 20  # horizontal spacing between icons
-            start_x = right_x
-            row_y = start_y
+            icon_size = 48  # smaller icon size
+            padding_x = 20  # horizontal spacing
+            padding_y = 20  # vertical spacing
+            max_per_row = 4  # wrap after 4 icons
 
             for i, level in enumerate(self.chapters[self.selected_chapter]):
+                # Always load the base icon
                 icon = self.level_icons.get(level)
-                # Scale down the icon
                 if isinstance(icon, pygame.Surface):
                     icon = pygame.transform.smoothscale(icon, (icon_size, icon_size))
-                    self.level_icons[level] = icon  # store resized version
 
-                rect = icon.get_rect(topleft=(start_x + i * (icon_size + padding_x), row_y))
-                if rect.right <= inner_right:
-                    self.level_rects.append((level, rect))
+                # Unlock logic: only Chapter 1 Level 1 is unlocked
+                unlocked = (self.selected_chapter == "CHAPTER 1: THE BEGINNING" and level == "Level 1")
+
+                # Grey out locked icons (but still visible)
+                display_icon = icon
+                if not unlocked:
+                    grey_icon = icon.copy()
+                    grey_icon.fill((100, 100, 100, 150), special_flags=pygame.BLEND_RGBA_MULT)
+                    display_icon = grey_icon
+
+                # Compute row/column position
+                row = i // max_per_row
+                col = i % max_per_row
+                pos_x = right_x + col * (icon_size + padding_x)
+                pos_y = start_y + row * (icon_size + padding_y)
+
+                rect = display_icon.get_rect(topleft=(pos_x, pos_y))
+                if rect.bottom <= inner_bottom:
+                    # Store both the display icon and unlocked state
+                    self.level_rects.append((level, rect, unlocked, display_icon))
         else:
             placeholder = "Select a chapter to view levels"
             placeholder_surface = self.font.render(placeholder, True, (180, 180, 180))
             rect = placeholder_surface.get_rect(topleft=(right_x, start_y))
-            self.level_rects.append((placeholder, rect))
+            self.level_rects.append((placeholder, rect, False, placeholder_surface))
             self.placeholder_surface = placeholder_surface
 
         # Buttons
@@ -201,13 +216,13 @@ class ChapterSelect:
             self.screen.blit(status_surface, status_rect)
 
         # Draw levels
-        for level, rect in self.level_rects:
+        for level, rect, unlocked, icon in self.level_rects:
             if "Select a chapter" in level:
                 self.screen.blit(self.placeholder_surface, rect)
             else:
-                icon = self.level_icons.get(level)
                 self.screen.blit(icon, rect)
-                if rect.collidepoint(mouse_pos):
+                # Only highlight hover if unlocked
+                if rect.collidepoint(mouse_pos) and unlocked:
                     hovered = level
 
         # Buttons (same hover logic)
@@ -249,8 +264,8 @@ class ChapterSelect:
                         self._create_layout()
                         return chapter
             # Check level clicks
-            for level, rect in self.level_rects:
-                if rect.collidepoint(mouse_pos) and "Select a chapter" not in level:
+            for level, rect, unlocked, _ in self.level_rects:
+                if rect.collidepoint(mouse_pos) and unlocked:
                     return f"{self.selected_chapter} - {level}"
             # Buttons
             if self.back_btn_rect.collidepoint(mouse_pos):
