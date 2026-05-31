@@ -196,45 +196,50 @@ DESIGN_HEIGHT = 1080
 scale_x = SCREEN_WIDTH / DESIGN_WIDTH
 scale_y = SCREEN_HEIGHT / DESIGN_HEIGHT
 
-# --- Adaptive Interactive Objects ---
+# --- Scaling ratios based on design resolution ---
+DESIGN_WIDTH = 1920
+DESIGN_HEIGHT = 1080
+scale_factor = SCREEN_HEIGHT / DESIGN_HEIGHT   # same logic as player
+
+# --- Adaptive Interactive Objects (player-style scaling) ---
 interactive_objects = [
     InteractiveObject(
-        x=int(150 * scale_x),
-        y=int(floor_y - int(370 * scale_y)),
-        width=int(300 * scale_x),
-        height=int(470 * scale_y),
+        x=int(150 * scale_factor),
+        y=int(floor_y - int(370 * scale_factor)),
+        width=int(300 * scale_factor),
+        height=int(470 * scale_factor),
         has_manuscript=False,
         prompt="I got locked out."
     ),
     InteractiveObject(
-        x=int(900 * scale_x),
-        y=int(floor_y - int(30 * scale_y)),
-        width=int(300 * scale_x),
-        height=int(150 * scale_y),
+        x=int(900 * scale_factor),
+        y=int(floor_y - int(30 * scale_factor)),
+        width=int(300 * scale_factor),
+        height=int(150 * scale_factor),
         has_manuscript=False,
         prompt="Some dusty table."
     ),
     InteractiveObject(
-        x=int(1520 * scale_x),
-        y=int(floor_y - int(250 * scale_y)),
-        width=int(300 * scale_x),
-        height=int(350 * scale_y),
+        x=int(1520 * scale_factor),
+        y=int(floor_y - int(250 * scale_factor)),
+        width=int(300 * scale_factor),
+        height=int(350 * scale_factor),
         has_manuscript=False,
         prompt="Looks like it's missing something..."
     ),
     InteractiveObject(
-        x=int(2100 * scale_x),
-        y=int(floor_y - int(30 * scale_y)),
-        width=int(480 * scale_x),
-        height=int(150 * scale_y),
+        x=int(2100 * scale_factor),
+        y=int(floor_y - int(30 * scale_factor)),
+        width=int(480 * scale_factor),
+        height=int(150 * scale_factor),
         has_manuscript=False,
         prompt="There's a paper, but I can't read it since the room is bit dark."
     ),
     InteractiveObject(
-        x=int(3000 * scale_x),
-        y=int(floor_y - int(150 * scale_y)),
-        width=int(100 * scale_x),
-        height=int(200 * scale_y),
+        x=int(3000 * scale_factor),
+        y=int(floor_y - int(150 * scale_factor)),
+        width=int(100 * scale_factor),
+        height=int(200 * scale_factor),
         has_manuscript=False,
         prompt="There must be something in this room. I can't leave yet."
     ),
@@ -244,7 +249,7 @@ interactive_objects = [
 player = Player(
     floor_y,
     x=int(SCREEN_WIDTH * 0.10),
-    y=int(SCREEN_HEIGHT * 0.56),
+    y=int(SCREEN_HEIGHT * 0.62),
     scale=(SCREEN_HEIGHT / 1080) * 1.5   # adaptive + manual multiplier
 )
 
