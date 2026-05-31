@@ -200,7 +200,7 @@ scale_y = SCREEN_HEIGHT / DESIGN_HEIGHT
 interactive_objects = [
     InteractiveObject(
         x=int(150 * scale_x),
-        y=int(floor_y - (370 * scale_y)),
+        y=int(floor_y - int(370 * scale_y)),
         width=int(300 * scale_x),
         height=int(470 * scale_y),
         has_manuscript=False,
@@ -208,7 +208,7 @@ interactive_objects = [
     ),
     InteractiveObject(
         x=int(900 * scale_x),
-        y=int(floor_y - (30 * scale_y)),
+        y=int(floor_y - int(30 * scale_y)),
         width=int(300 * scale_x),
         height=int(150 * scale_y),
         has_manuscript=False,
@@ -216,7 +216,7 @@ interactive_objects = [
     ),
     InteractiveObject(
         x=int(1520 * scale_x),
-        y=int(floor_y - (250 * scale_y)),
+        y=int(floor_y - int(250 * scale_y)),
         width=int(300 * scale_x),
         height=int(350 * scale_y),
         has_manuscript=False,
@@ -224,7 +224,7 @@ interactive_objects = [
     ),
     InteractiveObject(
         x=int(2100 * scale_x),
-        y=int(floor_y - (30 * scale_y)),
+        y=int(floor_y - int(30 * scale_y)),
         width=int(480 * scale_x),
         height=int(150 * scale_y),
         has_manuscript=False,
@@ -232,7 +232,7 @@ interactive_objects = [
     ),
     InteractiveObject(
         x=int(3000 * scale_x),
-        y=int(floor_y - (150 * scale_y)),
+        y=int(floor_y - int(150 * scale_y)),
         width=int(100 * scale_x),
         height=int(200 * scale_y),
         has_manuscript=False,
