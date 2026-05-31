@@ -325,6 +325,14 @@ def run_level():
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
+        # DEBUG
+        for obj in interactive_objects:
+            pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+            if player.rect.colliderect(obj.rect):
+                prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
+                prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
+                game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
+
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
 
