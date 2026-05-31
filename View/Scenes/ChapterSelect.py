@@ -143,7 +143,7 @@ class ChapterSelect:
         # Levels
         self.level_rects.clear()
         if self.selected_chapter:
-            icon_size = 48  # smaller icon size
+            icon_size = 64  # smaller icon size
             padding_x = 20  # horizontal spacing
             padding_y = 20  # vertical spacing
             max_per_row = 4  # wrap after 4 icons
