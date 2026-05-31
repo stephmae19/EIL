@@ -1,3 +1,4 @@
+# ch1_lvl1.py
 import pygame
 import sys
 import os
@@ -264,79 +265,80 @@ feedback_timer = 0
 feedback_msg = ""
 feedback_timer = 0
 
-# --- Main Loop ---
-while True:
-    now = pygame.time.get_ticks()
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
-            found = False
-            for obj in interactive_objects:
-                if player.rect.colliderect(obj.rect):
-                    found = True
-                    if obj.already_searched:
-                        feedback_msg = "You already searched this part."
-                        feedback_timer = now + 2000
-                    elif obj.has_manuscript:
-                        obj.already_searched = True
-                        player.manuscripts_found += 1
-                        feedback_msg = "You found a hidden manuscript!"
-                        feedback_timer = now + 3000
-                    else:
-                        obj.already_searched = True
-                        feedback_msg = obj.prompt  # ✅ show object-specific text only after pressing E
-                        feedback_timer = now + 2000
-                    break
-            if not found:
-                feedback_msg = "There is nothing to interact with here."
-                feedback_timer = now + 1500
-            pass
+# --- Main Loop wrapped in a function ---
+def run_level():
+    global feedback_msg, feedback_timer  # keep these accessible
+    clock = pygame.time.Clock()
 
-            # ✅ UI input handling
-            ui_layer.handle_input(event)
+    while True:
+        now = pygame.time.get_ticks()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                # ✅ Instead of quitting the whole program, return control to ChapterSelect
+                return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                found = False
+                for obj in interactive_objects:
+                    if player.rect.colliderect(obj.rect):
+                        found = True
+                        if obj.already_searched:
+                            feedback_msg = "You already searched this part."
+                            feedback_timer = now + 2000
+                        elif obj.has_manuscript:
+                            obj.already_searched = True
+                            player.manuscripts_found += 1
+                            feedback_msg = "You found a hidden manuscript!"
+                            feedback_timer = now + 3000
+                        else:
+                            obj.already_searched = True
+                            feedback_msg = obj.prompt
+                            feedback_timer = now + 2000
+                        break
+                if not found:
+                    feedback_msg = "There is nothing to interact with here."
+                    feedback_timer = now + 1500
 
-            # ✅ Apply insanity penalty on E press
-            ui_layer.click_insanity_loss()
+                # ✅ UI input handling
+                ui_layer.handle_input(event)
+                ui_layer.click_insanity_loss()
 
-    # Update
-    player.update(MAP_WIDTH)
-    camera.update(player)
+        # Update
+        player.update(MAP_WIDTH)
+        camera.update(player)
 
-    # Draw
-    screen.fill((0, 0, 0))
-    screen.blit(bg_image, (camera.camera.x, camera.camera.y))
+        # Draw
+        screen.fill((0, 0, 0))
+        screen.blit(bg_image, (camera.camera.x, camera.camera.y))
 
-    for obj in interactive_objects:
-        # ✅ Debug box
-        pygame.draw.rect(screen, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+        for obj in interactive_objects:
+            pygame.draw.rect(screen, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+            if player.rect.colliderect(obj.rect):
+                prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
+                prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
+                screen.blit(prompt_text, camera.apply_rect(prompt_rect))
 
-        if player.rect.colliderect(obj.rect):
-            prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
-            prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
-            screen.blit(prompt_text, camera.apply_rect(prompt_rect))
+        # Draw player
+        screen.blit(player.image, camera.apply(player))
 
-    # Draw player
-    screen.blit(player.image, camera.apply(player))
+        # Manuscripts UI text
+        ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
+        screen.blit(ui_text, (SCREEN_WIDTH - 280, 20))
 
-    # Manuscripts UI text
-    ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
-    screen.blit(ui_text, (SCREEN_WIDTH - 280, 20))
+        # Feedback message
+        if now < feedback_timer:
+            msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
+            msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+            screen.blit(msg_surface, msg_rect)
 
-    # Feedback message
-    if now < feedback_timer:
-        msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
-        msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
-        screen.blit(msg_surface, msg_rect)
+        # ✅ Draw UI overlay last
+        ui_layer.draw(player)
 
-    # ✅ Draw UI overlay last
-    ui_layer.draw(player)
+        pygame.display.flip()
+        clock.tick(60)
 
-    pygame.display.flip()
-    clock.tick(60)
-
-# testing
+# ✅ Allow standalone execution
+if __name__ == "__main__":
+    run_level()

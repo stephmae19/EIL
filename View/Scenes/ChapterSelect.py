@@ -1,5 +1,6 @@
 import pygame
 import os
+from ch1_lvl1 import run_level   # ✅ import the level
 
 class ChapterSelect:
     def __init__(self, screen):
@@ -214,7 +215,7 @@ class ChapterSelect:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
             # Check chapter clicks
-            for _, text_surfaces, status_surface, status_rect, chapter in self.chapter_rows:
+            for _, text_surfaces, _, _, chapter in self.chapter_rows:
                 for _, rect in text_surfaces:
                     if rect.collidepoint(mouse_pos):
                         self.selected_chapter = chapter
@@ -228,6 +229,9 @@ class ChapterSelect:
             if self.back_btn_rect.collidepoint(mouse_pos):
                 return "back"
             if self.start_btn_rect.collidepoint(mouse_pos):
+                # ✅ Only run if Chapter 1 Level 1 is selected
+                if self.selected_chapter == "CHAPTER 1: THE BEGINNING":
+                    run_level()
                 return "start"
         return None
 

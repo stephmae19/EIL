@@ -1,3 +1,4 @@
+# main.py
 import pygame
 import os
 from View.Scenes.StartMenu import StartMenu
@@ -105,7 +106,16 @@ def main():
                         print(f"Chapter selected: {chosen_chapter}")
                     elif action == "start" and chosen_chapter:
                         print(f"Starting Level with Chapter: {chosen_chapter}, Character: {chosen_character}")
-                        scene_manager.set_scene(Level(screen, chapter_id=chosen_chapter, character=chosen_character))
+                        # ✅ Directly run ch1_lvl1 if Chapter 1 Level 1 is chosen
+                        if "CHAPTER 1" in chosen_chapter and "Level 1" in chosen_chapter:
+                            from ch1_lvl1 import run_level
+                            run_level()
+                            # After run_level returns, go back to ChapterSelect
+                            scene_manager.set_scene(ChapterSelect(screen))
+                        else:
+                            # fallback to your MVC Level scene for other chapters/levels
+                            scene_manager.set_scene(
+                                Level(screen, chapter_id=chosen_chapter, character=chosen_character))
                     elif action == "back":
                         scene_manager.set_scene(CharacterSelection(screen, scene_manager))
                     elif action == "menu":
