@@ -22,7 +22,7 @@ class ChapterSelect:
 
         # Load book icon
         self.book_icon_original = pygame.image.load("assets/objects-items/book.png").convert_alpha()
-        self.book_icon = None
+        self.book_icon = None   # ✅ initialize properly
 
         # Define chapters and levels
         self.chapters = {
@@ -31,6 +31,18 @@ class ChapterSelect:
             "CHAPTER 3: THE PUZZLES": ["Level 1", "Level 2", "Level 3", "Level 4"],
             "CHAPTER 4: THE REVELATION": ["Level 1", "Level 2"],
         }
+
+        # Load level icons (after chapters are defined)
+        self.level_icons = {}
+        for chapter, levels in self.chapters.items():
+            for i, level in enumerate(levels, start=1):
+                # ✅ Correct path to assets/menu options/
+                icon_path = os.path.join("assets", "menu options", f"level_{i}.png")
+                if os.path.exists(icon_path):
+                    self.level_icons[level] = pygame.image.load(icon_path).convert_alpha()
+                else:
+                    # fallback: render text if icon missing
+                    self.level_icons[level] = self.font.render(level, True, (255, 255, 255))
 
         # Layout state
         self.menu_box = None
@@ -131,9 +143,21 @@ class ChapterSelect:
         # Levels
         self.level_rects.clear()
         if self.selected_chapter:
+            # Smaller icon size
+            icon_size = 48
+            padding_x = 20  # horizontal spacing between icons
+            start_x = right_x
+            row_y = start_y
+
             for i, level in enumerate(self.chapters[self.selected_chapter]):
-                rect = self.font.render(level, True, (255, 255, 255)).get_rect(topleft=(right_x, start_y + i * spacing))
-                if rect.bottom <= inner_bottom:
+                icon = self.level_icons.get(level)
+                # Scale down the icon
+                if isinstance(icon, pygame.Surface):
+                    icon = pygame.transform.smoothscale(icon, (icon_size, icon_size))
+                    self.level_icons[level] = icon  # store resized version
+
+                rect = icon.get_rect(topleft=(start_x + i * (icon_size + padding_x), row_y))
+                if rect.right <= inner_right:
                     self.level_rects.append((level, rect))
         else:
             placeholder = "Select a chapter to view levels"
@@ -181,8 +205,8 @@ class ChapterSelect:
             if "Select a chapter" in level:
                 self.screen.blit(self.placeholder_surface, rect)
             else:
-                text_surface = self.font.render(level, True, (200, 200, 200))
-                self.screen.blit(text_surface, rect)
+                icon = self.level_icons.get(level)
+                self.screen.blit(icon, rect)
                 if rect.collidepoint(mouse_pos):
                     hovered = level
 
