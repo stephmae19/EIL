@@ -170,8 +170,21 @@ class Player(pygame.sprite.Sprite):
 pygame.init()
 pygame.font.init()
 
-screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
+# --- Base Resolution (Design Target) ---
+BASE_WIDTH, BASE_HEIGHT = 1920, 1080
+
+# --- Display Setup ---
+info = pygame.display.Info()
+native_width, native_height = info.current_w, info.current_h
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+# Start with resizable window
+screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+pygame.display.set_caption("Chapter 1 - Level 1")
+
+# Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
+game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
+
 clock = pygame.time.Clock()
 
 ui_font = pygame.font.SysFont("arial", 28, bold=True)
@@ -179,14 +192,13 @@ feedback_font = pygame.font.SysFont("arial", 24, italic=True)
 
 # Background
 if not os.path.exists(BG_FILE):
-    bg_image = pygame.Surface((SCREEN_WIDTH * 2, SCREEN_HEIGHT))
-    bg_image = pygame.Surface((SCREEN_WIDTH * 2, SCREEN_HEIGHT))
+    bg_image = pygame.Surface((BASE_WIDTH * 2, BASE_HEIGHT))
     bg_image.fill((50, 50, 80))
 else:
     original_bg = pygame.image.load(BG_FILE).convert()
-    scale_factor = SCREEN_HEIGHT / original_bg.get_height()
+    scale_factor = BASE_HEIGHT / original_bg.get_height()
     new_bg_width = int(original_bg.get_width() * scale_factor)
-    bg_image = pygame.transform.scale(original_bg, (new_bg_width, SCREEN_HEIGHT))
+    bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
 
 MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
 floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
@@ -194,13 +206,13 @@ floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 # --- Scaling ratios based on design resolution ---
 DESIGN_WIDTH = 1920
 DESIGN_HEIGHT = 1080
-scale_x = SCREEN_WIDTH / DESIGN_WIDTH
-scale_y = SCREEN_HEIGHT / DESIGN_HEIGHT
 
-# --- Scaling ratios based on design resolution ---
-DESIGN_WIDTH = 1920
-DESIGN_HEIGHT = 1080
-scale_factor = SCREEN_HEIGHT / DESIGN_HEIGHT   # same logic as player
+# Use BASE_WIDTH/BASE_HEIGHT instead of SCREEN_WIDTH/SCREEN_HEIGHT
+scale_x = BASE_WIDTH / DESIGN_WIDTH
+scale_y = BASE_HEIGHT / DESIGN_HEIGHT
+
+# Player-style scaling factor
+scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 
 # --- Adaptive Interactive Objects (player-style scaling) ---
 interactive_objects = [
@@ -249,12 +261,12 @@ interactive_objects = [
 # --- Adaptive Player Initialization ---
 player = Player(
     floor_y,
-    x=int(SCREEN_WIDTH * 0.10),
-    y=int(SCREEN_HEIGHT * 0.62),
-    scale=(SCREEN_HEIGHT / 1080) * 1.5   # adaptive + manual multiplier
+    x=int(BASE_WIDTH * 0.10),
+    y=int(BASE_HEIGHT * 0.62),
+    scale=(BASE_HEIGHT / 1080) * 1.5   # adaptive + manual multiplier
 )
 
-camera = Camera(MAP_WIDTH, MAP_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT)
+camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 
 # ✅ UI Layer
 ui_layer = UILayer(screen)
@@ -325,13 +337,13 @@ def run_level():
 
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
-        screen.blit(ui_text, (SCREEN_WIDTH - 280, 20))
+        game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
         # Feedback message
         if now < feedback_timer:
             msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
-            msg_rect = msg_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
-            screen.blit(msg_surface, msg_rect)
+            msg_rect = msg_surface.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT - 50))
+            game_surface.blit(msg_surface, msg_rect)
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
