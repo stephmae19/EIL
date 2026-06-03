@@ -96,7 +96,7 @@ class UILayer:
             self.inventory_bar.fill((50, 50, 50))
 
         # Scale inventory bar to fit width of window (or custom width)
-        inv_width = int(self.scale_info["win_size"][0] * 0.6)   # 60% of screen width
+        inv_width = int(self.scale_info["win_size"][0] * 0.4)   # 60% of screen width
         inv_height = int(self.inventory_bar.get_height() * (inv_width / self.inventory_bar.get_width()))
         self.inventory_bar = pygame.transform.smoothscale(self.inventory_bar, (inv_width, inv_height))
 
@@ -105,9 +105,25 @@ class UILayer:
             midbottom=(self.scale_info["win_size"][0] // 2, self.scale_info["win_size"][1] - 20)
         )
 
-        # Visible bounding box for resizing/equipping
-        self.inventory_box = pygame.Rect(self.inventory_rect.left, self.inventory_rect.top,
-                                         self.inventory_rect.width, self.inventory_rect.height)
+        # --- Inventory slot configuration ---
+        self.slot_config = {
+            "x": self.inventory_rect.left + 46,   # starting X position
+            "y": self.inventory_rect.top + 158,    # starting Y position
+            "width": 85,                         # slot width
+            "height": 85,                        # slot height
+            "margin": 32                          # spacing between slots
+        }
+
+        # ✅ Auto-generate 6 slots based on config
+        self.inventory_slots = []
+        for i in range(6):
+            slot_x = self.slot_config["x"] + i * (self.slot_config["width"] + self.slot_config["margin"])
+            slot_y = self.slot_config["y"]
+            slot_rect = pygame.Rect(slot_x, slot_y, self.slot_config["width"], self.slot_config["height"])
+            self.inventory_slots.append(slot_rect)
+
+        # Track selected slot
+        self.selected_slot = None
 
     def set_scale_info(self, scale_info):
         """Update scale info from SceneManager so UI adapts to window size."""
@@ -179,8 +195,21 @@ class UILayer:
         # Draw the inventory bar image
         self.surface.blit(self.inventory_bar, self.inventory_rect)
 
-        # Draw visible bounding box (for resizing/placement)
-        pygame.draw.rect(self.surface, (0, 255, 0), self.inventory_box, 2)  # green outline
+        # Draw each slot outline + number
+        for i, slot in enumerate(self.inventory_slots):
+            if self.selected_slot == i:
+                highlight = pygame.Surface((slot.width, slot.height), pygame.SRCALPHA)
+                highlight.fill((255, 255, 0, 80))  # semi-transparent yellow
+                self.surface.blit(highlight, slot)
+                pygame.draw.rect(self.surface, (255, 255, 0), slot, 3)
+            else:
+                pygame.draw.rect(self.surface, (0, 255, 0), slot, 2)
+
+            # Slot number for debugging
+            num_text = self.font.render(str(i+1), True, (255, 255, 255))
+            num_rect = num_text.get_rect(center=slot.center)
+            self.surface.blit(num_text, num_rect)
+
         return self.inventory_rect
 
     # ---------------- DRAW ALL ----------------
@@ -212,32 +241,36 @@ class UILayer:
 
     # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
+        # --- Insanity bar input ---
         bar_rect = self.draw_insanity_bar()
-        if not bar_rect:
-            return
-
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            inner_rect = pygame.Rect(
-                bar_rect.left + int(50 * (self.bar_width / 397)),
-                bar_rect.top + int(20 * (self.bar_height / 90)),
-                int(100 * (self.bar_width / 397)),
-                int(30 * (self.bar_height / 90))
-            )
-            if inner_rect.collidepoint(event.pos):
-                self.dragging = True
+        if bar_rect:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                inner_rect = pygame.Rect(
+                    bar_rect.left + int(50 * (self.bar_width / 397)),
+                    bar_rect.top + int(20 * (self.bar_height / 90)),
+                    int(100 * (self.bar_width / 397)),
+                    int(30 * (self.bar_height / 90))
+                )
+                if inner_rect.collidepoint(event.pos):
+                    self.dragging = True
+                    self.update_insanity(event.pos[0], inner_rect)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.dragging = False
+            elif event.type == pygame.MOUSEMOTION and self.dragging:
+                inner_rect = pygame.Rect(
+                    bar_rect.left + int(50 * (self.bar_width / 397)),
+                    bar_rect.top + int(20 * (self.bar_height / 90)),
+                    int(100 * (self.bar_width / 397)),
+                    int(30 * (self.bar_height / 90))
+                )
                 self.update_insanity(event.pos[0], inner_rect)
 
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
-
-        elif event.type == pygame.MOUSEMOTION and self.dragging:
-            inner_rect = pygame.Rect(
-                bar_rect.left + int(50 * (self.bar_width / 397)),
-                bar_rect.top + int(20 * (self.bar_height / 90)),
-                int(100 * (self.bar_width / 397)),
-                int(30 * (self.bar_height / 90))
-            )
-            self.update_insanity(event.pos[0], inner_rect)
+        # --- Inventory slot input ---
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for i, slot in enumerate(self.inventory_slots):
+                if slot.collidepoint(event.pos):
+                    self.selected_slot = i
+                    break
 
     def update_insanity(self, mouse_x, inner_rect):
         relative_x = mouse_x - inner_rect.left
