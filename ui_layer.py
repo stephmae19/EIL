@@ -96,22 +96,22 @@ class UILayer:
             self.inventory_bar.fill((50, 50, 50))
 
         # Scale inventory bar to fit width of window (or custom width)
-        inv_width = int(self.scale_info["win_size"][0] * 0.4)   # 60% of screen width
+        inv_width = int(self.scale_info["win_size"][0] * 0.35)   # 60% of screen width
         inv_height = int(self.inventory_bar.get_height() * (inv_width / self.inventory_bar.get_width()))
         self.inventory_bar = pygame.transform.smoothscale(self.inventory_bar, (inv_width, inv_height))
 
         # Position at bottom center of screen
         self.inventory_rect = self.inventory_bar.get_rect(
-            midbottom=(self.scale_info["win_size"][0] // 2, self.scale_info["win_size"][1] - 20)
+            midbottom=(self.scale_info["win_size"][0] // 2, self.scale_info["win_size"][1] - 0)
         )
 
         # --- Inventory slot configuration ---
         self.slot_config = {
-            "x": self.inventory_rect.left + 46,   # starting X position
-            "y": self.inventory_rect.top + 158,    # starting Y position
-            "width": 85,                         # slot width
-            "height": 85,                        # slot height
-            "margin": 32                          # spacing between slots
+            "x": self.inventory_rect.left + 42,   # starting X position
+            "y": self.inventory_rect.top + 138,    # starting Y position
+            "width": 75,                         # slot width
+            "height": 75,                        # slot height
+            "margin": 27                          # spacing between slots
         }
 
         # ✅ Auto-generate 6 slots based on config
