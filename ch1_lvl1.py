@@ -6,6 +6,7 @@ from ui_layer import UILayer
 
 # --- Filenames ---
 WALK_FILE = "Assets/CHARACTERS/player_walk.png"
+WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
 BG_FILE = "Assets/Maps/chapter1/level1/ch1_lvl1.png"
 

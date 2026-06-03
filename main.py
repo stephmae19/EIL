@@ -39,6 +39,8 @@ def main():
     assets.cache["game_font"] = game_font
 
     assets.load("Assets/Characters/player_walk.png", (40, 40))
+    assets.load("Assets/Characters/player_idle.png", (40, 40))
+    assets.load("Assets/Characters/player_walk2.png", (40, 40))
     assets.load("Assets/Characters/girl_char.png", (40, 40))
     assets.load("Assets/Characters/boy_char.png", (40, 40))
 
