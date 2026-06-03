@@ -87,6 +87,28 @@ class UILayer:
         self.drain_amount = 1
         self.click_penalty = 5
 
+        # --- Inventory bar setup ---
+        inventory_path = os.path.join("Assets", "Sprite", "Gameplay", "inventory.png")
+        if os.path.exists(inventory_path):
+            self.inventory_bar = pygame.image.load(inventory_path).convert_alpha()
+        else:
+            self.inventory_bar = pygame.Surface((600, 100))
+            self.inventory_bar.fill((50, 50, 50))
+
+        # Scale inventory bar to fit width of window (or custom width)
+        inv_width = int(self.scale_info["win_size"][0] * 0.6)   # 60% of screen width
+        inv_height = int(self.inventory_bar.get_height() * (inv_width / self.inventory_bar.get_width()))
+        self.inventory_bar = pygame.transform.smoothscale(self.inventory_bar, (inv_width, inv_height))
+
+        # Position at bottom center of screen
+        self.inventory_rect = self.inventory_bar.get_rect(
+            midbottom=(self.scale_info["win_size"][0] // 2, self.scale_info["win_size"][1] - 20)
+        )
+
+        # Visible bounding box for resizing/equipping
+        self.inventory_box = pygame.Rect(self.inventory_rect.left, self.inventory_rect.top,
+                                         self.inventory_rect.width, self.inventory_rect.height)
+
     def set_scale_info(self, scale_info):
         """Update scale info from SceneManager so UI adapts to window size."""
         self.scale_info = scale_info
@@ -152,6 +174,15 @@ class UILayer:
         self.surface.blit(current_frame, rect)
         return rect
 
+    # ---------------- INVENTORY BAR ----------------
+    def draw_inventory_bar(self):
+        # Draw the inventory bar image
+        self.surface.blit(self.inventory_bar, self.inventory_rect)
+
+        # Draw visible bounding box (for resizing/placement)
+        pygame.draw.rect(self.surface, (0, 255, 0), self.inventory_box, 2)  # green outline
+        return self.inventory_rect
+
     # ---------------- DRAW ALL ----------------
     def draw(self, player):
         self.draw_health_bar()
@@ -177,6 +208,7 @@ class UILayer:
 
         self.drain_insanity()
         self.draw_insanity_bar()
+        self.draw_inventory_bar()
 
     # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
