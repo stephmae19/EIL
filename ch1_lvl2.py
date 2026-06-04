@@ -1,14 +1,14 @@
-# ch1_lvl1.py
+# ch1_lvl2.py
 import pygame
 import sys
 import os
-from ui_layer import UILayerTemp
+from ui_template import UILayerTemp
 
 # --- Filenames ---
 WALK_FILE = "Assets/CHARACTERS/player_walk.png"
 WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
-BG_FILE = "Assets/Maps/chapter1/level1/ch1_lvl1.png"
+BG_FILE = "Assets/Maps/chapter1/level2/ch1_lvl2.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -298,7 +298,7 @@ player = Player(
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 
 # ✅ UI Layer
-ui_layer = UILayer(game_surface)
+ui_template = UILayerTemp(game_surface)
 
 feedback_msg = ""
 feedback_timer = 0
@@ -362,8 +362,8 @@ def run_level():
                     feedback_timer = now + 1500
 
                 # ✅ UI input handling
-                ui_layer.handle_input(event)
-                ui_layer.click_insanity_loss()
+                ui_template.handle_input(event)
+                ui_template.click_insanity_loss()
 
         # Update
         player.update(MAP_WIDTH)
@@ -406,7 +406,7 @@ def run_level():
             game_surface.blit(msg_surface, msg_rect)
 
         # ✅ Draw UI overlay last
-        ui_layer.draw(player)
+        ui_template.draw(player)
 
         # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()
