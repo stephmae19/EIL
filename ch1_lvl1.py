@@ -219,43 +219,68 @@ scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 interactive_objects = [
     InteractiveObject(
         x=int(180 * scale_factor),
-        y=int(floor_y - int(460 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(400 * scale_factor),
+        y=int(floor_y - int(140 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="I got locked out."
+        prompt="I found a letter H."
     ),
     InteractiveObject(
-        x=int(800 * scale_factor),
-        y=int(floor_y - int(210 * scale_factor)),
-        width=int(100 * scale_factor),
-        height=int(150 * scale_factor),
+        x=int(490 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="Some dusty table."
+        prompt="I found a letter L."
     ),
     InteractiveObject(
-        x=int(1300 * scale_factor),
-        y=int(floor_y - int(380 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(190 * scale_factor),
+        x=int(560 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="Looks like it's missing something..."
+        prompt="I found a letter E."
     ),
     InteractiveObject(
-        x=int(1780 * scale_factor),
-        y=int(floor_y - int(210 * scale_factor)),
-        width=int(180 * scale_factor),
-        height=int(150 * scale_factor),
+        x=int(1000 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="There's a paper, but I can't read it since the room is bit dark."
+        prompt="I found a letter K."
     ),
     InteractiveObject(
-        x=int(2550 * scale_factor),
-        y=int(floor_y - int(250 * scale_factor)),
-        width=int(30 * scale_factor),
-        height=int(150 * scale_factor),
+        x=int(1100 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="There must be something in this room. I can't leave yet."
+        prompt="I found a letter M."
+    ),
+
+    InteractiveObject(
+        x=int(1100 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="I found a letter M."
+    ),
+    InteractiveObject(
+        x=int(1250 * scale_factor),
+        y=int(floor_y - int(120 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="I found a letter C."
+    ),
+    InteractiveObject(
+        x=int(1500 * scale_factor),
+        y=int(floor_y - int(100 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="Oh, there's something on the floor. I found a letter O."
     ),
 ]
 
@@ -263,8 +288,8 @@ interactive_objects = [
 player = Player(
     floor_y,
     x=int(BASE_WIDTH * 0.10),
-    y=int(BASE_HEIGHT * 0.48),
-    scale=(BASE_HEIGHT / 1080) * 1.3   # adaptive + manual multiplier
+    y=int(BASE_HEIGHT * 0.53),
+    scale=(BASE_HEIGHT / 1080) * 1.2   # adaptive + manual multiplier
 )
 
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
@@ -325,6 +350,14 @@ def run_level():
         # --- Render everything to internal surface ---
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
+
+        # DEBUG
+        for obj in interactive_objects:
+            pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+            if player.rect.colliderect(obj.rect):
+                prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
+                prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
+                game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
