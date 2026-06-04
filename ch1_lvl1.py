@@ -228,6 +228,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
+        inventory_item="H",
         prompt="I found a letter H."
     ),
     InteractiveObject(
@@ -236,6 +237,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
+        inventory_item="L",
         prompt="I found a letter L."
     ),
     InteractiveObject(
@@ -244,6 +246,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
+        inventory_item="E",
         prompt="I found a letter E."
     ),
     InteractiveObject(
@@ -252,6 +255,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
+        inventory_item="K",
         prompt="I found a letter K."
     ),
     InteractiveObject(
@@ -260,15 +264,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="I found a letter M."
-    ),
-
-    InteractiveObject(
-        x=int(1100 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
+        inventory_item="M",
         prompt="I found a letter M."
     ),
     InteractiveObject(
@@ -277,6 +273,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
+        inventory_item="C",
         prompt="I found a letter C."
     ),
     InteractiveObject(
@@ -285,6 +282,7 @@ interactive_objects = [
         width=int(5 * scale_factor),
         height=int(40 * scale_factor),
         has_manuscript=False,
+        inventory_item="O",
         prompt="Oh, there's something on the floor. I found a letter O."
     ),
 ]
