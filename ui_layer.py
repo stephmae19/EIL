@@ -46,17 +46,27 @@ class UILayer:
         self.timer_bar = pygame.transform.smoothscale(self.timer_bar, (tw, th))
         self.timer_rect = self.timer_bar.get_rect(midtop=(self.ui_config["timer"]["x"], self.ui_config["timer"]["y"]))
 
-        font_path = os.path.join("Assets", "FONT", "VCR_OSD_MONO_1.001.ttf")
+        # --- Timer font setup ---
+        font_path = os.path.join("Assets", "Font", "VCR_OSD_MONO_1.001.ttf")
         if os.path.exists(font_path):
             self.timer_font = pygame.font.Font(font_path, 36)
         else:
             self.timer_font = pygame.font.SysFont("arial", 36)
 
+        # --- Inventory font setup (same font, smaller size) ---
+        if os.path.exists(font_path):
+            self.inventory_font = pygame.font.Font(font_path, 32)
+        else:
+            self.inventory_font = pygame.font.SysFont("arial", 32)
+
+        # --- Timer setup ---
         self.countdown_seconds = 300
-        self.start_time = time.time()
+        self.start_time = time.time()  # ✅ this fixes the AttributeError
 
         # --- Insanity bar setup ---
         insanity_path = os.path.join("Assets", "Sprite", "gameplay", "insanity.png")
+
+        # ✅ Always initialize the list first
         self.insanity_frames = []
         self.insanity_level = 55
         self.dragging = False
@@ -191,11 +201,11 @@ class UILayer:
         return rect
 
     # ---------------- INVENTORY BAR ----------------
-    def draw_inventory_bar(self):
-        # Draw the inventory bar image
+    def draw_inventory_bar(self, player):
+        # Draw the inventory bar background
         self.surface.blit(self.inventory_bar, self.inventory_rect)
 
-        # Draw each slot outline + number
+        # Draw each slot outline + item
         for i, slot in enumerate(self.inventory_slots):
             if self.selected_slot == i:
                 highlight = pygame.Surface((slot.width, slot.height), pygame.SRCALPHA)
@@ -205,10 +215,11 @@ class UILayer:
             else:
                 pygame.draw.rect(self.surface, (0, 255, 0), slot, 2)
 
-            # Slot number for debugging
-            num_text = self.font.render(str(i+1), True, (255, 255, 255))
-            num_rect = num_text.get_rect(center=slot.center)
-            self.surface.blit(num_text, num_rect)
+            # ✅ Draw inventory letters if available
+            if i < len(player.inventory):
+                letter_text = self.inventory_font.render(player.inventory[i], True, (255, 255, 255))
+                letter_rect = letter_text.get_rect(center=slot.center)
+                self.surface.blit(letter_text, letter_rect)
 
         return self.inventory_rect
 
@@ -237,8 +248,9 @@ class UILayer:
 
         self.drain_insanity()
         self.draw_insanity_bar()
-        self.draw_inventory_bar()
 
+        # ✅ FIX: pass player here
+        self.draw_inventory_bar(player)
     # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
         # --- Insanity bar input ---

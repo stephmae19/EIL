@@ -39,10 +39,13 @@ class Camera:
 
 
 class InteractiveObject:
-    def __init__(self, x, y, width=150, height=250, has_manuscript=False, prompt="Press 'E' to interact"):
+    def __init__(self, x, y, width=150, height=250,
+                 has_manuscript=False, inventory_item=None,
+                 prompt="Press 'E' to interact"):
         # ✅ General rectangle for any interactive object
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
+        self.inventory_item = inventory_item   # <-- FIXED: now optional argument
         self.already_searched = False
         self.prompt = prompt   # ✅ Custom text per object
 
@@ -91,6 +94,8 @@ class Player(pygame.sprite.Sprite):
 
         self.last_update = pygame.time.get_ticks()
         self.frame_duration = 1000 // 12
+
+        self.inventory = []
 
     def load_frames(self, filename, rows, cols):
         if not os.path.exists(filename):
@@ -330,6 +335,21 @@ def run_level():
                             player.manuscripts_found += 1
                             feedback_msg = "You found a hidden manuscript!"
                             feedback_timer = now + 3000
+                        elif obj.inventory_item:  # ✅ inventory items
+                            obj.already_searched = True
+                            player.inventory.append(obj.inventory_item)
+                            feedback_msg = f"You picked up {obj.inventory_item}!"
+                            feedback_timer = now + 2000
+
+                        # ✅ PLACE YOUR LETTER-TO-INVENTORY BLOCK HERE
+                        elif not obj.has_manuscript and obj.prompt.startswith("I found a letter"):
+                            obj.already_searched = True
+                            words = obj.prompt.split()
+                            if words[-1].isalpha() and len(words[-1]) == 1:
+                                player.inventory.append(words[-1].upper())
+                            feedback_msg = obj.prompt
+                            feedback_timer = now + 2000
+
                         else:
                             obj.already_searched = True
                             feedback_msg = obj.prompt
