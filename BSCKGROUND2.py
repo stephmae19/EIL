@@ -13,7 +13,7 @@ GAME_FPS = 60
 
 WALK_FILE = "player_walk.jpg.jpg"
 IDLE_FILE = "player_idle.jpg.jpg"
-BG_FILE = "710423057_1471085930833450_7916420202525463635_n.jpg"
+BG_FILE = "Assets/Maps/chapter1/level2/ch1_lvl2.png"
 
 class Camera:
     def __init__(self, width, height):
