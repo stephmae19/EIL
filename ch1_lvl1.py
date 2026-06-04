@@ -333,10 +333,14 @@ def run_level():
                             player.manuscripts_found += 1
                             feedback_msg = "You found a hidden manuscript!"
                             feedback_timer = now + 3000
+
                         elif obj.inventory_item:  # ✅ inventory items
                             obj.already_searched = True
-                            player.inventory.append(obj.inventory_item)
-                            feedback_msg = f"You picked up {obj.inventory_item}!"
+                            if len(player.inventory) < 6:  # ✅ check slot limit
+                                player.inventory.append(obj.inventory_item)
+                                feedback_msg = f"You picked up {obj.inventory_item}!"
+                            else:
+                                feedback_msg = "My inventory is full."
                             feedback_timer = now + 2000
 
                         # ✅ PLACE YOUR LETTER-TO-INVENTORY BLOCK HERE
