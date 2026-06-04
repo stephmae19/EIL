@@ -39,10 +39,13 @@ class Camera:
 
 
 class InteractiveObject:
-    def __init__(self, x, y, width=150, height=250, has_manuscript=False, prompt="Press 'E' to interact"):
+    def __init__(self, x, y, width=150, height=250,
+                 has_manuscript=False, inventory_item=None,
+                 prompt="Press 'E' to interact"):
         # ✅ General rectangle for any interactive object
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
+        self.inventory_item = inventory_item   # <-- FIXED: now optional argument
         self.already_searched = False
         self.prompt = prompt   # ✅ Custom text per object
 
@@ -91,6 +94,8 @@ class Player(pygame.sprite.Sprite):
 
         self.last_update = pygame.time.get_ticks()
         self.frame_duration = 1000 // 12
+
+        self.inventory = []
 
     def load_frames(self, filename, rows, cols):
         if not os.path.exists(filename):
@@ -219,43 +224,66 @@ scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 interactive_objects = [
     InteractiveObject(
         x=int(180 * scale_factor),
-        y=int(floor_y - int(460 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(400 * scale_factor),
+        y=int(floor_y - int(140 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="I got locked out."
+        inventory_item="H",
+        prompt="I found a letter H."
     ),
     InteractiveObject(
-        x=int(800 * scale_factor),
-        y=int(floor_y - int(210 * scale_factor)),
-        width=int(100 * scale_factor),
-        height=int(150 * scale_factor),
+        x=int(490 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="Some dusty table."
+        inventory_item="L",
+        prompt="I found a letter L."
     ),
     InteractiveObject(
-        x=int(1300 * scale_factor),
-        y=int(floor_y - int(380 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(190 * scale_factor),
+        x=int(560 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="Looks like it's missing something..."
+        inventory_item="E",
+        prompt="I found a letter E."
     ),
     InteractiveObject(
-        x=int(1780 * scale_factor),
-        y=int(floor_y - int(210 * scale_factor)),
-        width=int(180 * scale_factor),
-        height=int(150 * scale_factor),
+        x=int(1000 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="There's a paper, but I can't read it since the room is bit dark."
+        inventory_item="K",
+        prompt="I found a letter K."
     ),
     InteractiveObject(
-        x=int(2550 * scale_factor),
-        y=int(floor_y - int(250 * scale_factor)),
-        width=int(30 * scale_factor),
-        height=int(150 * scale_factor),
+        x=int(1100 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
-        prompt="There must be something in this room. I can't leave yet."
+        inventory_item="M",
+        prompt="I found a letter M."
+    ),
+    InteractiveObject(
+        x=int(1250 * scale_factor),
+        y=int(floor_y - int(120 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="C",
+        prompt="I found a letter C."
+    ),
+    InteractiveObject(
+        x=int(1500 * scale_factor),
+        y=int(floor_y - int(100 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="O",
+        prompt="Oh, there's something on the floor. I found a letter O."
     ),
 ]
 
@@ -263,8 +291,8 @@ interactive_objects = [
 player = Player(
     floor_y,
     x=int(BASE_WIDTH * 0.10),
-    y=int(BASE_HEIGHT * 0.48),
-    scale=(BASE_HEIGHT / 1080) * 1.3   # adaptive + manual multiplier
+    y=int(BASE_HEIGHT * 0.53),
+    scale=(BASE_HEIGHT / 1080) * 1.2   # adaptive + manual multiplier
 )
 
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
@@ -305,6 +333,25 @@ def run_level():
                             player.manuscripts_found += 1
                             feedback_msg = "You found a hidden manuscript!"
                             feedback_timer = now + 3000
+
+                        elif obj.inventory_item:  # ✅ inventory items
+                            obj.already_searched = True
+                            if len(player.inventory) < 6:  # ✅ check slot limit
+                                player.inventory.append(obj.inventory_item)
+                                feedback_msg = f"You picked up {obj.inventory_item}!"
+                            else:
+                                feedback_msg = "My inventory is full."
+                            feedback_timer = now + 2000
+
+                        # ✅ PLACE YOUR LETTER-TO-INVENTORY BLOCK HERE
+                        elif not obj.has_manuscript and obj.prompt.startswith("I found a letter"):
+                            obj.already_searched = True
+                            words = obj.prompt.split()
+                            if words[-1].isalpha() and len(words[-1]) == 1:
+                                player.inventory.append(words[-1].upper())
+                            feedback_msg = obj.prompt
+                            feedback_timer = now + 2000
+
                         else:
                             obj.already_searched = True
                             feedback_msg = obj.prompt
