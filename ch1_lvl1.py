@@ -95,6 +95,7 @@ class Player(pygame.sprite.Sprite):
         self.is_running = False
 
         self.manuscripts_found = 0
+        self.puzzle_solved = False
 
         self.health = 100
 
@@ -346,18 +347,22 @@ def run_level():
 
                         # --- Manuscript object ---
                         if obj.has_manuscript:
-                            if not obj.already_searched:
-                                obj.already_searched = True
-                                feedback_msg = "You found a hidden manuscript!"
-                                feedback_timer = now + 3000
-                            else:
-                                # ✅ Allow re-entry without "already searched"
-                                feedback_msg = "You examine the manuscript again..."
+                            if player.puzzle_solved:
+                                # ✅ Puzzle already solved, don’t allow re-entry
+                                feedback_msg = "You already searched this part."
                                 feedback_timer = now + 2000
+                            else:
+                                if not obj.already_searched:
+                                    obj.already_searched = True
+                                    feedback_msg = "You found a hidden manuscript!"
+                                    feedback_timer = now + 3000
+                                else:
+                                    feedback_msg = "You examine the manuscript again..."
+                                    feedback_timer = now + 2000
 
-                            # Always route to puzzle
-                            import ch1_lvl1_puz
-                            ch1_lvl1_puz.run_puzzle(player, ui_layer)
+                                # Route to puzzle only if not solved yet
+                                import ch1_lvl1_puz
+                                ch1_lvl1_puz.run_puzzle(player, ui_layer)
                             break
 
                         # --- Inventory items ---
