@@ -138,9 +138,13 @@ def run_puzzle(player, ui_layer=None):
         # Puzzle text only shows once all 7 slots are filled
         if all(answer_slots):
             lines = puzzle_text.split("\n")
+            # Calculate starting Y inside the manuscript image
+            start_y = manu_rect.top + 40
             for i, line in enumerate(lines):
-                txt = ui_font.render(line, True, (255, 255, 255))
-                game_surface.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
+                txt = ui_font.render(line, True, (0, 0, 0))  # black text for contrast
+                text_x = manu_rect.centerx - txt.get_width() // 2
+                text_y = start_y + i * 40
+                game_surface.blit(txt, (text_x, text_y))
 
             # ✅ Check for success condition
             if "".join(answer_slots) == "HEMLOCK":
