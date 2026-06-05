@@ -13,8 +13,16 @@ BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 pygame.init()
 pygame.font.init()
 
-screen = pygame.display.set_mode((BASE_WIDTH, BASE_HEIGHT))
+# --- Display Setup ---
+info = pygame.display.Info()
+native_width, native_height = info.current_w, info.current_h
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
 pygame.display.set_caption("Chapter 1 - Level 1 Puzzle")
+
+# Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
+game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
 clock = pygame.time.Clock()
 ui_font = pygame.font.SysFont("arial", 32, bold=True)
@@ -42,7 +50,6 @@ back_button = pygame.Rect(50, 50, 120, 50)
 # --- Drag & drop state ---
 dragging_letter = None
 drag_source = None  # "inventory" or "answer"
-drag_offset_x, drag_offset_y = 0, 0
 
 # --- Answer slots ---
 answer_slots = [None] * 7
@@ -54,9 +61,9 @@ for i in range(7):
 def run_puzzle(player, ui_layer=None):
     global dragging_letter, drag_source
 
-    # ✅ Always bind UILayer to the puzzle screen
-    if ui_layer is None or ui_layer.surface != screen:
-        ui_layer = UILayer(screen)
+    # ✅ Always bind UILayer to the puzzle surface
+    if ui_layer is None or ui_layer.surface != game_surface:
+        ui_layer = UILayer(game_surface)
 
     solved = False
 
@@ -79,16 +86,12 @@ def run_puzzle(player, ui_layer=None):
                     if rect.collidepoint(event.pos) and i < len(player.inventory):
                         dragging_letter = i
                         drag_source = "inventory"
-                        drag_offset_x = rect.x - event.pos[0]
-                        drag_offset_y = rect.y - event.pos[1]
 
                 # ✅ Start dragging from answer slots (for rearranging)
                 for j, rect in enumerate(answer_rects):
                     if rect.collidepoint(event.pos) and answer_slots[j]:
                         dragging_letter = j
                         drag_source = "answer"
-                        drag_offset_x = rect.x - event.pos[0]
-                        drag_offset_y = rect.y - event.pos[1]
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if dragging_letter is not None:
@@ -111,9 +114,9 @@ def run_puzzle(player, ui_layer=None):
                     dragging_letter = None
                     drag_source = None
 
-        # --- Render ---
-        screen.fill((30, 30, 30))
-        screen.blit(manu_text_img, manu_rect)
+        # --- Render everything to internal surface ---
+        game_surface.fill((30, 30, 30))
+        game_surface.blit(manu_text_img, manu_rect)
 
         # ✅ Draw inventory bar with collected letters
         ui_layer.draw_inventory_bar(player)
@@ -123,29 +126,42 @@ def run_puzzle(player, ui_layer=None):
             lines = puzzle_text.split("\n")
             for i, line in enumerate(lines):
                 txt = ui_font.render(line, True, (255, 255, 255))
-                screen.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
+                game_surface.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
 
             # ✅ Check for success condition
             if "".join(answer_slots) == "HEMLOCK":
                 solved = True
 
         # Back button
-        pygame.draw.rect(screen, (200, 50, 50), back_button)
+        pygame.draw.rect(game_surface, (200, 50, 50), back_button)
         back_txt = ui_font.render("BACK", True, (255, 255, 255))
-        screen.blit(back_txt, back_button.move(20, 10))
+        game_surface.blit(back_txt, back_button.move(20, 10))
 
         # ✅ Answer slots (7 letters)
         for j, rect in enumerate(answer_rects):
-            pygame.draw.rect(screen, (255, 255, 255), rect, 2)
+            pygame.draw.rect(game_surface, (255, 255, 255), rect, 2)
             if answer_slots[j]:
                 color = (0, 255, 0) if solved else (255, 255, 0)
                 letter_txt = ui_font.render(answer_slots[j], True, color)
-                screen.blit(letter_txt, rect.move(20, 20))
+                game_surface.blit(letter_txt, rect.move(20, 20))
 
         # ✅ Success message
         if solved:
             success_txt = ui_font.render("Puzzle Solved! The word is HEMLOCK.", True, (0, 255, 0))
-            screen.blit(success_txt, (BASE_WIDTH//2 - success_txt.get_width()//2, BASE_HEIGHT//2 + 200))
+            game_surface.blit(success_txt, (BASE_WIDTH//2 - success_txt.get_width()//2, BASE_HEIGHT//2 + 200))
+
+        # --- Scale & Blit to window with aspect ratio preserved ---
+        window_width, window_height = screen.get_size()
+        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
+        scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
+
+        scaled_surface = pygame.transform.smoothscale(game_surface, (scaled_w, scaled_h))
+
+        x_offset = (window_width - scaled_w) // 2
+        y_offset = (window_height - scaled_h) // 2
+
+        screen.fill((0, 0, 0))  # black padding
+        screen.blit(scaled_surface, (x_offset, y_offset))
 
         pygame.display.flip()
         clock.tick(60)
@@ -156,5 +172,5 @@ if __name__ == "__main__":
         def __init__(self):
             self.inventory = ["H", "E", "M", "L", "O", "C", "K"]
 
-    ui_layer = UILayer(screen)
+    ui_layer = UILayer(game_surface)
     run_puzzle(DummyPlayer(), ui_layer)
