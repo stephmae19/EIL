@@ -21,6 +21,8 @@ SLOT_VERTICAL_OFFSET = 330   # distance from bottom of screen
 SLOT_SIZE = 70               # width/height of each slot
 SLOT_SPACING = 100            # spacing between slots
 
+# --- Success message layout config ---
+SUCCESS_MSG_OFFSET_Y = 150   # distance from vertical center
 
 pygame.init()
 pygame.font.init()
@@ -199,7 +201,9 @@ def run_puzzle(player, ui_layer=None):
 
         if solved:
             success_txt = ui_font.render("Puzzle Solved! The word is HEMLOCK.", True, (0, 255, 0))
-            game_surface.blit(success_txt, (BASE_WIDTH//2 - success_txt.get_width()//2, BASE_HEIGHT//2 + 200))
+            success_x = BASE_WIDTH // 2 - success_txt.get_width() // 2
+            success_y = BASE_HEIGHT // 2 + SUCCESS_MSG_OFFSET_Y
+            game_surface.blit(success_txt, (success_x, success_y))
 
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
