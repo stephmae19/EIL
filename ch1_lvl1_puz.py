@@ -44,8 +44,7 @@ dragging_letter = None
 drag_source = None  # "inventory" or "answer"
 drag_offset_x, drag_offset_y = 0, 0
 
-# --- Shuffle state ---
-letters_shuffled = False
+# --- Answer slots ---
 answer_slots = [None] * 7
 answer_rects = []
 for i in range(7):
@@ -53,7 +52,9 @@ for i in range(7):
     answer_rects.append(rect)
 
 def run_puzzle(player, ui_layer):
-    global dragging_letter, drag_source, letters_shuffled
+    global dragging_letter, drag_source
+
+    solved = False
 
     while True:
         for event in pygame.event.get():
@@ -88,7 +89,7 @@ def run_puzzle(player, ui_layer):
             if event.type == pygame.MOUSEBUTTONUP:
                 if dragging_letter is not None:
                     if drag_source == "inventory":
-                        # ✅ Drop from inventory into answer slots
+                        # ✅ Drop from inventory into empty answer slot
                         for j, rect in enumerate(answer_rects):
                             if rect.collidepoint(event.pos) and not answer_slots[j]:
                                 answer_slots[j] = player.inventory[dragging_letter]
@@ -100,7 +101,6 @@ def run_puzzle(player, ui_layer):
                         # ✅ Rearrange letters between answer slots
                         for j, rect in enumerate(answer_rects):
                             if rect.collidepoint(event.pos):
-                                # swap or move
                                 answer_slots[j], answer_slots[dragging_letter] = answer_slots[dragging_letter], answer_slots[j]
                                 break
 
@@ -121,6 +121,10 @@ def run_puzzle(player, ui_layer):
                 txt = ui_font.render(line, True, (255, 255, 255))
                 screen.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
 
+            # ✅ Check for success condition
+            if "".join(answer_slots) == "HEMLOCK":
+                solved = True
+
         # Back button
         pygame.draw.rect(screen, (200, 50, 50), back_button)
         back_txt = ui_font.render("BACK", True, (255, 255, 255))
@@ -130,8 +134,14 @@ def run_puzzle(player, ui_layer):
         for j, rect in enumerate(answer_rects):
             pygame.draw.rect(screen, (255, 255, 255), rect, 2)
             if answer_slots[j]:
-                letter_txt = ui_font.render(answer_slots[j], True, (0, 255, 0))
+                color = (0, 255, 0) if solved else (255, 255, 0)
+                letter_txt = ui_font.render(answer_slots[j], True, color)
                 screen.blit(letter_txt, rect.move(20, 20))
+
+        # ✅ Success message
+        if solved:
+            success_txt = ui_font.render("Puzzle Solved! The word is HEMLOCK.", True, (0, 255, 0))
+            screen.blit(success_txt, (BASE_WIDTH//2 - success_txt.get_width()//2, BASE_HEIGHT//2 + 200))
 
         pygame.display.flip()
         clock.tick(60)
