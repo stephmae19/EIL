@@ -51,8 +51,12 @@ for i in range(7):
     rect = pygame.Rect(BASE_WIDTH//2 - 280 + i*80, BASE_HEIGHT - 300, 70, 70)
     answer_rects.append(rect)
 
-def run_puzzle(player, ui_layer):
+def run_puzzle(player, ui_layer=None):
     global dragging_letter, drag_source
+
+    # ✅ Always bind UILayer to the puzzle screen
+    if ui_layer is None or ui_layer.surface != screen:
+        ui_layer = UILayer(screen)
 
     solved = False
 
