@@ -41,6 +41,7 @@ back_button = pygame.Rect(50, 50, 120, 50)
 
 # --- Drag & drop state ---
 dragging_letter = None
+drag_source = None  # "inventory" or "answer"
 drag_offset_x, drag_offset_y = 0, 0
 
 # --- Shuffle state ---
@@ -52,7 +53,7 @@ for i in range(7):
     answer_rects.append(rect)
 
 def run_puzzle(player, ui_layer):
-    global dragging_letter, letters_shuffled
+    global dragging_letter, drag_source, letters_shuffled
 
     while True:
         for event in pygame.event.get():
@@ -72,17 +73,39 @@ def run_puzzle(player, ui_layer):
                 for i, rect in enumerate(ui_layer.inventory_slots):
                     if rect.collidepoint(event.pos) and i < len(player.inventory):
                         dragging_letter = i
+                        drag_source = "inventory"
+                        drag_offset_x = rect.x - event.pos[0]
+                        drag_offset_y = rect.y - event.pos[1]
+
+                # ✅ Start dragging from answer slots (for rearranging)
+                for j, rect in enumerate(answer_rects):
+                    if rect.collidepoint(event.pos) and answer_slots[j]:
+                        dragging_letter = j
+                        drag_source = "answer"
                         drag_offset_x = rect.x - event.pos[0]
                         drag_offset_y = rect.y - event.pos[1]
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if dragging_letter is not None:
-                    # ✅ Drop into answer slots
-                    for j, rect in enumerate(answer_rects):
-                        if rect.collidepoint(event.pos):
-                            answer_slots[j] = player.inventory[dragging_letter]
-                            break
+                    if drag_source == "inventory":
+                        # ✅ Drop from inventory into answer slots
+                        for j, rect in enumerate(answer_rects):
+                            if rect.collidepoint(event.pos) and not answer_slots[j]:
+                                answer_slots[j] = player.inventory[dragging_letter]
+                                # remove from inventory
+                                player.inventory.pop(dragging_letter)
+                                break
+
+                    elif drag_source == "answer":
+                        # ✅ Rearrange letters between answer slots
+                        for j, rect in enumerate(answer_rects):
+                            if rect.collidepoint(event.pos):
+                                # swap or move
+                                answer_slots[j], answer_slots[dragging_letter] = answer_slots[dragging_letter], answer_slots[j]
+                                break
+
                     dragging_letter = None
+                    drag_source = None
 
         # --- Render ---
         screen.fill((30, 30, 30))
@@ -91,11 +114,12 @@ def run_puzzle(player, ui_layer):
         # ✅ Draw inventory bar with collected letters
         ui_layer.draw_inventory_bar(player)
 
-        # Puzzle text
-        lines = puzzle_text.split("\n")
-        for i, line in enumerate(lines):
-            txt = ui_font.render(line, True, (255, 255, 255))
-            screen.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
+        # Puzzle text only shows once all 7 slots are filled
+        if all(answer_slots):
+            lines = puzzle_text.split("\n")
+            for i, line in enumerate(lines):
+                txt = ui_font.render(line, True, (255, 255, 255))
+                screen.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
 
         # Back button
         pygame.draw.rect(screen, (200, 50, 50), back_button)
@@ -116,8 +140,7 @@ def run_puzzle(player, ui_layer):
 if __name__ == "__main__":
     class DummyPlayer:
         def __init__(self):
-            self.inventory = ["H", "E", "M", "L", "O", "C"]
+            self.inventory = ["H", "E", "M", "L", "O", "C", "K"]
 
-    # ✅ Initialize UILayer with screen
     ui_layer = UILayer(screen)
     run_puzzle(DummyPlayer(), ui_layer)
