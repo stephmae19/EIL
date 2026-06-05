@@ -186,7 +186,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Start with resizable window
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 1 - Level 1")
+pygame.display.set_caption("Chapter 1 - Level 2")
 
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
