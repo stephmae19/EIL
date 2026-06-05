@@ -24,7 +24,7 @@ class UILayer:
         self.hearts = self.max_hearts
         self.health_frames = []
         for i in range(1, 7):
-            path = os.path.join("Assets", "Sprite", "Gameplay", f"health_{i:02}.png")
+            path = os.path.join("../Assets", "Sprite", "Gameplay", f"health_{i:02}.png")
             if os.path.exists(path):
                 frame = pygame.image.load(path).convert_alpha()
                 self.health_frames.append(frame)
@@ -34,7 +34,7 @@ class UILayer:
                 self.health_frames.append(surf)
 
         # --- Timer bar setup ---
-        asset_path = os.path.join("Assets", "health-sanity bar-timer", "timer_bar.png")
+        asset_path = os.path.join("../Assets", "health-sanity bar-timer", "timer_bar.png")
         if os.path.exists(asset_path):
             self.timer_bar = pygame.image.load(asset_path).convert_alpha()
         else:
@@ -47,7 +47,7 @@ class UILayer:
         self.timer_rect = self.timer_bar.get_rect(midtop=(self.ui_config["timer"]["x"], self.ui_config["timer"]["y"]))
 
         # --- Timer font setup ---
-        font_path = os.path.join("Assets", "Font", "VCR_OSD_MONO_1.001.ttf")
+        font_path = os.path.join("../Assets", "Font", "VCR_OSD_MONO_1.001.ttf")
         if os.path.exists(font_path):
             self.timer_font = pygame.font.Font(font_path, 36)
         else:
@@ -64,7 +64,7 @@ class UILayer:
         self.start_time = time.time()  # ✅ this fixes the AttributeError
 
         # --- Insanity bar setup ---
-        insanity_path = os.path.join("Assets", "Sprite", "gameplay", "insanity.png")
+        insanity_path = os.path.join("../Assets", "Sprite", "gameplay", "insanity.png")
 
         # ✅ Always initialize the list first
         self.insanity_frames = []
@@ -98,7 +98,7 @@ class UILayer:
         self.click_penalty = 5
 
         # --- Inventory bar setup ---
-        inventory_path = os.path.join("Assets", "Sprite", "Gameplay", "inventory.png")
+        inventory_path = os.path.join("../Assets", "Sprite", "Gameplay", "inventory.png")
         if os.path.exists(inventory_path):
             self.inventory_bar = pygame.image.load(inventory_path).convert_alpha()
         else:

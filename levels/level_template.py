@@ -2,14 +2,13 @@
 import pygame
 import sys
 import os
-from ui_layer import UILayer
+from levels.ui_layer import UILayerTemp
 
 # --- Filenames ---
-WALK_FILE = "Assets/CHARACTERS/player_walk.png"
-WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
-IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
-BG_FILE = "Assets/Maps/chapter1/level1/ch1_lvl1.png"
-MANUSCRIPT_FILE = "assets/objects-items/manuscript.png"
+WALK_FILE = "../Assets/CHARACTERS/player_walk.png"
+WALK2_FILE = "../Assets/CHARACTERS/player_walk2.png"
+IDLE_FILE = "../Assets/CHARACTERS/player_idle.png"
+BG_FILE = "../Assets/MAPS/chapter1/level1/ch1_lvl1.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -42,18 +41,13 @@ class Camera:
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
-                 prompt="Press 'E' to interact", image_file=None):
+                 prompt="Press 'E' to interact"):
+        # ✅ General rectangle for any interactive object
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
-        self.inventory_item = inventory_item
+        self.inventory_item = inventory_item   # <-- FIXED: now optional argument
         self.already_searched = False
-        self.prompt = prompt
-
-        # ✅ Load image if provided
-        self.image = None
-        if image_file and os.path.exists(image_file):
-            raw = pygame.image.load(image_file).convert_alpha()
-            self.image = pygame.transform.scale(raw, (width, height))
+        self.prompt = prompt   # ✅ Custom text per object
 
     def resize(self, new_width, new_height):
         """Resize the interactive object rectangle."""
@@ -95,7 +89,6 @@ class Player(pygame.sprite.Sprite):
         self.is_running = False
 
         self.manuscripts_found = 0
-        self.puzzle_solved = False
 
         self.health = 100
 
@@ -294,18 +287,6 @@ interactive_objects = [
     ),
 ]
 
-interactive_objects.append(
-    InteractiveObject(
-        x=int(MAP_WIDTH * 0.845),  # right side
-        y=int(floor_y - int(BASE_HEIGHT * 0.20)),  # center vertically above floor
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
-        has_manuscript=True,
-        prompt="A mysterious manuscript lies here...",
-        image_file=MANUSCRIPT_FILE
-    )
-)
-
 # --- Adaptive Player Initialization ---
 player = Player(
     floor_y,
@@ -344,53 +325,37 @@ def run_level():
                 for obj in interactive_objects:
                     if player.rect.colliderect(obj.rect):
                         found = True
+                        if obj.already_searched:
+                            feedback_msg = "You already searched this part."
+                            feedback_timer = now + 2000
+                        elif obj.has_manuscript:
+                            obj.already_searched = True
+                            player.manuscripts_found += 1
+                            feedback_msg = "You found a hidden manuscript!"
+                            feedback_timer = now + 3000
 
-                        # --- Manuscript object ---
-                        if obj.has_manuscript:
-                            if player.puzzle_solved:
-                                # ✅ Puzzle already solved, don’t allow re-entry
-                                feedback_msg = "You already searched this part."
-                                feedback_timer = now + 2000
+                        elif obj.inventory_item:  # ✅ inventory items
+                            obj.already_searched = True
+                            if len(player.inventory) < 6:  # ✅ check slot limit
+                                player.inventory.append(obj.inventory_item)
+                                feedback_msg = f"You picked up {obj.inventory_item}!"
                             else:
-                                if not obj.already_searched:
-                                    obj.already_searched = True
-                                    feedback_msg = "You found a hidden manuscript!"
-                                    feedback_timer = now + 3000
-                                else:
-                                    feedback_msg = "You examine the manuscript again..."
-                                    feedback_timer = now + 2000
+                                feedback_msg = "My inventory is full."
+                            feedback_timer = now + 2000
 
-                                # Route to puzzle only if not solved yet
-                                import ch1_lvl1_puz
-                                ch1_lvl1_puz.run_puzzle(player, ui_layer)
-                            break
+                        # ✅ PLACE YOUR LETTER-TO-INVENTORY BLOCK HERE
+                        elif not obj.has_manuscript and obj.prompt.startswith("I found a letter"):
+                            obj.already_searched = True
+                            words = obj.prompt.split()
+                            if words[-1].isalpha() and len(words[-1]) == 1:
+                                player.inventory.append(words[-1].upper())
+                            feedback_msg = obj.prompt
+                            feedback_timer = now + 2000
 
-                        # --- Inventory items ---
-                        elif obj.inventory_item:
-                            if not obj.already_searched:
-                                if len(player.inventory) < 6:
-                                    # ✅ Successfully pick up item
-                                    player.inventory.append(obj.inventory_item)
-                                    obj.already_searched = True
-                                    feedback_msg = f"You picked up {obj.inventory_item}!"
-                                else:
-                                    # ✅ Inventory full, but item not yet picked up
-                                    feedback_msg = "My inventory is full."
-                                feedback_timer = now + 2000
-                            else:
-                                # ✅ Item was already picked up before
-                                feedback_msg = "You already picked this up."
-                                feedback_timer = now + 2000
-
-                        # --- Other prompts ---
                         else:
-                            if not obj.already_searched:
-                                obj.already_searched = True
-                                feedback_msg = obj.prompt
-                                feedback_timer = now + 2000
-                            else:
-                                feedback_msg = "You already searched this part."
-                                feedback_timer = now + 2000
+                            obj.already_searched = True
+                            feedback_msg = obj.prompt
+                            feedback_timer = now + 2000
                         break
                 if not found:
                     feedback_msg = "There is nothing to interact with here."
@@ -408,15 +373,9 @@ def run_level():
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
-        # DEBUG + object rendering
+        # DEBUG
         for obj in interactive_objects:
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
-
-            # ✅ Render object image if available
-            if obj.image:
-                game_surface.blit(obj.image, camera.apply_rect(obj.rect))
-
-            # Show prompt when player collides
             if player.rect.colliderect(obj.rect):
                 prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                 prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))

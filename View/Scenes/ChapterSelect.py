@@ -1,7 +1,7 @@
 # ChapterSelect.py
 import pygame
 import os
-from ch1_lvl1 import run_level   # ✅ import the level
+from levels.ch1_lvl1 import run_level   # ✅ import the level
 
 class ChapterSelect:
     def __init__(self, screen):

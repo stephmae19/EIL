@@ -102,7 +102,7 @@ def main():
                         print(f"Chapter selected: {chosen_chapter}")
                     elif action == "start" and chosen_chapter:
                         if "CHAPTER 1" in chosen_chapter and "Level 1" in chosen_chapter:
-                            from ch1_lvl1 import run_level
+                            from levels.ch1_lvl1 import run_level
                             run_level()
                             scene_manager.set_scene(ChapterSelect(game_surface))
                         else:
