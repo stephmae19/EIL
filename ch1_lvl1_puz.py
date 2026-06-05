@@ -16,6 +16,12 @@ FONT_SIZE = 40           # ✅ direct font size control
 # --- Config ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 
+# --- Answer slots layout config ---
+SLOT_VERTICAL_OFFSET = 330   # distance from bottom of screen
+SLOT_SIZE = 70               # width/height of each slot
+SLOT_SPACING = 100            # spacing between slots
+
+
 pygame.init()
 pygame.font.init()
 
@@ -60,8 +66,11 @@ drag_source = None  # "inventory" or "answer"
 # --- Answer slots ---
 answer_slots = [None] * 7
 answer_rects = []
+slot_row_y = BASE_HEIGHT - SLOT_VERTICAL_OFFSET   # ✅ adjustable vertical position
+slot_row_x_start = BASE_WIDTH//2 - (3 * SLOT_SPACING + SLOT_SIZE//2)
+
 for i in range(7):
-    rect = pygame.Rect(BASE_WIDTH//2 - 280 + i*80, BASE_HEIGHT - 300, 70, 70)
+    rect = pygame.Rect(slot_row_x_start + i * SLOT_SPACING, slot_row_y, SLOT_SIZE, SLOT_SIZE)
     answer_rects.append(rect)
 
 # --- Helper: translate mouse coords ---
