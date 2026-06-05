@@ -348,7 +348,6 @@ def run_level():
                         if obj.has_manuscript:
                             if not obj.already_searched:
                                 obj.already_searched = True
-                                player.manuscripts_found += 1
                                 feedback_msg = "You found a hidden manuscript!"
                                 feedback_timer = now + 3000
                             else:
@@ -364,15 +363,17 @@ def run_level():
                         # --- Inventory items ---
                         elif obj.inventory_item:
                             if not obj.already_searched:
-                                obj.already_searched = True
                                 if len(player.inventory) < 6:
+                                    # ✅ Successfully pick up item
                                     player.inventory.append(obj.inventory_item)
+                                    obj.already_searched = True
                                     feedback_msg = f"You picked up {obj.inventory_item}!"
                                 else:
+                                    # ✅ Inventory full, but item not yet picked up
                                     feedback_msg = "My inventory is full."
                                 feedback_timer = now + 2000
                             else:
-                                # ✅ Only show this if item was picked up
+                                # ✅ Item was already picked up before
                                 feedback_msg = "You already picked this up."
                                 feedback_timer = now + 2000
 
