@@ -346,7 +346,6 @@ def run_level():
                         if obj.already_searched:
                             feedback_msg = "You already searched this part."
                             feedback_timer = now + 2000
-
                         elif obj.has_manuscript and not obj.already_searched:
                             obj.already_searched = True
                             player.manuscripts_found += 1
@@ -356,7 +355,7 @@ def run_level():
                             # ✅ Route to puzzle level
                             import ch1_lvl1_puz
                             ch1_lvl1_puz.run_puzzle(player, ui_layer)
-                            return
+                            # ⚠️ Do NOT return here — just continue the loop
 
                         elif obj.inventory_item:  # ✅ inventory items
                             obj.already_searched = True
