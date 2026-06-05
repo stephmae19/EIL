@@ -343,42 +343,48 @@ def run_level():
                 for obj in interactive_objects:
                     if player.rect.colliderect(obj.rect):
                         found = True
-                        if obj.already_searched:
-                            feedback_msg = "You already searched this part."
-                            feedback_timer = now + 2000
-                        elif obj.has_manuscript and not obj.already_searched:
-                            obj.already_searched = True
-                            player.manuscripts_found += 1
-                            feedback_msg = "You found a hidden manuscript!"
-                            feedback_timer = now + 3000
 
-                            # ✅ Route to puzzle level
+                        # --- Manuscript object ---
+                        if obj.has_manuscript:
+                            if not obj.already_searched:
+                                obj.already_searched = True
+                                player.manuscripts_found += 1
+                                feedback_msg = "You found a hidden manuscript!"
+                                feedback_timer = now + 3000
+                            else:
+                                # ✅ Allow re-entry without "already searched"
+                                feedback_msg = "You examine the manuscript again..."
+                                feedback_timer = now + 2000
+
+                            # Always route to puzzle
                             import ch1_lvl1_puz
                             ch1_lvl1_puz.run_puzzle(player, ui_layer)
-                            # ⚠️ Do NOT return here — just continue the loop
+                            break
 
-                        elif obj.inventory_item:  # ✅ inventory items
-                            obj.already_searched = True
-                            if len(player.inventory) < 6:
-                                player.inventory.append(obj.inventory_item)
-                                feedback_msg = f"You picked up {obj.inventory_item}!"
+                        # --- Inventory items ---
+                        elif obj.inventory_item:
+                            if not obj.already_searched:
+                                obj.already_searched = True
+                                if len(player.inventory) < 6:
+                                    player.inventory.append(obj.inventory_item)
+                                    feedback_msg = f"You picked up {obj.inventory_item}!"
+                                else:
+                                    feedback_msg = "My inventory is full."
+                                feedback_timer = now + 2000
                             else:
-                                feedback_msg = "My inventory is full."
-                            feedback_timer = now + 2000
+                                # ✅ Only show this if item was picked up
+                                feedback_msg = "You already picked this up."
+                                feedback_timer = now + 2000
 
-                        elif not obj.has_manuscript and obj.prompt.startswith("I found a letter"):
-                            obj.already_searched = True
-                            words = obj.prompt.split()
-                            if words[-1].isalpha() and len(words[-1]) == 1:
-                                player.inventory.append(words[-1].upper())
-                            feedback_msg = obj.prompt
-                            feedback_timer = now + 2000
-
+                        # --- Other prompts ---
                         else:
-                            obj.already_searched = True
-                            feedback_msg = obj.prompt
-                            feedback_timer = now + 2000
-
+                            if not obj.already_searched:
+                                obj.already_searched = True
+                                feedback_msg = obj.prompt
+                                feedback_timer = now + 2000
+                            else:
+                                feedback_msg = "You already searched this part."
+                                feedback_timer = now + 2000
                         break
                 if not found:
                     feedback_msg = "There is nothing to interact with here."

@@ -58,6 +58,17 @@ for i in range(7):
     rect = pygame.Rect(BASE_WIDTH//2 - 280 + i*80, BASE_HEIGHT - 300, 70, 70)
     answer_rects.append(rect)
 
+# --- Helper: translate mouse coords ---
+def translate_mouse(pos, window_size):
+    window_w, window_h = window_size
+    scale = min(window_w / BASE_WIDTH, window_h / BASE_HEIGHT)
+    scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
+    x_offset = (window_w - scaled_w) // 2
+    y_offset = (window_h - scaled_h) // 2
+    x = (pos[0] - x_offset) / scale
+    y = (pos[1] - y_offset) / scale
+    return int(x), int(y)
+
 def run_puzzle(player, ui_layer=None):
     global dragging_letter, drag_source
 
@@ -78,36 +89,39 @@ def run_puzzle(player, ui_layer=None):
                 return  # go back to ch1_lvl1.py, keep progress
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if back_button.collidepoint(event.pos):
+                mouse_pos = translate_mouse(event.pos, screen.get_size())
+
+                if back_button.collidepoint(mouse_pos):
                     return  # ✅ back button click also works
 
                 # ✅ Start dragging from inventory bar
                 for i, rect in enumerate(ui_layer.inventory_slots):
-                    if rect.collidepoint(event.pos) and i < len(player.inventory):
+                    if rect.collidepoint(mouse_pos) and i < len(player.inventory):
                         dragging_letter = i
                         drag_source = "inventory"
 
                 # ✅ Start dragging from answer slots (for rearranging)
                 for j, rect in enumerate(answer_rects):
-                    if rect.collidepoint(event.pos) and answer_slots[j]:
+                    if rect.collidepoint(mouse_pos) and answer_slots[j]:
                         dragging_letter = j
                         drag_source = "answer"
 
             if event.type == pygame.MOUSEBUTTONUP:
+                mouse_pos = translate_mouse(event.pos, screen.get_size())
+
                 if dragging_letter is not None:
                     if drag_source == "inventory":
                         # ✅ Drop from inventory into empty answer slot
                         for j, rect in enumerate(answer_rects):
-                            if rect.collidepoint(event.pos) and not answer_slots[j]:
+                            if rect.collidepoint(mouse_pos) and not answer_slots[j]:
                                 answer_slots[j] = player.inventory[dragging_letter]
-                                # remove from inventory
                                 player.inventory.pop(dragging_letter)
                                 break
 
                     elif drag_source == "answer":
                         # ✅ Rearrange letters between answer slots
                         for j, rect in enumerate(answer_rects):
-                            if rect.collidepoint(event.pos):
+                            if rect.collidepoint(mouse_pos):
                                 answer_slots[j], answer_slots[dragging_letter] = answer_slots[dragging_letter], answer_slots[j]
                                 break
 
