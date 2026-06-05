@@ -148,7 +148,10 @@ def run_puzzle(player, ui_layer=None):
 
             # ✅ Check for success condition
             if "".join(answer_slots) == "HEMLOCK":
-                solved = True
+                if not solved:
+                    solved = True
+                    # ✅ Increment manuscript counter only once when solved
+                    player.manuscripts_found += 1
 
         # Back button
         pygame.draw.rect(game_surface, (200, 50, 50), back_button)
