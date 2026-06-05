@@ -57,8 +57,14 @@ for i in range(7):
     rect = pygame.Rect(BASE_WIDTH//2 - 280 + i*80, BASE_HEIGHT - 300, 70, 70)
     answer_rects.append(rect)
 
-def run_puzzle():
+def run_puzzle(player, ui_layer):
     global dragging_letter, letters_shuffled
+
+    # ✅ Copy player inventory into puzzle slots (pad to 6)
+    inventory_slots[:] = player.inventory[:6]
+    while len(inventory_slots) < 6:
+        inventory_slots.append(None)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -69,9 +75,9 @@ def run_puzzle():
                 if back_button.collidepoint(event.pos):
                     return  # ✅ go back to ch1_lvl1.py
 
-                # check inventory slots
-                for i, rect in enumerate(slot_rects):
-                    if rect.collidepoint(event.pos) and inventory_slots[i]:
+                # check inventory slots from ui_layer
+                for i, rect in enumerate(ui_layer.inventory_slots):
+                    if rect.collidepoint(event.pos) and i < len(player.inventory):
                         dragging_letter = i
                         drag_offset_x = rect.x - event.pos[0]
                         drag_offset_y = rect.y - event.pos[1]
@@ -81,13 +87,16 @@ def run_puzzle():
                     # drop into answer slots
                     for j, rect in enumerate(answer_rects):
                         if rect.collidepoint(event.pos):
-                            answer_slots[j] = inventory_slots[dragging_letter]
+                            answer_slots[j] = player.inventory[dragging_letter]
                             break
                     dragging_letter = None
 
         # --- Render ---
         screen.fill((30, 30, 30))
         screen.blit(manu_text_img, manu_rect)
+
+        # ✅ Use ui_layer to draw inventory bar
+        ui_layer.draw_inventory_bar(player)
 
         # Puzzle text
         lines = puzzle_text.split("\n")
@@ -100,14 +109,7 @@ def run_puzzle():
         back_txt = ui_font.render("BACK", True, (255, 255, 255))
         screen.blit(back_txt, back_button.move(20, 10))
 
-        # Inventory slots
-        for i, rect in enumerate(slot_rects):
-            pygame.draw.rect(screen, (100, 100, 100), rect, 2)
-            if inventory_slots[i]:
-                letter_txt = ui_font.render(inventory_slots[i], True, (255, 255, 0))
-                screen.blit(letter_txt, rect.move(20, 20))
-
-        # Answer slots (7 letters)
+        # ✅ Only keep answer slots here
         for j, rect in enumerate(answer_rects):
             pygame.draw.rect(screen, (255, 255, 255), rect, 2)
             if answer_slots[j]:
@@ -119,4 +121,14 @@ def run_puzzle():
 
 # ✅ Allow standalone execution
 if __name__ == "__main__":
-    run_puzzle()
+    # For testing, create dummy player + ui_layer
+    class DummyPlayer:
+        def __init__(self):
+            self.inventory = ["H", "E", "M", "L", "O", "C"]
+
+    class DummyUILayer:
+        def draw_inventory_bar(self, player):
+            # simple placeholder
+            pass
+
+    run_puzzle(DummyPlayer(), DummyUILayer())

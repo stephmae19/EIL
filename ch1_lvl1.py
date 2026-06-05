@@ -355,7 +355,7 @@ def run_level():
 
                             # ✅ Route to puzzle level
                             import ch1_lvl1_puz
-                            ch1_lvl1_puz.run_puzzle()
+                            ch1_lvl1_puz.run_puzzle(player, ui_layer)
                             return
 
                         elif obj.inventory_item:  # ✅ inventory items
