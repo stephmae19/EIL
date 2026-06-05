@@ -2,6 +2,7 @@
 import pygame
 import sys
 import os
+from ui_layer import UILayer   # ✅ import your UI layer
 
 # --- Filenames ---
 MANU_TEXT_FILE = "assets/objects-items/manu_text.png"
@@ -60,14 +61,14 @@ def run_puzzle(player, ui_layer):
                 sys.exit()
 
             # ✅ ESC key acts as back button
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return  # go back to ch1_lvl1.py, keep progress
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
                     return  # ✅ back button click also works
 
-                # ✅ check inventory slots from ui_layer
+                # ✅ Start dragging from inventory bar
                 for i, rect in enumerate(ui_layer.inventory_slots):
                     if rect.collidepoint(event.pos) and i < len(player.inventory):
                         dragging_letter = i
@@ -76,7 +77,7 @@ def run_puzzle(player, ui_layer):
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if dragging_letter is not None:
-                    # ✅ drop into answer slots
+                    # ✅ Drop into answer slots
                     for j, rect in enumerate(answer_rects):
                         if rect.collidepoint(event.pos):
                             answer_slots[j] = player.inventory[dragging_letter]
@@ -96,7 +97,7 @@ def run_puzzle(player, ui_layer):
             txt = ui_font.render(line, True, (255, 255, 255))
             screen.blit(txt, (BASE_WIDTH//2 - txt.get_width()//2, 50 + i*40))
 
-        # Back button (still visible for mouse users)
+        # Back button
         pygame.draw.rect(screen, (200, 50, 50), back_button)
         back_txt = ui_font.render("BACK", True, (255, 255, 255))
         screen.blit(back_txt, back_button.move(20, 10))
@@ -113,14 +114,10 @@ def run_puzzle(player, ui_layer):
 
 # ✅ Allow standalone execution
 if __name__ == "__main__":
-    # For testing, create dummy player + ui_layer
     class DummyPlayer:
         def __init__(self):
             self.inventory = ["H", "E", "M", "L", "O", "C"]
 
-    class DummyUILayer:
-        def draw_inventory_bar(self, player):
-            # simple placeholder
-            pass
-
-    run_puzzle(DummyPlayer(), DummyUILayer())
+    # ✅ Initialize UILayer with screen
+    ui_layer = UILayer(screen)
+    run_puzzle(DummyPlayer(), ui_layer)
