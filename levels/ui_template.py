@@ -223,6 +223,25 @@ class UILayerTemp:
 
         return self.inventory_rect
 
+    # ---------------- SUBTITLES ----------------
+    def show_subtitle(self, message, duration=2000, color=(255, 255, 255)):
+        """Set a subtitle message with a timer (ms) and optional color."""
+        self.subtitle_msg = message
+        self.subtitle_color = color
+        self.subtitle_timer = pygame.time.get_ticks() + duration
+
+    def draw_subtitle(self):
+        """Render subtitle text above inventory bar, adaptive to window size."""
+        now = pygame.time.get_ticks()
+        if now < self.subtitle_timer and self.subtitle_msg:
+            msg_surface = self.subtitle_font.render(self.subtitle_msg, True, self.subtitle_color)
+
+            # Position: centered above inventory bar
+            msg_rect = msg_surface.get_rect(
+                midbottom=(self.inventory_rect.centerx, self.inventory_rect.top - 10)
+            )
+            self.surface.blit(msg_surface, msg_rect)
+
     # ---------------- DRAW ALL ----------------
     def draw(self, player):
         self.draw_health_bar()
@@ -249,8 +268,11 @@ class UILayerTemp:
         self.drain_insanity()
         self.draw_insanity_bar()
 
-        # ✅ FIX: pass player here
+        # ✅ Draw inventory bar
         self.draw_inventory_bar(player)
+
+        # ✅ Draw subtitles last so they overlay cleanly
+        self.draw_subtitle()
     # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
         # --- Insanity bar input ---

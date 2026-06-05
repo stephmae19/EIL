@@ -1,14 +1,15 @@
-# ch1_lvl2.py
+# ch1_lvl1.py
 import pygame
 import sys
 import os
-from ui_template import UILayerTemp
+from ui_layer import UILayer
 
 # --- Filenames ---
 WALK_FILE = "../Assets/CHARACTERS/player_walk.png"
 WALK2_FILE = "../Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "../Assets/CHARACTERS/player_idle.png"
 BG_FILE = "../Assets/MAPS/chapter1/ch1_lvl2.png"
+MANUSCRIPT_FILE = "../Assets/OBJECTS-ITEMS/manuscript.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -41,13 +42,18 @@ class Camera:
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
-                 prompt="Press 'E' to interact"):
-        # ✅ General rectangle for any interactive object
+                 prompt="Press 'E' to interact", image_file=None):
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
-        self.inventory_item = inventory_item   # <-- FIXED: now optional argument
+        self.inventory_item = inventory_item
         self.already_searched = False
-        self.prompt = prompt   # ✅ Custom text per object
+        self.prompt = prompt
+
+        # ✅ Load image if provided
+        self.image = None
+        if image_file and os.path.exists(image_file):
+            raw = pygame.image.load(image_file).convert_alpha()
+            self.image = pygame.transform.scale(raw, (width, height))
 
     def resize(self, new_width, new_height):
         """Resize the interactive object rectangle."""
@@ -89,6 +95,7 @@ class Player(pygame.sprite.Sprite):
         self.is_running = False
 
         self.manuscripts_found = 0
+        self.puzzle_solved = False
 
         self.health = 100
 
@@ -186,7 +193,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Start with resizable window
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 1 - Level 2")
+pygame.display.set_caption("Chapter 1 - Level 1")
 
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
@@ -286,7 +293,6 @@ interactive_objects = [
         prompt="Oh, there's something on the floor. I found a letter O."
     ),
 ]
-
 # --- Adaptive Player Initialization ---
 player = Player(
     floor_y,
@@ -298,17 +304,10 @@ player = Player(
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 
 # ✅ UI Layer
-ui_template = UILayerTemp(game_surface)
-
-feedback_msg = ""
-feedback_timer = 0
-
-feedback_msg = ""
-feedback_timer = 0
+ui_layer = UILayer(game_surface)
 
 # --- Main Loop wrapped in a function ---
 def run_level():
-    global feedback_msg, feedback_timer  # keep these accessible
     clock = pygame.time.Clock()
 
     while True:
@@ -325,45 +324,53 @@ def run_level():
                 for obj in interactive_objects:
                     if player.rect.colliderect(obj.rect):
                         found = True
-                        if obj.already_searched:
-                            feedback_msg = "You already searched this part."
-                            feedback_timer = now + 2000
-                        elif obj.has_manuscript:
-                            obj.already_searched = True
-                            player.manuscripts_found += 1
-                            feedback_msg = "You found a hidden manuscript!"
-                            feedback_timer = now + 3000
 
-                        elif obj.inventory_item:  # ✅ inventory items
-                            obj.already_searched = True
-                            if len(player.inventory) < 6:  # ✅ check slot limit
-                                player.inventory.append(obj.inventory_item)
-                                feedback_msg = f"You picked up {obj.inventory_item}!"
+                        # --- Manuscript object ---
+                        if obj.has_manuscript:
+                            if player.puzzle_solved:
+                                # ✅ Puzzle already solved, don’t allow re-entry
+                                ui_layer.show_subtitle("You already searched this part.", 2000)
                             else:
-                                feedback_msg = "My inventory is full."
-                            feedback_timer = now + 2000
+                                if not obj.already_searched:
+                                    obj.already_searched = True
+                                    ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
+                                else:
+                                    ui_layer.show_subtitle("You examine the manuscript again...", 2000)
 
-                        # ✅ PLACE YOUR LETTER-TO-INVENTORY BLOCK HERE
-                        elif not obj.has_manuscript and obj.prompt.startswith("I found a letter"):
-                            obj.already_searched = True
-                            words = obj.prompt.split()
-                            if words[-1].isalpha() and len(words[-1]) == 1:
-                                player.inventory.append(words[-1].upper())
-                            feedback_msg = obj.prompt
-                            feedback_timer = now + 2000
+                                # Route to puzzle only if not solved yet
+                                import ch1_lvl1_puz
+                                ch1_lvl1_puz.run_puzzle(player, ui_layer)
+                            break
 
+                        # --- Inventory items ---
+                        elif obj.inventory_item:
+                            if not obj.already_searched:
+                                if len(player.inventory) < 6:
+                                    # ✅ Successfully pick up item
+                                    player.inventory.append(obj.inventory_item)
+                                    obj.already_searched = True
+                                    ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!")
+                                else:
+                                    # ✅ Inventory full, but item not yet picked up
+                                    ui_layer.show_subtitle("My inventory is full.", 2000)
+                            else:
+                                # ✅ Item was already picked up before
+                                ui_layer.show_subtitle("You already picked this up.", 2000)
+
+                        # --- Other prompts ---
                         else:
-                            obj.already_searched = True
-                            feedback_msg = obj.prompt
-                            feedback_timer = now + 2000
+                            if not obj.already_searched:
+                                obj.already_searched = True
+                                ui_layer.show_subtitle(obj.prompt, 2000)
+                            else:
+                                ui_layer.show_subtitle("You already searched this part.", 2000)
                         break
                 if not found:
-                    feedback_msg = "There is nothing to interact with here."
-                    feedback_timer = now + 1500
+                    ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
 
                 # ✅ UI input handling
-                ui_template.handle_input(event)
-                ui_template.click_insanity_loss()
+                ui_layer.handle_input(event)
+                ui_layer.click_insanity_loss()
 
         # Update
         player.update(MAP_WIDTH)
@@ -373,9 +380,15 @@ def run_level():
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
-        # DEBUG
+        # DEBUG + object rendering
         for obj in interactive_objects:
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+
+            # ✅ Render object image if available
+            if obj.image:
+                game_surface.blit(obj.image, camera.apply_rect(obj.rect))
+
+            # Show prompt when player collides
             if player.rect.colliderect(obj.rect):
                 prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                 prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
@@ -388,25 +401,8 @@ def run_level():
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
-        # Feedback message
-        if now < feedback_timer:
-            msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
-
-            # --- Adaptive horizontal offset ---
-            # Positive values push right, negative push left
-            SUBTITLE_OFFSET_X = 0  # adjust this value to move horizontally
-            SUBTITLE_OFFSET_Y = 280  # vertical offset from bottom
-
-            msg_rect = msg_surface.get_rect(
-                center=(
-                    BASE_WIDTH // 2 + int(SUBTITLE_OFFSET_X * scale_x),
-                    BASE_HEIGHT - int(SUBTITLE_OFFSET_Y * scale_y)
-                )
-            )
-            game_surface.blit(msg_surface, msg_rect)
-
         # ✅ Draw UI overlay last
-        ui_template.draw(player)
+        ui_layer.draw(player)
 
         # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()

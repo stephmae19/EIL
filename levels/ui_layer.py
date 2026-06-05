@@ -66,6 +66,16 @@ class UILayer:
         # --- Insanity bar setup ---
         insanity_path = os.path.join("../Assets", "Sprite", "gameplay", "insanity.png")
 
+        # --- Subtitle font setup ---
+        subtitle_font_path = os.path.join("../Assets", "Font", "VCR_OSD_MONO_1.001.ttf")
+        if os.path.exists(subtitle_font_path):
+            self.subtitle_font = pygame.font.Font(subtitle_font_path, 28)
+        else:
+            self.subtitle_font = pygame.font.SysFont("arial", 28)
+
+        self.subtitle_msg = ""
+        self.subtitle_timer = 0
+
         # ✅ Always initialize the list first
         self.insanity_frames = []
         self.insanity_level = 55
@@ -223,6 +233,24 @@ class UILayer:
 
         return self.inventory_rect
 
+    # ---------------- SUBTITLES ----------------
+    def show_subtitle(self, message, duration=2000):
+        """Set a subtitle message with a timer (ms)."""
+        self.subtitle_msg = message
+        self.subtitle_timer = pygame.time.get_ticks() + duration
+
+    def draw_subtitle(self):
+        """Render subtitle text above inventory bar, adaptive to window size."""
+        now = pygame.time.get_ticks()
+        if now < self.subtitle_timer and self.subtitle_msg:
+            msg_surface = self.subtitle_font.render(self.subtitle_msg, True, (255, 255, 255))
+
+            # Position: centered above inventory bar
+            msg_rect = msg_surface.get_rect(
+                midbottom=(self.inventory_rect.centerx, self.inventory_rect.top - 10)
+            )
+            self.surface.blit(msg_surface, msg_rect)
+
     # ---------------- DRAW ALL ----------------
     def draw(self, player):
         self.draw_health_bar()
@@ -249,8 +277,11 @@ class UILayer:
         self.drain_insanity()
         self.draw_insanity_bar()
 
-        # ✅ FIX: pass player here
+        # ✅ Draw inventory bar
         self.draw_inventory_bar(player)
+
+        # ✅ Draw subtitles last so they overlay cleanly
+        self.draw_subtitle()
     # ---------------- HANDLE INPUT ----------------
     def handle_input(self, event):
         # --- Insanity bar input ---

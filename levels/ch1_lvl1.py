@@ -319,15 +319,8 @@ camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 # ✅ UI Layer
 ui_layer = UILayer(game_surface)
 
-feedback_msg = ""
-feedback_timer = 0
-
-feedback_msg = ""
-feedback_timer = 0
-
 # --- Main Loop wrapped in a function ---
 def run_level():
-    global feedback_msg, feedback_timer  # keep these accessible
     clock = pygame.time.Clock()
 
     while True:
@@ -349,16 +342,13 @@ def run_level():
                         if obj.has_manuscript:
                             if player.puzzle_solved:
                                 # ✅ Puzzle already solved, don’t allow re-entry
-                                feedback_msg = "You already searched this part."
-                                feedback_timer = now + 2000
+                                ui_layer.show_subtitle("You already searched this part.", 2000)
                             else:
                                 if not obj.already_searched:
                                     obj.already_searched = True
-                                    feedback_msg = "You found a hidden manuscript!"
-                                    feedback_timer = now + 3000
+                                    ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                 else:
-                                    feedback_msg = "You examine the manuscript again..."
-                                    feedback_timer = now + 2000
+                                    ui_layer.show_subtitle("You examine the manuscript again...", 2000)
 
                                 # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
@@ -372,29 +362,24 @@ def run_level():
                                     # ✅ Successfully pick up item
                                     player.inventory.append(obj.inventory_item)
                                     obj.already_searched = True
-                                    feedback_msg = f"You picked up {obj.inventory_item}!"
+                                    ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!")
                                 else:
                                     # ✅ Inventory full, but item not yet picked up
-                                    feedback_msg = "My inventory is full."
-                                feedback_timer = now + 2000
+                                    ui_layer.show_subtitle("My inventory is full.", 2000)
                             else:
                                 # ✅ Item was already picked up before
-                                feedback_msg = "You already picked this up."
-                                feedback_timer = now + 2000
+                                ui_layer.show_subtitle("You already picked this up.", 2000)
 
                         # --- Other prompts ---
                         else:
                             if not obj.already_searched:
                                 obj.already_searched = True
-                                feedback_msg = obj.prompt
-                                feedback_timer = now + 2000
+                                ui_layer.show_subtitle(obj.prompt, 2000)
                             else:
-                                feedback_msg = "You already searched this part."
-                                feedback_timer = now + 2000
+                                ui_layer.show_subtitle("You already searched this part.", 2000)
                         break
                 if not found:
-                    feedback_msg = "There is nothing to interact with here."
-                    feedback_timer = now + 1500
+                    ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
 
                 # ✅ UI input handling
                 ui_layer.handle_input(event)
@@ -428,23 +413,6 @@ def run_level():
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
-
-        # Feedback message
-        if now < feedback_timer:
-            msg_surface = feedback_font.render(feedback_msg, True, (150, 255, 150))
-
-            # --- Adaptive horizontal offset ---
-            # Positive values push right, negative push left
-            SUBTITLE_OFFSET_X = 0  # adjust this value to move horizontally
-            SUBTITLE_OFFSET_Y = 280  # vertical offset from bottom
-
-            msg_rect = msg_surface.get_rect(
-                center=(
-                    BASE_WIDTH // 2 + int(SUBTITLE_OFFSET_X * scale_x),
-                    BASE_HEIGHT - int(SUBTITLE_OFFSET_Y * scale_y)
-                )
-            )
-            game_surface.blit(msg_surface, msg_rect)
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
