@@ -8,7 +8,7 @@ from ui_layer import UILayer
 WALK_FILE = "Assets/CHARACTERS/player_walk.png"
 WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
-BG_FILE = "Assets/MAPS/chapter1/ch1_lvl1.png"
+BG_FILE = "Assets/MAPS/chapter1/ch1_lvl3.png"
 MANUSCRIPT_FILE = "Assets/OBJECTS-ITEMS/manuscript.png"
 
 # --- Config ---
@@ -238,66 +238,12 @@ interactive_objects = [
         inventory_item="H",
         prompt="I found a letter H."
     ),
-    InteractiveObject(
-        x=int(490 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="L",
-        prompt="I found a letter L."
-    ),
-    InteractiveObject(
-        x=int(560 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="E",
-        prompt="I found a letter E."
-    ),
-    InteractiveObject(
-        x=int(1000 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="K",
-        prompt="I found a letter K."
-    ),
-    InteractiveObject(
-        x=int(1100 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="M",
-        prompt="I found a letter M."
-    ),
-    InteractiveObject(
-        x=int(1250 * scale_factor),
-        y=int(floor_y - int(120 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="C",
-        prompt="I found a letter C."
-    ),
-    InteractiveObject(
-        x=int(1500 * scale_factor),
-        y=int(floor_y - int(100 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="O",
-        prompt="Oh, there's something on the floor. I found a letter O."
-    ),
 ]
 
 interactive_objects.append(
     InteractiveObject(
-        x=int(MAP_WIDTH * 0.845),  # right side
-        y=int(floor_y - int(BASE_HEIGHT * 0.20)),  # center vertically above floor
+        x=int(MAP_WIDTH * 0.77),  # right side
+        y=int(floor_y - int(BASE_HEIGHT * 0.25)),  # center vertically above floor
         width=int(80 * scale_factor),
         height=int(80 * scale_factor),
         has_manuscript=True,
@@ -310,8 +256,8 @@ interactive_objects.append(
 player = Player(
     floor_y,
     x=int(BASE_WIDTH * 0.10),
-    y=int(BASE_HEIGHT * 0.53),
-    scale=(BASE_HEIGHT / 1080) * 1.2   # adaptive + manual multiplier
+    y=int(BASE_HEIGHT * 0.48),
+    scale=(BASE_HEIGHT / 1080) * 1.1   # adaptive + manual multiplier
 )
 
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
