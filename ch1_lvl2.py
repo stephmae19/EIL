@@ -9,7 +9,8 @@ WALK_FILE = "Assets/CHARACTERS/player_walk.png"
 WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl2.png"
-MANUSCRIPT_FILE = "Assets/OBJECTS-ITEMS/manuscript.png"
+SCALE_FILE = "Assets/MAPS/chapter1/scale.png"
+ORB_GLOW = "Assets/MAPS/chapter1/orb_glow.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -49,11 +50,48 @@ class InteractiveObject:
         self.already_searched = False
         self.prompt = prompt
 
-        # ✅ Load image if provided
+        # ✅ Load image with aspect ratio preserved OR animate if spritesheet
         self.image = None
+        self.frames = None
+        self.frame_index = 0
+        self.last_update = pygame.time.get_ticks()
+        self.frame_duration = 1000 // 12  # 12 FPS default
+
         if image_file and os.path.exists(image_file):
-            raw = pygame.image.load(image_file).convert_alpha()
-            self.image = pygame.transform.scale(raw, (width, height))
+            if image_file == ORB_GLOW:
+                # --- Treat orb_glow.png as a spritesheet (adjust rows/cols as needed) ---
+                sheet = pygame.image.load(image_file).convert_alpha()
+                rows, cols = 2, 2  # example: 6 frames horizontally
+                w, h = sheet.get_width() // cols, sheet.get_height() // rows
+                self.frames = []
+                for r in range(rows):
+                    for c in range(cols):
+                        frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
+                        scale_factor = min(width / w, height / h)
+                        new_w, new_h = int(w * scale_factor), int(h * scale_factor)
+                        scaled = pygame.transform.scale(frame, (new_w, new_h))
+                        self.frames.append(scaled)
+                self.image = self.frames[self.frame_index]
+                self.image_rect = self.image.get_rect(center=self.rect.center)
+            else:
+                # --- Static image case ---
+                raw = pygame.image.load(image_file).convert_alpha()
+                raw_w, raw_h = raw.get_size()
+                scale_factor = min(width / raw_w, height / raw_h)
+                new_w, new_h = int(raw_w * scale_factor), int(raw_h * scale_factor)
+                self.image = pygame.transform.scale(raw, (new_w, new_h))
+                self.image_rect = self.image.get_rect(center=self.rect.center)
+        else:
+            self.image_rect = self.rect
+
+    def update(self):
+        if self.frames:
+            now = pygame.time.get_ticks()
+            if now - self.last_update >= self.frame_duration:
+                self.last_update = now
+                self.frame_index = (self.frame_index + 1) % len(self.frames)
+                self.image = self.frames[self.frame_index]
+                self.image_rect = self.image.get_rect(center=self.rect.center)
 
     def resize(self, new_width, new_height):
         """Resize the interactive object rectangle."""
@@ -132,7 +170,7 @@ class Player(pygame.sprite.Sprite):
                 frames.append(scaled_frame)
         return frames
 
-    def update_logic(self, map_width):
+    def update_logic(self,scale_width):
         keys = pygame.key.get_pressed()
         self.is_moving = False
         self.is_running = False
@@ -155,27 +193,28 @@ class Player(pygame.sprite.Sprite):
 
         if self.rect.left < 0:
             self.rect.left = 0
-        if self.rect.right > map_width:
-            self.rect.right = map_width
+        if self.rect.right > scale_width:
+            self.rect.right = scale_width
 
     def animate(self):
         now = pygame.time.get_ticks()
         target_frames = self.walk_frames if self.is_moving else self.idle_frames
-        self.frame_duration = 1000 // (36 if self.is_running else (20 if self.is_moving else 12))
+        fps = 36 if self.is_running else (20 if self.is_moving else 12)
+        self.frame_duration = 1000 // fps
 
         if self.current_frames != target_frames:
             self.current_frames = target_frames
             self.frame_index = 0
             self.last_update = now
 
-        if now - self.last_update > self.frame_duration:
+        if now - self.last_update >= self.frame_duration:
             self.last_update = now
             self.frame_index = (self.frame_index + 1) % len(self.current_frames)
             raw_image = self.current_frames[self.frame_index]
             self.image = pygame.transform.flip(raw_image, True, False) if not self.facing_right else raw_image
 
-    def update(self, map_width):
-        self.update_logic(map_width)
+    def update(self, scale_width):
+        self.update_logic(scale_width)
         self.animate()
 
 
@@ -213,8 +252,8 @@ else:
     new_bg_width = int(original_bg.get_width() * scale_factor)
     bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
 
-MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
-floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
+SCALE_WIDTH, SCALE_HEIGHT = bg_image.get_width(), bg_image.get_height()
+floor_y = int(SCALE_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 
 # --- Scaling ratios based on design resolution ---
 DESIGN_WIDTH = 1920
@@ -236,7 +275,24 @@ interactive_objects = [
         height=int(40 * scale_factor),
         has_manuscript=False,
         inventory_item="H",
-        prompt="I found a letter H."
+        prompt="A glowing orb."
+    ),
+    InteractiveObject(
+            x=int(350 * scale_factor),
+            y=int(floor_y - int(200 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            prompt="An alchemy book."
+        ),
+    InteractiveObject(
+        x=int(300 * scale_factor),
+        y=int(floor_y - int(300 * scale_factor)),
+        width=int(100 * scale_factor),
+        height=int(100 * scale_factor),
+        has_manuscript=False,
+        inventory_item="H",
+        image_file=ORB_GLOW
     ),
 InteractiveObject(
         x=int(2210 * scale_factor),
@@ -250,13 +306,13 @@ InteractiveObject(
 
 interactive_objects.append(
     InteractiveObject(
-        x=int(MAP_WIDTH * 0.77),  # right side
-        y=int(floor_y - int(BASE_HEIGHT * 0.25)),  # center vertically above floor
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
+        x=int(SCALE_WIDTH * 0.68),  # right side
+        y=int(floor_y - int(BASE_HEIGHT * 0.22)),  # center vertically above floor
+        width=int(91 * scale_factor),
+        height=int(138 * scale_factor),
         has_manuscript=True,
-        prompt="A mysterious manuscript lies here...",
-        image_file=MANUSCRIPT_FILE
+        prompt="An antique scale...",
+        image_file=SCALE_FILE
     )
 )
 
@@ -268,7 +324,7 @@ player = Player(
     scale=(BASE_HEIGHT / 1080) * 1.1   # adaptive + manual multiplier
 )
 
-camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
+camera = Camera(SCALE_WIDTH, SCALE_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 
 # ✅ UI Layer
 ui_layer = UILayer(game_surface)
@@ -289,6 +345,7 @@ def run_level():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
                 for obj in interactive_objects:
+                    obj.update()
                     if player.rect.colliderect(obj.rect):
                         found = True
 
@@ -302,7 +359,7 @@ def run_level():
                                     obj.already_searched = True
                                     ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                 else:
-                                    ui_layer.show_subtitle("You examine the manuscript again...", 2000)
+                                    ui_layer.show_subtitle("An antique scale...", 2000)
 
                                 # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
@@ -345,7 +402,7 @@ def run_level():
                 ui_layer.click_insanity_loss()
 
         # Update
-        player.update(MAP_WIDTH)
+        player.update(SCALE_WIDTH)
         camera.update(player)
 
         # --- Render everything to internal surface ---
@@ -358,7 +415,7 @@ def run_level():
 
             # ✅ Render object image if available
             if obj.image:
-                game_surface.blit(obj.image, camera.apply_rect(obj.rect))
+                game_surface.blit(obj.image, camera.apply_rect(obj.image_rect))
 
             # Show prompt when player collides
             if player.rect.colliderect(obj.rect):
@@ -370,7 +427,7 @@ def run_level():
         game_surface.blit(player.image, camera.apply(player))
 
         # Manuscripts UI text
-        ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
+        ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 1", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
         # ✅ Draw UI overlay last
