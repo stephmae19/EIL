@@ -187,6 +187,11 @@ def run_puzzle(player, ui_layer=None):
                     solved = True
                     player.manuscripts_found += 1
                     player.puzzle_solved = True
+            if "".join(answer_slots) == "HEMLOCK":
+                if not solved:
+                    solved = True
+                    player.manuscripts_found += 1
+                    player.puzzle_solved = True  # ✅ signal back to level
 
         pygame.draw.rect(game_surface, (200, 50, 50), back_button)
         back_txt = ui_font.render("BACK", True, (255, 255, 255))

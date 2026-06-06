@@ -341,18 +341,25 @@ def run_level():
                         # --- Manuscript object ---
                         if obj.has_manuscript:
                             if player.puzzle_solved:
-                                # ✅ Puzzle already solved, don’t allow re-entry
-                                ui_layer.show_subtitle("You already searched this part.", 2000)
+                                # ✅ Puzzle solved: change prompt permanently
+                                obj.prompt = "The manuscript has already been deciphered."
+                                ui_layer.show_subtitle(obj.prompt, 2000)
                             else:
                                 if not obj.already_searched:
                                     obj.already_searched = True
-                                    ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                 else:
                                     ui_layer.show_subtitle("You examine the manuscript again...", 2000)
 
                                 # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
                                 ch1_lvl1_puz.run_puzzle(player, ui_layer)
+
+                                # ✅ After puzzle closes, check if solved
+                                if player.puzzle_solved and not obj.already_searched:
+                                    ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
+                                    obj.already_searched = True
+                                    # ✅ Update prompt permanently
+                                    obj.prompt = "The manuscript has already been deciphered."
                             break
 
                         # --- Inventory items ---
