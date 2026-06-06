@@ -296,7 +296,7 @@ interactive_objects = [
 
 interactive_objects.append(
     InteractiveObject(
-        x=int(MAP_WIDTH * 0.77),  # right side
+        x=int(MAP_WIDTH * 0.78),  # right side
         y=int(floor_y - int(BASE_HEIGHT * 0.25)),  # center vertically above floor
         width=int(80 * scale_factor),
         height=int(80 * scale_factor),

@@ -222,8 +222,6 @@ class UILayer:
                 highlight.fill((255, 255, 0, 80))  # semi-transparent yellow
                 self.surface.blit(highlight, slot)
                 pygame.draw.rect(self.surface, (255, 255, 0), slot, 3)
-            else:
-                pygame.draw.rect(self.surface, (0, 255, 0), slot, 2)
 
             # ✅ Draw inventory letters if available
             if i < len(player.inventory):
