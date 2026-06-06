@@ -9,9 +9,21 @@ WALK_FILE = "Assets/CHARACTERS/player_walk.png"
 WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl2.png"
+
 SCALE_FILE = "Assets/MAPS/chapter1/scale.png"
-ORB_GLOW = "Assets/MAPS/chapter1/orb_glow.png"
-ORB_STATIC = "Assets/MAPS/chapter1/orb_static.png"
+# --- Orb Variations ---
+ORB_GLOW_BLUE   = "Assets/MAPS/chapter1/orb_glow_blue.png"
+ORB_STATIC_BLUE = "Assets/MAPS/chapter1/orb_static_blue.png"
+
+ORB_GLOW_GREEN   = "Assets/MAPS/chapter1/orb_glow_green.png"
+ORB_STATIC_GREEN = "Assets/MAPS/chapter1/orb_static_green.png"
+
+ORB_GLOW_RED   = "Assets/MAPS/chapter1/orb_glow_red.png"
+ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
+
+ORB_GLOW_VIOLET   = "Assets/MAPS/chapter1/orb_glow_violet.png"
+ORB_STATIC_VIOLET = "Assets/MAPS/chapter1/orb_static_violet.png"
+
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -59,10 +71,10 @@ class InteractiveObject:
         self.frame_duration = 1000 // 12  # 12 FPS default
 
         if image_file and os.path.exists(image_file):
-            if image_file == ORB_GLOW:
-                # --- Treat orb_glow.png as a spritesheet (adjust rows/cols as needed) ---
+            # ✅ Animate any orb glow file
+            if image_file and "orb_glow" in image_file:
                 sheet = pygame.image.load(image_file).convert_alpha()
-                rows, cols = 2, 2  # example: 6 frames horizontally
+                rows, cols = 2, 2  # adjust based on your spritesheet layout
                 w, h = sheet.get_width() // cols, sheet.get_height() // rows
                 self.frames = []
                 for r in range(rows):
@@ -292,9 +304,39 @@ interactive_objects = [
         width=int(80 * scale_factor),
         height=int(80 * scale_factor),
         has_manuscript=False,
-        inventory_item="ORB",  # ✅ use a logical tag
-        prompt="A glowing orb.",
-        image_file=ORB_GLOW  # ✅ animated glow on map
+        inventory_item="ORB_BLUE",
+        prompt="A glowing blue orb.",
+        image_file=ORB_GLOW_BLUE
+    ),
+    InteractiveObject(
+        x=int(780 * scale_factor),
+        y=int(floor_y - int(300 * scale_factor)),
+        width=int(80 * scale_factor),
+        height=int(80 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_GREEN",
+        prompt="A glowing green orb.",
+        image_file=ORB_GLOW_GREEN
+    ),
+    InteractiveObject(
+        x=int(880 * scale_factor),
+        y=int(floor_y - int(300 * scale_factor)),
+        width=int(80 * scale_factor),
+        height=int(80 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_RED",
+        prompt="A glowing red orb.",
+        image_file=ORB_GLOW_RED
+    ),
+    InteractiveObject(
+        x=int(980 * scale_factor),
+        y=int(floor_y - int(300 * scale_factor)),
+        width=int(80 * scale_factor),
+        height=int(80 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_VIOLET",
+        prompt="A glowing violet orb.",
+        image_file=ORB_GLOW_VIOLET
     ),
     InteractiveObject(
         x=int(2210 * scale_factor),
@@ -373,19 +415,26 @@ def run_level():
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
                                     # ✅ Special case: glowing orb pickup
-                                    if obj.inventory_item == "ORB":
-                                        # Load static orb image once when picked up
-                                        orb_icon = pygame.image.load(ORB_STATIC).convert_alpha()
-                                        orb_icon = pygame.transform.scale(orb_icon, (40, 40))  # adjust size
+                                    if obj.inventory_item.startswith("ORB"):
+                                        # Map glow tag to static icon
+                                        orb_map = {
+                                            "ORB_BLUE": ORB_STATIC_BLUE,
+                                            "ORB_GREEN": ORB_STATIC_GREEN,
+                                            "ORB_RED": ORB_STATIC_RED,
+                                            "ORB_VIOLET": ORB_STATIC_VIOLET
+                                        }
 
-                                        # Store the surface directly in inventory
-                                        player.inventory.append(orb_icon)
+                                        orb_static_path = orb_map.get(obj.inventory_item)
+                                        if orb_static_path:
+                                            orb_icon = pygame.image.load(orb_static_path).convert_alpha()
+                                            orb_icon = pygame.transform.scale(orb_icon, (40, 40))
+                                            player.inventory.append(orb_icon)
 
                                         obj.already_searched = True
                                         obj.image = None
-                                        obj.frames = None  # stop animation
+                                        obj.frames = None
+                                        ui_layer.show_subtitle(f"You picked up a {obj.prompt.lower()}", 2000)
 
-                                        ui_layer.show_subtitle("You picked up a glowing orb!", 2000)
                                     else:
                                         # ✅ Normal item pickup
                                         player.inventory.append(obj.inventory_item)
