@@ -1,5 +1,5 @@
 {
-    "activeFile": "C:/Users/K/Downloads/level-1.tmx",
+    "activeFile": "Level_1.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -13,6 +13,14 @@
             "viewCenter": {
                 "x": 152.5,
                 "y": 3654.5
+            }
+        },
+        "Level_1.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 229,
+                "y": 25
             }
         },
         "Wall 1.tsx": {
@@ -38,11 +46,11 @@
     "map.tileWidth": 64,
     "map.width": 64,
     "openFiles": [
-        "wall 1.tsx",
-        "C:/Users/K/Downloads/level-1.tmx"
+        "Level_1.tmx"
     ],
     "project": "Level_1.tiled-project",
     "recentFiles": [
+        "Level_1.tmx",
         "wall 1.tsx",
         "C:/Users/K/Downloads/level-1.tmx",
         "wall_3.tsx",

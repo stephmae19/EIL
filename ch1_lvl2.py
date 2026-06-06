@@ -5,11 +5,11 @@ import os
 from ui_layer import UILayer
 
 # --- Filenames ---
-WALK_FILE = "../Assets/CHARACTERS/player_walk.png"
-WALK2_FILE = "../Assets/CHARACTERS/player_walk2.png"
-IDLE_FILE = "../Assets/CHARACTERS/player_idle.png"
-BG_FILE = "../Assets/MAPS/chapter1/ch1_lvl2.png"
-MANUSCRIPT_FILE = "../Assets/OBJECTS-ITEMS/manuscript.png"
+WALK_FILE = "Assets/CHARACTERS/player_walk.png"
+WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
+IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
+BG_FILE = "Assets/MAPS/chapter1/ch1_lvl2.png"
+MANUSCRIPT_FILE = "Assets/OBJECTS-ITEMS/manuscript.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74

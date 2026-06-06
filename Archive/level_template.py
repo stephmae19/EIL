@@ -2,7 +2,7 @@
 import pygame
 import sys
 import os
-from levels.ui_layer import UILayerTemp
+from ui_layer import UILayerTemp
 
 # --- Filenames ---
 WALK_FILE = "../Assets/CHARACTERS/player_walk.png"
