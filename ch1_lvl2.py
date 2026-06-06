@@ -238,60 +238,6 @@ interactive_objects = [
         inventory_item="H",
         prompt="I found a letter H."
     ),
-    InteractiveObject(
-        x=int(490 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="L",
-        prompt="I found a letter L."
-    ),
-    InteractiveObject(
-        x=int(560 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="E",
-        prompt="I found a letter E."
-    ),
-    InteractiveObject(
-        x=int(1000 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="K",
-        prompt="I found a letter K."
-    ),
-    InteractiveObject(
-        x=int(1100 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="M",
-        prompt="I found a letter M."
-    ),
-    InteractiveObject(
-        x=int(900 * scale_factor),
-        y=int(floor_y - int(120 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="C",
-        prompt="I found a letter C."
-    ),
-    InteractiveObject(
-        x=int(1400 * scale_factor),
-        y=int(floor_y - int(100 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="O",
-        prompt="Oh, there's something on the floor. I found a letter O."
-    ),
 ]
 
 interactive_objects.append(
