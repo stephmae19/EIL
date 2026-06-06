@@ -223,11 +223,19 @@ class UILayer:
                 self.surface.blit(highlight, slot)
                 pygame.draw.rect(self.surface, (255, 255, 0), slot, 3)
 
-            # ✅ Draw inventory letters if available
+            # ✅ Draw inventory items if available
             if i < len(player.inventory):
-                letter_text = self.inventory_font.render(player.inventory[i], True, (255, 255, 255))
-                letter_rect = letter_text.get_rect(center=slot.center)
-                self.surface.blit(letter_text, letter_rect)
+                item = player.inventory[i]
+                if isinstance(item, pygame.Surface):
+                    # ✅ Draw image surfaces directly
+                    item_rect = item.get_rect(center=slot.center)
+                    self.surface.blit(item, item_rect)
+                else:
+                    # ✅ Fallback: render text for non-image items
+                    text_value = str(item) if not isinstance(item, str) else item
+                    letter_text = self.inventory_font.render(text_value, True, (255, 255, 255))
+                    letter_rect = letter_text.get_rect(center=slot.center)
+                    self.surface.blit(letter_text, letter_rect)
 
         return self.inventory_rect
 

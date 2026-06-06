@@ -11,6 +11,7 @@ IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl2.png"
 SCALE_FILE = "Assets/MAPS/chapter1/scale.png"
 ORB_GLOW = "Assets/MAPS/chapter1/orb_glow.png"
+ORB_STATIC = "Assets/MAPS/chapter1/orb_static.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -286,15 +287,16 @@ interactive_objects = [
             prompt="An alchemy book."
         ),
     InteractiveObject(
-        x=int(300 * scale_factor),
+        x=int(680 * scale_factor),
         y=int(floor_y - int(300 * scale_factor)),
-        width=int(100 * scale_factor),
-        height=int(100 * scale_factor),
+        width=int(80 * scale_factor),
+        height=int(80 * scale_factor),
         has_manuscript=False,
-        inventory_item="H",
-        image_file=ORB_GLOW
+        inventory_item="ORB",  # ✅ use a logical tag
+        prompt="A glowing orb.",
+        image_file=ORB_GLOW  # ✅ animated glow on map
     ),
-InteractiveObject(
+    InteractiveObject(
         x=int(2210 * scale_factor),
         y=int(floor_y - int(280 * scale_factor)),
         width=int(40 * scale_factor),
@@ -370,15 +372,28 @@ def run_level():
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
-                                    # ✅ Successfully pick up item
-                                    player.inventory.append(obj.inventory_item)
-                                    obj.already_searched = True
-                                    ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!")
+                                    # ✅ Special case: glowing orb pickup
+                                    if obj.inventory_item == "ORB":
+                                        # Load static orb image once when picked up
+                                        orb_icon = pygame.image.load(ORB_STATIC).convert_alpha()
+                                        orb_icon = pygame.transform.scale(orb_icon, (40, 40))  # adjust size
+
+                                        # Store the surface directly in inventory
+                                        player.inventory.append(orb_icon)
+
+                                        obj.already_searched = True
+                                        obj.image = None
+                                        obj.frames = None  # stop animation
+
+                                        ui_layer.show_subtitle("You picked up a glowing orb!", 2000)
+                                    else:
+                                        # ✅ Normal item pickup
+                                        player.inventory.append(obj.inventory_item)
+                                        obj.already_searched = True
+                                        ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!", 2000)
                                 else:
-                                    # ✅ Inventory full, but item not yet picked up
                                     ui_layer.show_subtitle("My inventory is full.", 2000)
                             else:
-                                # ✅ Item was already picked up before
                                 ui_layer.show_subtitle("You already picked this up.", 2000)
 
                         # --- Other prompts ---
@@ -404,8 +419,10 @@ def run_level():
         # Update
         player.update(SCALE_WIDTH)
         camera.update(player)
+        for obj in interactive_objects:
+            obj.update()
 
-        # --- Render everything to internal surface ---
+            # --- Render everything to internal surface ---
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
@@ -432,6 +449,18 @@ def run_level():
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
+        # ✅ Inventory rendering
+        offset_x = 0
+        for item in player.inventory:
+            if isinstance(item, pygame.Surface):
+                # ✅ Draw image surfaces directly
+                game_surface.blit(item, (BASE_WIDTH - 320 + offset_x, 70))
+            else:
+                # Fallback: render text for non-image items
+                text_value = str(item) if not isinstance(item, str) else item
+                text = ui_font.render(text_value, True, (255, 255, 255))
+                game_surface.blit(text, (BASE_WIDTH - 320 + offset_x, 70))
+            offset_x += 50
 
         # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()
