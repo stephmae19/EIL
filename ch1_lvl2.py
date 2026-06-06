@@ -300,7 +300,7 @@ interactive_objects = [
         ),
     InteractiveObject(
         x=int(680 * scale_factor),
-        y=int(floor_y - int(300 * scale_factor)),
+        y=int(floor_y - int(270 * scale_factor)),
         width=int(80 * scale_factor),
         height=int(80 * scale_factor),
         has_manuscript=False,
@@ -309,30 +309,30 @@ interactive_objects = [
         image_file=ORB_GLOW_BLUE
     ),
     InteractiveObject(
-        x=int(780 * scale_factor),
-        y=int(floor_y - int(300 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
+        x=int(2925 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(50 * scale_factor),
+        height=int(50 * scale_factor),
         has_manuscript=False,
         inventory_item="ORB_GREEN",
         prompt="A glowing green orb.",
         image_file=ORB_GLOW_GREEN
     ),
     InteractiveObject(
-        x=int(880 * scale_factor),
-        y=int(floor_y - int(300 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
+        x=int(1450 * scale_factor),
+        y=int(floor_y - int(240 * scale_factor)),
+        width=int(30 * scale_factor),
+        height=int(30 * scale_factor),
         has_manuscript=False,
         inventory_item="ORB_RED",
         prompt="A glowing red orb.",
         image_file=ORB_GLOW_RED
     ),
     InteractiveObject(
-        x=int(980 * scale_factor),
-        y=int(floor_y - int(300 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
+        x=int(2085 * scale_factor),
+        y=int(floor_y - int(260 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
         has_manuscript=False,
         inventory_item="ORB_VIOLET",
         prompt="A glowing violet orb.",
@@ -498,18 +498,6 @@ def run_level():
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
-        # ✅ Inventory rendering
-        offset_x = 0
-        for item in player.inventory:
-            if isinstance(item, pygame.Surface):
-                # ✅ Draw image surfaces directly
-                game_surface.blit(item, (BASE_WIDTH - 320 + offset_x, 70))
-            else:
-                # Fallback: render text for non-image items
-                text_value = str(item) if not isinstance(item, str) else item
-                text = ui_font.render(text_value, True, (255, 255, 255))
-                game_surface.blit(text, (BASE_WIDTH - 320 + offset_x, 70))
-            offset_x += 50
 
         # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()
