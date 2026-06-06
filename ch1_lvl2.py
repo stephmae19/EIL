@@ -238,6 +238,14 @@ interactive_objects = [
         inventory_item="H",
         prompt="I found a letter H."
     ),
+InteractiveObject(
+        x=int(2210 * scale_factor),
+        y=int(floor_y - int(280 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="The scales weigh not gold nor silver, but wisdom and light. Balance the spheres of power with the tomes of truth, and the hidden way shall open."
+    ),
 ]
 
 interactive_objects.append(
@@ -255,7 +263,7 @@ interactive_objects.append(
 # --- Adaptive Player Initialization ---
 player = Player(
     floor_y,
-    x=int(BASE_WIDTH * 0.10),
+    x=int(BASE_WIDTH * 0.6),
     y=int(BASE_HEIGHT * 0.48),
     scale=(BASE_HEIGHT / 1080) * 1.1   # adaptive + manual multiplier
 )
@@ -318,11 +326,16 @@ def run_level():
 
                         # --- Other prompts ---
                         else:
-                            if not obj.already_searched:
-                                obj.already_searched = True
-                                ui_layer.show_subtitle(obj.prompt, 2000)
+                            # Special case: wisdom clue should always show
+                            if obj.prompt.startswith("The scales weigh not gold"):
+                                ui_layer.show_subtitle(obj.prompt, 4000)  # longer duration if you like
                             else:
-                                ui_layer.show_subtitle("You already searched this part.", 2000)
+                                if not obj.already_searched:
+                                    obj.already_searched = True
+                                    ui_layer.show_subtitle(obj.prompt, 2000)
+                                else:
+                                    ui_layer.show_subtitle("You already searched this part.", 2000)
+
                         break
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)

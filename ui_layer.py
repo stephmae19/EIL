@@ -237,17 +237,38 @@ class UILayer:
         self.subtitle_msg = message
         self.subtitle_timer = pygame.time.get_ticks() + duration
 
+    def wrap_text(self, text, font, max_width):
+        """Split text into wrapped lines that fit within max_width."""
+        words = text.split(' ')
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = current_line + word + " "
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line.strip())
+                current_line = word + " "
+        if current_line:
+            lines.append(current_line.strip())
+
+        return lines
+
     def draw_subtitle(self):
-        """Render subtitle text above inventory bar, adaptive to window size."""
+        """Render wrapped subtitle text above inventory bar, max width 500px."""
         now = pygame.time.get_ticks()
         if now < self.subtitle_timer and self.subtitle_msg:
-            msg_surface = self.subtitle_font.render(self.subtitle_msg, True, (255, 255, 255))
+            # Wrap text into multiple lines
+            lines = self.wrap_text(self.subtitle_msg, self.subtitle_font, 1300)
 
-            # Position: centered above inventory bar
-            msg_rect = msg_surface.get_rect(
-                midbottom=(self.inventory_rect.centerx, self.inventory_rect.top - 10)
-            )
-            self.surface.blit(msg_surface, msg_rect)
+            # Draw each line stacked above inventory bar
+            y_offset = self.inventory_rect.top - 10
+            for line in reversed(lines):  # last line closest to bar
+                msg_surface = self.subtitle_font.render(line, True, (255, 255, 255))
+                msg_rect = msg_surface.get_rect(midbottom=(self.inventory_rect.centerx, y_offset))
+                self.surface.blit(msg_surface, msg_rect)
+                y_offset -= msg_surface.get_height() + 5
 
     # ---------------- DRAW ALL ----------------
     def draw(self, player):
