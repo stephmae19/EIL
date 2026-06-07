@@ -292,29 +292,32 @@ interactive_objects.append(
 
 import random
 
-# --- Create TRAITORS set ---
-for char in "TRAITORS":
-    interactive_objects.append(
-        InteractiveObject(
-            x=random.randint(200, MAP_WIDTH - 200),
-            y=int(floor_y - 100),
-            width=50, height=50,
-            prompt=f"A small carving in the wall: {char}",
-            is_repeatable=True
-        )
+# Calculate the upper boundary: Top of map to 320px above the floor
+# Ensuring we don't go into negative coordinates
+max_y = floor_y - 320
+min_y = 50  # Start at least 50px from the top of the map
+
+# --- Helper to create glowing letter objects ---
+def create_glowing_letter(char, prompt_text):
+    return InteractiveObject(
+        x=random.randint(200, MAP_WIDTH - 200),
+        y=random.randint(min_y, max_y), # Random Y in upper area
+        width=60, height=60,
+        prompt=prompt_text,
+        is_glowing=True,          # Enables the glow
+        is_repeatable=True
     )
 
-# --- Create DEMONIC set ---
+# --- Create sets ---
+for char in "TRAITORS":
+    obj = create_glowing_letter(char, f"You found the letter: {char}")
+    obj.inventory_item = char # Assign char to display in the H-style render
+    interactive_objects.append(obj)
+
 for char in "DEMONIC":
-    interactive_objects.append(
-        InteractiveObject(
-            x=random.randint(200, MAP_WIDTH - 200),
-            y=int(floor_y - 200),
-            width=50, height=50,
-            prompt=f"A faint whisper seems to emanate from this spot: {char}",
-            is_repeatable=True
-        )
-    )
+    obj = create_glowing_letter(char, f"You found the letter: {char}")
+    obj.inventory_item = char
+    interactive_objects.append(obj)
 
 # --- Adaptive Player Initialization ---
 player = Player(
@@ -426,6 +429,11 @@ def run_level():
                 # --- Pulse Effect ---
                 import math
                 pulse = 1.0 + (0.2 * math.sin(pygame.time.get_ticks() / 200))
+
+                if obj.inventory_item and len(str(obj.inventory_item)) == 1:
+                    char_text = h_font.render(str(obj.inventory_item), True, (255, 255, 255))
+                    text_rect = char_text.get_rect(center=obj.rect.center)
+                    game_surface.blit(char_text, camera.apply_rect(text_rect))
 
                 # 1. Apply pulse to size here
                 base_w = int(obj.rect.width * 1.5)
