@@ -60,6 +60,7 @@ class InteractiveObject:
         self.prompt = prompt
         self.is_glowing = is_glowing
         self.is_repeatable = is_repeatable
+        self.is_revealed = False
 
         self.static_image = None
         if static_image and os.path.exists(static_image):
@@ -471,6 +472,25 @@ def run_level():
         player.update(MAP_WIDTH)
         camera.update(player)
 
+        # ✅ Check for Drag Collisions (Orb Reveal Logic)
+        if ui_layer.is_dragging and ui_layer.dragging_item:
+            dragged_id = ui_layer.dragging_item.get("id")
+            # Create an 80x80 hitbox around the mouse cursor to match your dragged orb
+            mouse_rect = pygame.Rect(adj_mouse_x - 40, adj_mouse_y - 40, 80, 80)
+
+            for obj in interactive_objects:
+                # Check if it's a letter object (has set_type) and is not yet revealed
+                if hasattr(obj, 'set_type') and not getattr(obj, 'is_revealed', False):
+                    # Apply camera offset to the object's rect so it matches mouse screen space
+                    screen_rect = camera.apply_rect(obj.rect)
+
+                    if screen_rect.colliderect(mouse_rect):
+                        # Reveal logic based on Orb ID and Set Type
+                        if dragged_id == "ORB_VIOLET" and obj.set_type == "TRAITORS":
+                            obj.is_revealed = True
+                        elif dragged_id == "ORB_RED" and obj.set_type == "DEMONIC":
+                            obj.is_revealed = True
+
         # 4. Render
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
@@ -515,12 +535,15 @@ def run_level():
 
                 # 4. Glow/Letter logic (Moved inside 'if not obj.already_searched')
                 if obj.is_glowing and obj.inventory_item and len(str(obj.inventory_item)) == 1:
-                    # Determine color based on set: VIOLET (238, 130, 238) or RED (255, 0, 0)
-                    text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0, 0)
 
-                    char_text = h_font.render(str(obj.inventory_item), True, text_color)
-                    text_rect = char_text.get_rect(center=obj.rect.center)
-                    game_surface.blit(char_text, camera.apply_rect(text_rect))
+                    # ✅ Only draw the letter if it has been successfully revealed
+                    if getattr(obj, 'is_revealed', False):
+                        # Determine color based on set: VIOLET (238, 130, 238) or RED (255, 0, 0)
+                        text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0, 0)
+
+                        char_text = h_font.render(str(obj.inventory_item), True, text_color)
+                        text_rect = char_text.get_rect(center=obj.rect.center)
+                        game_surface.blit(char_text, camera.apply_rect(text_rect))
 
             # 5. Debug Rect (Optional: kept outside the searched check so you see the hitboxes)
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
@@ -528,24 +551,11 @@ def run_level():
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
 
-        # ✅ Draw the dragged item exactly once using the adjusted coordinates
-        ui_layer.draw_dragged_item(adj_mouse_pos)
-
         # Draw UI
         ui_layer.draw(player)
 
-        # Render the dragged item on the game_surface so it follows resolution scaling
-        # We pass the mouse position adjusted for the screen scaling
-        window_width, window_height = screen.get_size()
-        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
-        offset_x = (window_width - int(BASE_WIDTH * scale)) // 2
-        offset_y = (window_height - int(BASE_HEIGHT * scale)) // 2
-
-        # Calculate normalized mouse pos relative to the game_surface
-        adj_mouse_x = (pygame.mouse.get_pos()[0] - offset_x) / scale
-        adj_mouse_y = (pygame.mouse.get_pos()[1] - offset_y) / scale
-
-        ui_layer.draw_dragged_item((adj_mouse_x, adj_mouse_y))
+        # ✅ Draw the dragged item exactly once using the adjusted coordinates calculated at the top
+        ui_layer.draw_dragged_item(adj_mouse_pos)
 
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
