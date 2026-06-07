@@ -8,48 +8,30 @@ from ui_layer import UILayer   # ✅ import your UI layer
 MANU_TEXT_FILE = "Assets/Objects-Items/manu_text.png"
 
 # --- Puzzle text layout config ---
-TEXT_OFFSET_X = 0        # horizontal offset relative to manuscript center
-TEXT_OFFSET_Y = 40       # vertical offset from manuscript top
-LINE_SPACING = 5         # spacing between lines
-FONT_SIZE = 40           # ✅ direct font size control
+TEXT_OFFSET_X = 0
+TEXT_OFFSET_Y = 40
+LINE_SPACING = 5
+FONT_SIZE = 40
 
 # --- Config ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 
 # --- Answer slots layout config ---
-SLOT_VERTICAL_OFFSET = 330   # distance from bottom of screen
-SLOT_SIZE = 70               # width/height of each slot
-SLOT_SPACING = 100            # spacing between slots
+SLOT_VERTICAL_OFFSET = 330
+SLOT_SIZE = 70
+SLOT_SPACING = 100
 
 # --- Success message layout config ---
-SUCCESS_MSG_OFFSET_Y = 150   # distance from vertical center
+SUCCESS_MSG_OFFSET_Y = 150
 
 pygame.init()
 pygame.font.init()
-
-# --- Display Setup ---
-info = pygame.display.Info()
-native_width, native_height = info.current_w, info.current_h
-os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 1 - Level 1 Puzzle")
 
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
 clock = pygame.time.Clock()
 ui_font = pygame.font.SysFont("arial", 32, bold=True)
-
-# --- Load manu_text image ---
-if os.path.exists(MANU_TEXT_FILE):
-    manu_text_img = pygame.image.load(MANU_TEXT_FILE).convert_alpha()
-    manu_text_img = pygame.transform.scale(manu_text_img, (int(BASE_WIDTH * 0.6), int(BASE_HEIGHT * 0.6)))
-else:
-    manu_text_img = pygame.Surface((600, 400))
-    manu_text_img.fill((200, 200, 200))
-
-manu_rect = manu_text_img.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
 
 # --- Puzzle text ---
 puzzle_text = (
@@ -68,8 +50,8 @@ drag_source = None  # "inventory" or "answer"
 # --- Answer slots ---
 answer_slots = [None] * 7
 answer_rects = []
-slot_row_y = BASE_HEIGHT - SLOT_VERTICAL_OFFSET   # ✅ adjustable vertical position
-slot_row_x_start = BASE_WIDTH//2 - (3 * SLOT_SPACING + SLOT_SIZE//2)
+slot_row_y = BASE_HEIGHT - SLOT_VERTICAL_OFFSET
+slot_row_x_start = BASE_WIDTH // 2 - (3 * SLOT_SPACING + SLOT_SIZE // 2)
 
 for i in range(7):
     rect = pygame.Rect(slot_row_x_start + i * SLOT_SPACING, slot_row_y, SLOT_SIZE, SLOT_SIZE)
@@ -86,17 +68,29 @@ def translate_mouse(pos, window_size):
     y = (pos[1] - y_offset) / scale
     return int(x), int(y)
 
+# --- Safe image loader ---
+def load_manu_text():
+    if os.path.exists(MANU_TEXT_FILE):
+        img = pygame.image.load(MANU_TEXT_FILE).convert_alpha()
+        img = pygame.transform.scale(img, (int(BASE_WIDTH * 0.6), int(BASE_HEIGHT * 0.6)))
+    else:
+        img = pygame.Surface((600, 400))
+        img.fill((200, 200, 200))
+    return img
+
+manu_text_img = None
+manu_rect = None
+
 # --- Helper: render wrapped text inside manuscript ---
 def render_wrapped_text(surface, text, font, color, rect, offset_x, line_spacing):
     words = text.split(' ')
     lines = []
     current_line = ""
 
-    # Word wrapping
     for word in words:
         test_line = current_line + word + " "
         test_surface = font.render(test_line, True, color)
-        if test_surface.get_width() <= rect.width - 20:  # keep inside manuscript
+        if test_surface.get_width() <= rect.width - 20:
             current_line = test_line
         else:
             lines.append(current_line)
@@ -104,24 +98,28 @@ def render_wrapped_text(surface, text, font, color, rect, offset_x, line_spacing
     if current_line:
         lines.append(current_line)
 
-    # ✅ Calculate total height of all lines
     total_height = len(lines) * (font.get_height() + line_spacing) - line_spacing
-
-    # ✅ Center vertically inside manuscript
     y = rect.centery - total_height // 2
 
-    # Render each line centered horizontally
     for line in lines:
         txt_surface = font.render(line, True, color)
         x = rect.centerx - txt_surface.get_width() // 2 + offset_x
         surface.blit(txt_surface, (x, y))
         y += font.get_height() + line_spacing
 
-def run_puzzle(player, ui_layer=None):
-    global dragging_letter, drag_source
+def run_puzzle(player, ui_layer=None, screen=None):
+    global manu_text_img, manu_rect, dragging_letter, drag_source
+
+    if screen is None:
+        screen = pygame.display.get_surface()
 
     if ui_layer is None or ui_layer.surface != game_surface:
         ui_layer = UILayer(game_surface)
+
+    # ✅ Load image only after display exists
+    if manu_text_img is None:
+        manu_text_img = load_manu_text()
+        manu_rect = manu_text_img.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
 
     solved = False
     text_font = pygame.font.SysFont("arial", FONT_SIZE, bold=True)
@@ -187,11 +185,6 @@ def run_puzzle(player, ui_layer=None):
                     solved = True
                     player.manuscripts_found += 1
                     player.puzzle_solved = True
-            if "".join(answer_slots) == "HEMLOCK":
-                if not solved:
-                    solved = True
-                    player.manuscripts_found += 1
-                    player.puzzle_solved = True  # ✅ signal back to level
 
         pygame.draw.rect(game_surface, (200, 50, 50), back_button)
         back_txt = ui_font.render("BACK", True, (255, 255, 255))
@@ -222,9 +215,3 @@ def run_puzzle(player, ui_layer=None):
         pygame.display.flip()
         clock.tick(60)
 
-if __name__ == "__main__":
-    class DummyPlayer:
-        def __init__(self):
-            self.inventory = ["H", "E", "M", "L", "O", "C", "K"]
-    ui_layer = UILayer(game_surface)
-    run_puzzle(DummyPlayer(), ui_layer)

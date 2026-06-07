@@ -352,7 +352,7 @@ def run_level():
 
                                 # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
-                                ch1_lvl1_puz.run_puzzle(player, ui_layer)
+                                ch1_lvl1_puz.run_puzzle(player, ui_layer, screen)
 
                                 # ✅ After puzzle closes, check if solved
                                 if player.puzzle_solved and not obj.already_searched:
