@@ -42,14 +42,14 @@ class Camera:
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
-                 prompt="Press 'E' to interact", image_file=None):
+                 prompt="Press 'E' to interact", image_file=None, is_glowing=False):
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
         self.inventory_item = inventory_item
         self.already_searched = False
         self.prompt = prompt
+        self.is_glowing = is_glowing  # New attribute
 
-        # ✅ Load image if provided
         self.image = None
         if image_file and os.path.exists(image_file):
             raw = pygame.image.load(image_file).convert_alpha()
@@ -200,8 +200,13 @@ game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
 clock = pygame.time.Clock()
 
+# --- Fonts ---
 ui_font = pygame.font.SysFont("arial", 28, bold=True)
 feedback_font = pygame.font.SysFont("arial", 24, italic=True)
+
+# ✅ Load your specific custom font
+CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
+h_font = pygame.font.Font(CUSTOM_FONT_PATH, 50) # Set size to 50 for visibility
 
 # Background
 if not os.path.exists(BG_FILE):
@@ -232,11 +237,12 @@ interactive_objects = [
     InteractiveObject(
         x=int(180 * scale_factor),
         y=int(floor_y - int(140 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
+        width=int(50 * scale_factor), # Adjusted width for visibility
+        height=int(80 * scale_factor),
         has_manuscript=False,
         inventory_item="H",
-        prompt="I found a letter H."
+        prompt="I found a letter H.",
+        is_glowing=True # Enable glow
     ),
 ]
 
@@ -343,7 +349,7 @@ def run_level():
         for obj in interactive_objects:
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
-            # ✅ Render object image if available
+            # --- Original object rendering ---
             if obj.image:
                 game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
@@ -352,6 +358,29 @@ def run_level():
                 prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                 prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
                 game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
+
+            if obj.is_glowing and not obj.already_searched:
+                # Create a surface slightly larger than the text/rect
+                glow_size = (int(obj.rect.width * 1.5), int(obj.rect.height * 1.5))
+                glow_surf = pygame.Surface(glow_size, pygame.SRCALPHA)
+
+                # Draw concentric circles to create a soft radial gradient
+                # Inner (brighter/more opaque) to outer (fainter/transparent)
+                for i in range(10, 0, -1):
+                    alpha = int(150 * (i / 10))  # Gradient intensity
+                    pygame.draw.ellipse(glow_surf, (255, 255, 0, alpha),
+                                        glow_surf.get_rect().inflate(-i * 5, -i * 5))
+
+                glow_rect = glow_surf.get_rect(center=obj.rect.center)
+                game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
+
+                # ✅ Render the text "H" using the custom font (Always render it)
+                if obj.inventory_item == "H" and not obj.already_searched:
+                    h_text = h_font.render("H", True, (255, 255, 255))
+                    text_rect = h_text.get_rect(center=obj.rect.center)
+                    game_surface.blit(h_text, camera.apply_rect(text_rect))
+
+            pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
