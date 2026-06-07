@@ -24,6 +24,11 @@ ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
 ORB_GLOW_VIOLET   = "Assets/MAPS/chapter1/orb_glow_violet.png"
 ORB_STATIC_VIOLET = "Assets/MAPS/chapter1/orb_static_violet.png"
 
+# --- Book Variations ---
+BOOK_BLUE   = "Assets/MAPS/chapter1/book_blue.png"
+BOOK_RED    = "Assets/MAPS/chapter1/book_red.png"
+BOOK_GREEN  = "Assets/MAPS/chapter1/book_green.png"
+BOOK_BROWN  = "Assets/MAPS/chapter1/book_brown.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -341,6 +346,46 @@ interactive_objects = [
         image_file=ORB_GLOW_VIOLET
     ),
     InteractiveObject(
+        x=int(1000 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(50 * scale_factor),
+        height=int(50 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_BLUE",
+        prompt="A dusty blue book.",
+        image_file=BOOK_BLUE
+    ),
+    InteractiveObject(
+        x=int(1200 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(50 * scale_factor),
+        height=int(50 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_RED",
+        prompt="A worn red book.",
+        image_file=BOOK_RED
+    ),
+    InteractiveObject(
+        x=int(1400 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(50 * scale_factor),
+        height=int(50 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_GREEN",
+        prompt="A mossy green book.",
+        image_file=BOOK_GREEN
+    ),
+    InteractiveObject(
+        x=int(1600 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(50 * scale_factor),
+        height=int(50 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_BROWN",
+        prompt="An ancient brown book.",
+        image_file=BOOK_BROWN
+    ),
+    InteractiveObject(
         x=int(2210 * scale_factor),
         y=int(floor_y - int(280 * scale_factor)),
         width=int(40 * scale_factor),
@@ -427,7 +472,7 @@ def run_level():
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
                                     if obj.inventory_item.startswith("ORB"):
-                                        # Map glow tag to static icon
+                                        # ✅ Orb pickup logic
                                         orb_map = {
                                             "ORB_BLUE": ORB_STATIC_BLUE,
                                             "ORB_GREEN": ORB_STATIC_GREEN,
@@ -444,7 +489,28 @@ def run_level():
                                         obj.image = None
                                         obj.frames = None
                                         ui_layer.show_subtitle(f"You picked up a {obj.prompt.lower()}", 2000)
+
+                                    elif obj.inventory_item.startswith("BOOK"):
+                                        # ✅ Book pickup logic
+                                        book_map = {
+                                            "BOOK_BLUE": BOOK_BLUE,
+                                            "BOOK_RED": BOOK_RED,
+                                            "BOOK_GREEN": BOOK_GREEN,
+                                            "BOOK_BROWN": BOOK_BROWN
+                                        }
+                                        book_path = book_map.get(obj.inventory_item)
+                                        if book_path:
+                                            book_icon = pygame.image.load(book_path).convert_alpha()
+                                            book_icon = pygame.transform.scale(book_icon, (40, 40))
+                                            player.inventory.append(book_icon)
+
+                                        obj.already_searched = True
+                                        obj.image = None
+                                        obj.frames = None
+                                        ui_layer.show_subtitle(f"You picked up {obj.prompt.lower()}", 2000)
+
                                     else:
+                                        # ✅ Normal item pickup
                                         player.inventory.append(obj.inventory_item)
                                         obj.already_searched = True
                                         ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!", 2000)
