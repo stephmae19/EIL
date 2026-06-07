@@ -50,26 +50,29 @@ class PuzzleScene:
         # ✅ Back Button Hitbox Area Rectangle definition (Match Level 1 style)
         self.back_button = pygame.Rect(50, 50, 120, 50)
 
-        # --- Scale Area Placement Settings ---
-        LEFT_BOX_OFFSET_X = 10
-        RIGHT_BOX_OFFSET_X = -168
-        BOX_OFFSET_Y = -10    #💡 Adjust this value to shift the hitboxes vertically (e.g., -50 to lower, -150 to raise)
+        # =============================================================
+        # ⚙️ POSITION CONFIGURATIONS FOR ACTIVE AREAS
+        # =============================================================
+        # 1. Balanced State Offsets (scale_bal.png)
+        self.BAL_LEFT_X = 10
+        self.BAL_RIGHT_X = -168
+        self.BAL_Y = -10
 
-        self.debug_left_box = pygame.Rect(self.scale_rect.left + LEFT_BOX_OFFSET_X,
-                                          self.scale_rect.centery + BOX_OFFSET_Y, 150, 50)
-        self.debug_right_box = pygame.Rect(self.scale_rect.right + RIGHT_BOX_OFFSET_X,
-                                           self.scale_rect.centery + BOX_OFFSET_Y, 150, 50)
+        # 2. Left Tilted State Offsets (scale_left.png)
+        self.LEFT_TILT_LEFT_X = 10      # Left side horizontal shift
+        self.LEFT_TILT_LEFT_Y = 40      # 💡 MANUALLY ADJUST THIS: Shifts the Left box up/down when tilted left
+        self.LEFT_TILT_RIGHT_X = -168   # Right side horizontal shift
+        self.LEFT_TILT_RIGHT_Y = -10    # 💡 MANUALLY ADJUST THIS: Shifts the Right box up/down when tilted left
 
-        # Automatically calculate slots inside the visual box bounds to prevent overflow
-        self.orb_slots = [
-            pygame.Rect(self.debug_left_box.left + 10 + i * 45, self.debug_left_box.centery - 20, 40, 40)
-            for i in range(3)
-        ]
+        # 3. Right Tilted State Offsets (scale_right.png)
+        self.RIGHT_TILT_LEFT_X = 10     # Left side horizontal shift
+        self.RIGHT_TILT_LEFT_Y = -10    # 💡 MANUALLY ADJUST THIS: Shifts the Left box up/down when tilted right
+        self.RIGHT_TILT_RIGHT_X = -168  # Right side horizontal shift
+        self.RIGHT_TILT_RIGHT_Y = 40    # 💡 MANUALLY ADJUST THIS: Shifts the Right box up/down when tilted right
+        # =============================================================
 
-        self.book_slots = [
-            pygame.Rect(self.debug_right_box.left + 10 + i * 45, self.debug_right_box.centery - 20, 40, 40)
-            for i in range(3)
-        ]
+        # Initialize base hitboxes
+        self.recalculate_hitboxes(self.BAL_LEFT_X, self.BAL_RIGHT_X, self.BAL_Y, self.BAL_Y)
 
         # Track placed items
         self.orbs_placed = []
@@ -88,6 +91,24 @@ class PuzzleScene:
 
         self.message = ""
         self.last_checked_message = ""  # Track state to prevent resetting the 3-second timer constantly
+
+    def recalculate_hitboxes(self, left_x, right_x, left_y, right_y):
+        """Helper to re-anchor active area bounds and item slots smoothly on demand."""
+        self.debug_left_box = pygame.Rect(self.scale_rect.left + left_x,
+                                          self.scale_rect.centery + left_y, 150, 50)
+        self.debug_right_box = pygame.Rect(self.scale_rect.right + right_x,
+                                           self.scale_rect.centery + right_y, 150, 50)
+
+        # Automatically re-calculate internal slots relative to the modified hitboxes
+        self.orb_slots = [
+            pygame.Rect(self.debug_left_box.left + 10 + i * 45, self.debug_left_box.centery - 20, 40, 40)
+            for i in range(3)
+        ]
+
+        self.book_slots = [
+            pygame.Rect(self.debug_right_box.left + 10 + i * 45, self.debug_right_box.centery - 20, 40, 40)
+            for i in range(3)
+        ]
 
     def get_virtual_mouse_pos(self, screen_pos):
         """Converts physical window mouse coordinates into virtual 1920x1080 space."""
@@ -125,25 +146,25 @@ class PuzzleScene:
                     return None
 
             # 2. Allow picking up items already dropped onto the LEFT orb plate
-            for i, (item, slot) in enumerate(self.orbs_placed):
-                if slot.collidepoint(virtual_pos):
+            for i, (item, _) in enumerate(self.orbs_placed):
+                if i < len(self.orb_slots) and self.orb_slots[i].collidepoint(virtual_pos):
                     self.dragging_item = item
                     self.dragged_item_index = i
                     self.drag_source = "ORBS"
-                    self.drag_offset_x = virtual_pos[0] - slot.centerx
-                    self.drag_offset_y = virtual_pos[1] - slot.centery
-                    self.orbs_placed.pop(i)  # ⚠️ REMOVE IMMEDIATELY to prevent multiple copies
+                    self.drag_offset_x = virtual_pos[0] - self.orb_slots[i].centerx
+                    self.drag_offset_y = virtual_pos[1] - self.orb_slots[i].centery
+                    self.orbs_placed.pop(i)
                     return None
 
             # 3. Allow picking up items already dropped onto the RIGHT book plate
-            for i, (item, slot) in enumerate(self.books_placed):
-                if slot.collidepoint(virtual_pos):
+            for i, (item, _) in enumerate(self.books_placed):
+                if i < len(self.book_slots) and self.book_slots[i].collidepoint(virtual_pos):
                     self.dragging_item = item
                     self.dragged_item_index = i
                     self.drag_source = "BOOKS"
-                    self.drag_offset_x = virtual_pos[0] - slot.centerx
-                    self.drag_offset_y = virtual_pos[1] - slot.centery
-                    self.books_placed.pop(i)  # ⚠️ REMOVE IMMEDIATELY to prevent multiple copies
+                    self.drag_offset_x = virtual_pos[0] - self.book_slots[i].centerx
+                    self.drag_offset_y = virtual_pos[1] - self.book_slots[i].centery
+                    self.books_placed.pop(i)
                     return None
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -158,13 +179,10 @@ class PuzzleScene:
                 if self.debug_left_box.collidepoint(virtual_pos) or any(
                         slot.collidepoint(virtual_pos) for slot in self.orb_slots):
                     if "ORB" in item_id:
-                        already_taken_slots = [slot for _, slot in self.orbs_placed]
-                        for slot in self.orb_slots:
-                            if slot not in already_taken_slots:
-                                self.orbs_placed.append((self.dragging_item, slot))
-                                placed = True
-                                break
-                        if not placed:
+                        if len(self.orbs_placed) < 3:
+                            self.orbs_placed.append((self.dragging_item, None))
+                            placed = True
+                        else:
                             self.message = "The orb plate is completely full!"
                     else:
                         self.message = "Only round orbs fit on the left plate!"
@@ -173,13 +191,10 @@ class PuzzleScene:
                 elif self.debug_right_box.collidepoint(virtual_pos) or any(
                         slot.collidepoint(virtual_pos) for slot in self.book_slots):
                     if "BOOK" in item_id:
-                        already_taken_slots = [slot for _, slot in self.books_placed]
-                        for slot in self.book_slots:
-                            if slot not in already_taken_slots:
-                                self.books_placed.append((self.dragging_item, slot))
-                                placed = True
-                                break
-                        if not placed:
+                        if len(self.books_placed) < 3:
+                            self.books_placed.append((self.dragging_item, None))
+                            placed = True
+                        else:
                             self.message = "The book plate is completely full!"
                     else:
                         self.message = "Only books belong on the right plate!"
@@ -219,18 +234,27 @@ class PuzzleScene:
 
             if self.imposter_orb in orb_names or self.imposter_book in book_names:
                 new_msg = "The scale refuses to balance..."
-                self.scale_image = self.scale_left if self.imposter_orb in orb_names else self.scale_right
+                if self.imposter_orb in orb_names:
+                    self.scale_image = self.scale_left
+                    self.recalculate_hitboxes(self.LEFT_TILT_LEFT_X, self.LEFT_TILT_RIGHT_X, self.LEFT_TILT_LEFT_Y, self.LEFT_TILT_RIGHT_Y)
+                else:
+                    self.scale_image = self.scale_right
+                    self.recalculate_hitboxes(self.RIGHT_TILT_LEFT_X, self.RIGHT_TILT_RIGHT_X, self.RIGHT_TILT_LEFT_Y, self.RIGHT_TILT_RIGHT_Y)
             else:
                 new_msg = "The scale balances perfectly!"
                 self.scale_image = self.scale_bal
+                self.recalculate_hitboxes(self.BAL_LEFT_X, self.BAL_RIGHT_X, self.BAL_Y, self.BAL_Y)
                 is_balanced = True
         else:
             if len(self.orbs_placed) > len(self.books_placed):
                 self.scale_image = self.scale_left
+                self.recalculate_hitboxes(self.LEFT_TILT_LEFT_X, self.LEFT_TILT_RIGHT_X, self.LEFT_TILT_LEFT_Y, self.LEFT_TILT_RIGHT_Y)
             elif len(self.books_placed) > len(self.orbs_placed):
                 self.scale_image = self.scale_right
+                self.recalculate_hitboxes(self.RIGHT_TILT_LEFT_X, self.RIGHT_TILT_RIGHT_X, self.RIGHT_TILT_LEFT_Y, self.RIGHT_TILT_RIGHT_Y)
             else:
                 self.scale_image = self.scale_bal
+                self.recalculate_hitboxes(self.BAL_LEFT_X, self.BAL_RIGHT_X, self.BAL_Y, self.BAL_Y)
 
         # ✅ Only trigger subtitle update if the balancing state message actually changed
         if new_msg != self.last_checked_message:
@@ -269,13 +293,15 @@ class PuzzleScene:
         back_txt = self.button_font.render("BACK", True, (255, 255, 255))
         self.surface.blit(back_txt, self.back_button.move(20, 10))
 
-        # Draw placed orbs
-        for item, slot in self.orbs_placed:
-            self.draw_placed_item(item, slot)
+        # Draw placed orbs into their adaptive slots
+        for i, (item, _) in enumerate(self.orbs_placed):
+            if i < len(self.orb_slots):
+                self.draw_placed_item(item, self.orb_slots[i])
 
-        # Draw placed books
-        for item, slot in self.books_placed:
-            self.draw_placed_item(item, slot)
+        # Draw placed books into their adaptive slots
+        for i, (item, _) in enumerate(self.books_placed):
+            if i < len(self.book_slots):
+                self.draw_placed_item(item, self.book_slots[i])
 
         # Draw UI layer updates
         self.ui_layer.draw(self.player)
@@ -358,3 +384,16 @@ def run_puzzle(surface, player):
             return
 
         clock.tick(60)
+
+
+def get_placed_item_ids():
+    """Returns a combined list of item IDs currently situated on the plates."""
+    global _puzzle_instance
+    if _puzzle_instance is None:
+        return []
+    ids = []
+    for item, _ in _puzzle_instance.orbs_placed:
+        ids.append(item["id"] if isinstance(item, dict) else str(item))
+    for item, _ in _puzzle_instance.books_placed:
+        ids.append(item["id"] if isinstance(item, dict) else str(item))
+    return ids
