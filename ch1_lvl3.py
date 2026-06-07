@@ -313,7 +313,7 @@ interactive_objects = [
 
 interactive_objects.append(
     InteractiveObject(
-        x=int(MAP_WIDTH * 0.77),  # right side
+        x=int(MAP_WIDTH * 0.79),  # right side
         y=int(floor_y - int(BASE_HEIGHT * 0.25)),  # center vertically above floor
         width=int(80 * scale_factor),
         height=int(80 * scale_factor),
@@ -345,7 +345,6 @@ def is_position_valid(new_rect, existing_objects):
 
 # --- Create sets ---
 # Explicitly define which letter belongs to which word/color
-# Note: If a letter is in both, this structure gives you full control
 traitors_letters = list("TRAITORS")
 demonic_letters = list("DEMONIC")
 
@@ -481,13 +480,6 @@ def run_level():
             # UI input handling
             ui_layer.handle_input(event)
 
-            # Updated: Check for any mouse button (1=Left, 2=Middle, 3=Right)
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                # If it IS one of the mouse buttons, check if it's NOT in the inventory
-                if event.button in [1, 2, 3]:
-                    # The insanity loss logic has been removed to prevent draining on clicks
-                    pass
-
         # 3. Update
         player.update(MAP_WIDTH)
         camera.update(player)
@@ -517,26 +509,23 @@ def run_level():
 
         for obj in interactive_objects:
             obj.update_animation()
-            if not obj.already_searched:
+
+            # ✅ FIX: Always render the manuscript image even if already_searched is True
+            if not obj.already_searched or obj.has_manuscript:
                 if obj.image:
                     game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
-                # ✅ Check if this object is a letter that hasn't been revealed yet
+                # Check if this object is a letter that hasn't been revealed yet
                 is_hidden_letter = hasattr(obj, 'set_type') and not getattr(obj, 'is_revealed', False)
 
-                # 2. Pulse Effect (Circular and expanding)
-                # ✅ Only show the glow if it's NOT a hidden letter
+                # Pulse Effect (Circular and expanding)
                 if obj.is_glowing and not is_hidden_letter:
-                    # Calculate pulse intensity (0.0 to 1.0)
                     pulse = (math.sin(pygame.time.get_ticks() * 0.005) + 1) / 2
-
-                    # Define a larger radius for the glow area (e.g., 1.5x the object width)
                     glow_radius = int(max(obj.rect.width, obj.rect.height) * (0.8 + pulse * 0.4))
                     glow_surf_size = (glow_radius * 2, glow_radius * 2)
-
                     glow_surf = pygame.Surface(glow_surf_size, pygame.SRCALPHA)
 
-                    # Draw a soft, semi-transparent circle
+                    # Draw soft, semi-transparent circle
                     for i in range(5):
                         alpha = int(40 * (1 - (i / 5)))
                         pygame.draw.circle(
@@ -546,24 +535,16 @@ def run_level():
                             glow_radius - (i * 5)
                         )
 
-                    # Calculate position to center the glow on the object
                     glow_rect = glow_surf.get_rect(center=obj.rect.center)
                     game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
 
-                # 4. Glow/Letter logic
+                # Glow/Letter logic
                 if obj.is_glowing and obj.inventory_item and len(str(obj.inventory_item)) == 1:
-
-                    # ✅ Only draw the letter if it has been successfully revealed
                     if getattr(obj, 'is_revealed', False):
-                        # Determine color based on set: VIOLET (238, 130, 238) or RED (255, 0, 0)
                         text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0, 0)
-
                         char_text = h_font.render(str(obj.inventory_item), True, text_color)
                         text_rect = char_text.get_rect(center=obj.rect.center)
                         game_surface.blit(char_text, camera.apply_rect(text_rect))
-
-            # 5. Debug Rect (Optional: kept outside the searched check so you see the hitboxes)
-            # pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
@@ -571,14 +552,14 @@ def run_level():
         # Draw UI
         ui_layer.draw(player)
 
-        # ✅ Draw the dragged item exactly once using the adjusted coordinates calculated at the top
+        # Draw the dragged item
         ui_layer.draw_dragged_item(adj_mouse_pos)
 
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
-        # 5. Display Scaling
+        # Display Scaling
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
         scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
@@ -591,6 +572,5 @@ def run_level():
         clock.tick(60)
 
 
-# ✅ Allow standalone execution
 if __name__ == "__main__":
     run_level()

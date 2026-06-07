@@ -7,6 +7,7 @@ import os
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 MANU_TEXT_FILE = "Assets/OBJECTS-ITEMS/manu_text.png"
 CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
+BACK_BUTTON_Y = 300  # 💡 Adjust this value to change the vertical position of the back button
 
 pygame.init()
 pygame.font.init()
@@ -109,8 +110,8 @@ def run_puzzle(player, ui_layer):
                 elif row2_y <= adj_mouse_y <= row2_y + box_size:
                     active_row = 1
 
-                # Back button boundaries check
-                if 40 <= adj_mouse_x <= 180 and 40 <= adj_mouse_y <= 95:
+                # 💡 Back button dynamic boundaries check
+                if 40 <= adj_mouse_x <= 180 and BACK_BUTTON_Y <= adj_mouse_y <= BACK_BUTTON_Y + 55:
                     return
 
         # Verification check
@@ -132,17 +133,17 @@ def run_puzzle(player, ui_layer):
             # Simple dark tint container backup overlay
             pygame.draw.rect(game_surface, (50, 45, 40), (200, 150, BASE_WIDTH - 400, BASE_HEIGHT - 300))
 
-        # Render explicit UI escape back button node
-        pygame.draw.rect(game_surface, (120, 30, 30), (40, 40, 140, 55), border_radius=5)
+        # 💡 Render explicit UI escape back button node dynamically using BACK_BUTTON_Y
+        pygame.draw.rect(game_surface, (120, 30, 30), (40, BACK_BUTTON_Y, 140, 55), border_radius=5)
         back_txt = label_font.render("BACK", True, (255, 255, 255))
-        game_surface.blit(back_txt, (55, 48))
+        game_surface.blit(back_txt, (55, BACK_BUTTON_Y + 8))
 
         # Render Input Labels
         lbl_color1 = (240, 200, 80) if active_row == 0 else (160, 140, 100)
         lbl_color2 = (240, 200, 80) if active_row == 1 else (160, 140, 100)
 
-        label_r1 = label_font.render("ROW 1:", True, lbl_color1)
-        label_r2 = label_font.render("ROW 2:", True, lbl_color2)
+        label_r1 = label_font.render("BOOK 1:", True, lbl_color1)
+        label_r2 = label_font.render("BOOK 2:", True, lbl_color2)
         game_surface.blit(label_r1, (start_x1 - 180, row1_y + 15))
         game_surface.blit(label_r2, (start_x2 - 180, row2_y + 15))
 
@@ -180,6 +181,12 @@ def run_puzzle(player, ui_layer):
             game_surface.blit(success_txt, (BASE_WIDTH // 2 - success_txt.get_width() // 2, 780))
             if pygame.time.get_ticks() - solved_timer > 1500:
                 return
+
+        # Overlay UILayer exactly like Level 2 Puzzle behaviors
+        old_surface = ui_layer.surface
+        ui_layer.surface = game_surface
+        ui_layer.draw(player)
+        ui_layer.surface = old_surface
 
         # Adaptive Blit Transformations
         scaled_surf = pygame.transform.smoothscale(game_surface, (int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)))
