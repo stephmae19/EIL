@@ -55,10 +55,12 @@ class Camera:
 
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
-                 has_manuscript=False, inventory_item=None,
+                 has_manuscript=False, has_scale=False,  # ✅ add this
+                 inventory_item=None,
                  prompt="Press 'E' to interact", image_file=None):
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
+        self.has_scale = has_scale   # ✅ store it
         self.inventory_item = inventory_item
         self.already_searched = False
         self.prompt = prompt
@@ -354,11 +356,12 @@ interactive_objects.append(
         y=int(floor_y - int(BASE_HEIGHT * 0.22)),  # center vertically above floor
         width=int(91 * scale_factor),
         height=int(138 * scale_factor),
-        has_manuscript=True,
+        has_scale=True,   # ✅ use a new flag instead of has_manuscript
         prompt="An antique scale...",
         image_file=SCALE_FILE
     )
 )
+
 
 # --- Adaptive Player Initialization ---
 player = Player(
@@ -393,17 +396,26 @@ def run_level():
                     if player.rect.colliderect(obj.rect):
                         found = True
 
+                        # --- Scale object ---
+                        if obj.has_scale:
+                            obj.already_searched = True
+                            ui_layer.show_subtitle("You approach the antique scale...", 2000)
+
+                            # ✅ Route to puzzle scene
+                            import ch1_lvl2_puz
+                            ch1_lvl2_puz.run_puzzle(game_surface, player)
+                            return
+
                         # --- Manuscript object ---
-                        if obj.has_manuscript:
+                        elif obj.has_manuscript:
                             if player.puzzle_solved:
-                                # ✅ Puzzle already solved, don’t allow re-entry
                                 ui_layer.show_subtitle("You already searched this part.", 2000)
                             else:
                                 if not obj.already_searched:
                                     obj.already_searched = True
                                     ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                 else:
-                                    ui_layer.show_subtitle("An antique scale...", 2000)
+                                    ui_layer.show_subtitle("You already searched this part.", 2000)
 
                                 # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
@@ -414,7 +426,6 @@ def run_level():
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
-                                    # ✅ Special case: glowing orb pickup
                                     if obj.inventory_item.startswith("ORB"):
                                         # Map glow tag to static icon
                                         orb_map = {
@@ -423,7 +434,6 @@ def run_level():
                                             "ORB_RED": ORB_STATIC_RED,
                                             "ORB_VIOLET": ORB_STATIC_VIOLET
                                         }
-
                                         orb_static_path = orb_map.get(obj.inventory_item)
                                         if orb_static_path:
                                             orb_icon = pygame.image.load(orb_static_path).convert_alpha()
@@ -434,9 +444,7 @@ def run_level():
                                         obj.image = None
                                         obj.frames = None
                                         ui_layer.show_subtitle(f"You picked up a {obj.prompt.lower()}", 2000)
-
                                     else:
-                                        # ✅ Normal item pickup
                                         player.inventory.append(obj.inventory_item)
                                         obj.already_searched = True
                                         ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!", 2000)
@@ -447,9 +455,8 @@ def run_level():
 
                         # --- Other prompts ---
                         else:
-                            # Special case: wisdom clue should always show
                             if obj.prompt.startswith("The scales weigh not gold"):
-                                ui_layer.show_subtitle(obj.prompt, 4000)  # longer duration if you like
+                                ui_layer.show_subtitle(obj.prompt, 4000)
                             else:
                                 if not obj.already_searched:
                                     obj.already_searched = True
@@ -458,6 +465,7 @@ def run_level():
                                     ui_layer.show_subtitle("You already searched this part.", 2000)
 
                         break
+
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
 
