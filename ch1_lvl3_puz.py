@@ -7,7 +7,7 @@ import os
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 MANU_TEXT_FILE = "Assets/OBJECTS-ITEMS/manu_text.png"
 CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
-BACK_BUTTON_Y = 300  # 💡 Adjust this value to change the vertical position of the back button
+BACK_BUTTON_Y = 40  # Adjust this value to change the vertical position of the back button
 
 pygame.init()
 pygame.font.init()
@@ -30,9 +30,19 @@ def run_puzzle(player, ui_layer):
         puzzle_font = pygame.font.SysFont("mono", 55, bold=True)
         label_font = pygame.font.SysFont("arial", 40, bold=True)
 
-    # State values
-    row1_input = []
-    row2_input = []
+    # Persistent State Initialization on Player Object
+    if not hasattr(player, 'book1_solved'):
+        player.book1_solved = False
+    if not hasattr(player, 'book2_solved'):
+        player.book2_solved = False
+    if not hasattr(player, 'row1_input_saved'):
+        player.row1_input_saved = []
+    if not hasattr(player, 'row2_input_saved'):
+        player.row2_input_saved = []
+
+    # Restore saved inputs
+    row1_input = list(player.row1_input_saved)
+    row2_input = list(player.row2_input_saved)
     active_row = 0  # 0 for Row 1, 1 for Row 2
 
     # Target solutions
@@ -53,7 +63,7 @@ def run_puzzle(player, ui_layer):
     row1_y = 420
     row2_y = 620
 
-    solved = False
+    solved = player.book1_solved and player.book2_solved
     solved_timer = 0
 
     # Load manuscript background template layout
@@ -81,6 +91,9 @@ def run_puzzle(player, ui_layer):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    # Save progress before escaping
+                    player.row1_input_saved = list(row1_input)
+                    player.row2_input_saved = list(row2_input)
                     return
 
                 # Toggle selection between fields via Arrow Keys or TAB
@@ -88,17 +101,17 @@ def run_puzzle(player, ui_layer):
                     active_row = 1 if active_row == 0 else 0
 
                 elif event.key == pygame.K_BACKSPACE:
-                    if active_row == 0 and len(row1_input) > 0:
+                    if active_row == 0 and len(row1_input) > 0 and not player.book1_solved:
                         row1_input.pop()
-                    elif active_row == 1 and len(row2_input) > 0:
+                    elif active_row == 1 and len(row2_input) > 0 and not player.book2_solved:
                         row2_input.pop()
 
                 # Text input processor with automatic forced capitalization conversion
                 elif event.unicode and event.unicode.isalpha():
                     char_upper = event.unicode.upper()
-                    if active_row == 0 and len(row1_input) < len(ans_row1):
+                    if active_row == 0 and len(row1_input) < len(ans_row1) and not player.book1_solved:
                         row1_input.append(char_upper)
-                    elif active_row == 1 and len(row2_input) < len(ans_row2):
+                    elif active_row == 1 and len(row2_input) < len(ans_row2) and not player.book2_solved:
                         row2_input.append(char_upper)
 
             # Click selection for typing grids
@@ -110,20 +123,47 @@ def run_puzzle(player, ui_layer):
                 elif row2_y <= adj_mouse_y <= row2_y + box_size:
                     active_row = 1
 
-                # 💡 Back button dynamic boundaries check
+                # Back button boundaries check
                 if 40 <= adj_mouse_x <= 180 and BACK_BUTTON_Y <= adj_mouse_y <= BACK_BUTTON_Y + 55:
+                    # Save progress before returning
+                    player.row1_input_saved = list(row1_input)
+                    player.row2_input_saved = list(row2_input)
                     return
 
         # Verification check
         current_r1 = "".join(row1_input)
         current_r2 = "".join(row2_input)
 
-        if current_r1 == ans_row1 and current_r2 == ans_row2:
+        # Handle Book 1 Solving State independently
+        if current_r1 == ans_row1 and not player.book1_solved:
+            player.book1_solved = True
+            player.manuscripts_found += 1
+
+        # Handle Book 2 Solving State independently
+        if current_r2 == ans_row2 and not player.book2_solved:
+            player.book2_solved = True
+            player.manuscripts_found += 1
+
+        # Check for universal puzzle solution
+        if player.book1_solved and player.book2_solved:
             if not solved:
                 solved = True
                 player.puzzle_solved = True
-                player.manuscripts_found = max(player.manuscripts_found, 2)
                 solved_timer = pygame.time.get_ticks()
+
+        # 🚨 Accelerated Insanity Drain Mechanic
+        # If slots are maxed out/filled but the string combination is incorrect
+        if len(row1_input) == len(ans_row1) and current_r1 != ans_row1:
+            if hasattr(ui_layer, 'insanity_level'):
+                ui_layer.insanity_level = max(0, ui_layer.insanity_level - 0.4)
+
+        if len(row2_input) == len(ans_row2) and current_r2 != ans_row2:
+            if hasattr(ui_layer, 'insanity_level'):
+                ui_layer.insanity_level = max(0, ui_layer.insanity_level - 0.4)
+
+        # Sync live changes to persistent state memory
+        player.row1_input_saved = list(row1_input)
+        player.row2_input_saved = list(row2_input)
 
         # Visual Rendering Scene Layer
         game_surface.fill((30, 25, 25))
@@ -133,7 +173,7 @@ def run_puzzle(player, ui_layer):
             # Simple dark tint container backup overlay
             pygame.draw.rect(game_surface, (50, 45, 40), (200, 150, BASE_WIDTH - 400, BASE_HEIGHT - 300))
 
-        # 💡 Render explicit UI escape back button node dynamically using BACK_BUTTON_Y
+        # Render explicit UI escape back button node
         pygame.draw.rect(game_surface, (120, 30, 30), (40, BACK_BUTTON_Y, 140, 55), border_radius=5)
         back_txt = label_font.render("BACK", True, (255, 255, 255))
         game_surface.blit(back_txt, (55, BACK_BUTTON_Y + 8))
@@ -142,8 +182,8 @@ def run_puzzle(player, ui_layer):
         lbl_color1 = (240, 200, 80) if active_row == 0 else (160, 140, 100)
         lbl_color2 = (240, 200, 80) if active_row == 1 else (160, 140, 100)
 
-        label_r1 = label_font.render("BOOK 1:", True, lbl_color1)
-        label_r2 = label_font.render("BOOK 2:", True, lbl_color2)
+        label_r1 = label_font.render("ROW 1:", True, lbl_color1)
+        label_r2 = label_font.render("ROW 2:", True, lbl_color2)
         game_surface.blit(label_r1, (start_x1 - 180, row1_y + 15))
         game_surface.blit(label_r2, (start_x2 - 180, row2_y + 15))
 
@@ -152,13 +192,14 @@ def run_puzzle(player, ui_layer):
             bx = start_x1 + i * (box_size + spacing)
             box_rect = pygame.Rect(bx, row1_y, box_size, box_size)
             border_w = 4 if (active_row == 0 and len(row1_input) == i) else 2
-            border_color = (255, 215, 0) if active_row == 0 else (100, 100, 100)
+            border_color = (0, 255, 0) if player.book1_solved else ((255, 215, 0) if active_row == 0 else (100, 100, 100))
 
             pygame.draw.rect(game_surface, (20, 20, 20), box_rect)
             pygame.draw.rect(game_surface, border_color, box_rect, border_w)
 
             if i < len(row1_input):
-                char_surf = puzzle_font.render(row1_input[i], True, (238, 130, 238))
+                text_color = (0, 255, 0) if player.book1_solved else (238, 130, 238)
+                char_surf = puzzle_font.render(row1_input[i], True, text_color)
                 game_surface.blit(char_surf, char_surf.get_rect(center=box_rect.center))
 
         # Render Row 2 Input Fields (DEMONIC)
@@ -166,23 +207,24 @@ def run_puzzle(player, ui_layer):
             bx = start_x2 + i * (box_size + spacing)
             box_rect = pygame.Rect(bx, row2_y, box_size, box_size)
             border_w = 4 if (active_row == 1 and len(row2_input) == i) else 2
-            border_color = (255, 215, 0) if active_row == 1 else (100, 100, 100)
+            border_color = (0, 255, 0) if player.book2_solved else ((255, 215, 0) if active_row == 1 else (100, 100, 100))
 
             pygame.draw.rect(game_surface, (20, 20, 20), box_rect)
             pygame.draw.rect(game_surface, border_color, box_rect, border_w)
 
             if i < len(row2_input):
-                char_surf = puzzle_font.render(row2_input[i], True, (255, 50, 50))
+                text_color = (0, 255, 0) if player.book2_solved else (255, 50, 50)
+                char_surf = puzzle_font.render(row2_input[i], True, text_color)
                 game_surface.blit(char_surf, char_surf.get_rect(center=box_rect.center))
 
         # Display Success Feedback Metrics
         if solved:
-            success_txt = label_font.render("PUZZLE SOLVED COMPLETED!", True, (0, 255, 0))
+            success_txt = label_font.render("MANUSCRIPTS DECIPHERED COMPLETED!", True, (0, 255, 0))
             game_surface.blit(success_txt, (BASE_WIDTH // 2 - success_txt.get_width() // 2, 780))
             if pygame.time.get_ticks() - solved_timer > 1500:
                 return
 
-        # Overlay UILayer exactly like Level 2 Puzzle behaviors
+        # Overlay UILayer behaviors
         old_surface = ui_layer.surface
         ui_layer.surface = game_surface
         ui_layer.draw(player)

@@ -430,6 +430,10 @@ def run_level():
                 found = False
                 for obj in interactive_objects:
                     if player.rect.colliderect(obj.rect):
+                        # ✅ FIX: Skip hidden letters that haven't been revealed by an orb yet
+                        if hasattr(obj, 'set_type') and not getattr(obj, 'is_revealed', False):
+                            continue
+
                         found = True
                         # --- Manuscript logic ---
                         if obj.has_manuscript:
@@ -445,8 +449,10 @@ def run_level():
                                 import ch1_lvl3_puz
                                 ch1_lvl3_puz.run_puzzle(player, ui_layer)
                             break
+
                         # --- Inventory logic ---
-                        elif obj.inventory_item:
+                        # ✅ FIX: Only pick up items (Orbs) and exclude environmental clue letters
+                        elif obj.inventory_item and not hasattr(obj, 'set_type'):
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
                                     item_data = {"id": obj.inventory_item,
