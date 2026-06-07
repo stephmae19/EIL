@@ -2,6 +2,7 @@
 import pygame
 import os
 from View.Scenes.Credits import run_credits
+from View.UI import VolumeSlider  # ✅ Imported our newly migrated widget
 
 class StartMenu:
     def __init__(self, screen):
@@ -25,24 +26,16 @@ class StartMenu:
             {"image": pygame.image.load("Assets/Menu Options/exit_btn.jpeg").convert_alpha(), "action": "exit"},
         ]
 
-        # Volume spritesheet (3x3 grid)
+        # Volume spritesheet layout initialization
         spritesheet = pygame.image.load("Assets/Sprite/Music/music_volume.png").convert_alpha()
         frame_width, frame_height = 340, 91
-        self.volume_frames = [
+        volume_frames = [
             spritesheet.subsurface(pygame.Rect(col * frame_width, row * frame_height, frame_width, frame_height))
             for row in range(3) for col in range(3)
         ]
 
-        # Slider clickable offsets
-        self.inner_x_offset = 53
-        self.inner_y_offset = 32
-        self.slider_width = 265
-        self.slider_height = 33
-        self.frame_width = frame_width
-        self.frame_height = frame_height
-
-        self.volume_level = 4
-        self.dragging = False
+        # ✅ Instantiate the migrated UI object instead of hardcoding variables local to the scene
+        self.slider_ui = VolumeSlider(volume_frames)
 
         # SFX toggle spritesheet (2 frames)
         sfx_sheet = pygame.image.load("Assets/Sprite/Music/sfx.png").convert_alpha()
@@ -101,12 +94,13 @@ class StartMenu:
 
             vol_width = int(new_width * 0.6)
             vol_height = int(new_height * 0.15)
-            vol_image = pygame.transform.smoothscale(self.volume_frames[self.volume_level], (vol_width, vol_height))
+            # ✅ Reference UI helper volume level
+            vol_image = pygame.transform.smoothscale(self.slider_ui.frames[self.slider_ui.volume_level], (vol_width, vol_height))
             vol_rect = vol_image.get_rect(center=(center_x, start_y))
             self.button_rects.append((vol_image, vol_rect, "volume"))
 
-            self.vol_scale_x = vol_width / self.frame_width
-            self.vol_scale_y = vol_height / self.frame_height
+            self.vol_scale_x = vol_width / self.slider_ui.frame_width
+            self.vol_scale_y = vol_height / self.slider_ui.frame_height
 
             sfx_image = self.sfx_frames[0 if self.sfx_on else 1]
             sfx_scaled = pygame.transform.smoothscale(sfx_image, (int(150 * 0.8), int(100 * 0.8)))
@@ -121,10 +115,9 @@ class StartMenu:
             self.sfx_rect = sfx_rect
 
     def draw(self):
-        # use the remapped position from SceneManager
         mouse_pos = getattr(self, "last_mouse_pos", None)
         if mouse_pos is None:
-            return  # skip if not set yet
+            return
 
         self.screen.blit(self.background_scaled, (0, 0))
         self.screen.blit(self.menu_box, self.menu_box_rect)
@@ -142,7 +135,6 @@ class StartMenu:
             else:
                 self.screen.blit(image, rect)
 
-        # play hover sound when entering a new button
         if hovered_index is not None and hovered_index != self.last_hovered_index and self.sfx_on:
             self.hover_sound.play()
         self.last_hovered_index = hovered_index
@@ -152,10 +144,6 @@ class StartMenu:
             sfx_text = self.ui_font.render("SOUND EFFECTS", True, (255, 255, 255))
             self.screen.blit(music_text, music_text.get_rect(center=(self.volume_rect.centerx, self.volume_rect.top - 25)))
             self.screen.blit(sfx_text, sfx_text.get_rect(center=(self.sfx_rect.centerx, self.sfx_rect.top - 25)))
-
-        if hovered_index is not None and hovered_index != self.last_hovered_index and self.sfx_on:
-            self.hover_sound.play()
-        self.last_hovered_index = hovered_index
 
     def handle_input(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -170,18 +158,20 @@ class StartMenu:
                         self._create_layout()
                         return "back"
                     elif action == "credits":
-                        run_credits()  # ✅ Connect to Credits.py
+                        run_credits()
                         return "credits"
                     elif action == "volume":
+                        # ✅ Check interactive boundary layout safely using the UI component tracking properties
                         inner_rect = pygame.Rect(
-                            rect.left + int(self.inner_x_offset * self.vol_scale_x),
-                            rect.top + int(self.inner_y_offset * self.vol_scale_y),
-                            int(self.slider_width * self.vol_scale_x),
-                            int(self.slider_height * self.vol_scale_y)
+                            rect.left + int(self.slider_ui.inner_x_offset * self.vol_scale_x),
+                            rect.top + int(self.slider_ui.inner_y_offset * self.vol_scale_y),
+                            int(self.slider_ui.slider_width * self.vol_scale_x),
+                            int(self.slider_ui.slider_height * self.vol_scale_y)
                         )
                         if inner_rect.collidepoint(event.pos):
-                            self.dragging = True
-                            self.update_volume(event.pos[0], inner_rect)
+                            self.slider_ui.dragging = True
+                            self.slider_ui.update_volume(event.pos[0], rect, self.vol_scale_x, self.vol_scale_y)
+                            self._create_layout()
                             return "volume"
                     elif action == "sfx":
                         self.sfx_on = not self.sfx_on
@@ -190,37 +180,21 @@ class StartMenu:
                     else:
                         return action
 
-
         elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
+            self.slider_ui.dragging = False
 
-        elif event.type == pygame.MOUSEMOTION and self.dragging:
+        elif event.type == pygame.MOUSEMOTION and self.slider_ui.dragging:
             for _, rect, action in self.button_rects:
                 if action == "volume":
-                    inner_rect = pygame.Rect(
-                        rect.left + int(self.inner_x_offset * self.vol_scale_x),
-                        rect.top + int(self.inner_y_offset * self.vol_scale_y),
-                        int(self.slider_width * self.vol_scale_x),
-                        int(self.slider_height * self.vol_scale_y)
-                    )
-                    self.update_volume(event.pos[0], inner_rect)
+                    # ✅ Route audio update calls tracking through migrated component
+                    self.slider_ui.update_volume(event.pos[0], rect, self.vol_scale_x, self.vol_scale_y)
+                    self._create_layout()
                     return "volume"
 
         return None
-
-    def update_volume(self, mouse_x, inner_rect):
-        relative_x = mouse_x - inner_rect.left
-        relative_x = max(0, min(relative_x, inner_rect.width))
-        self.volume_level = round((relative_x / inner_rect.width) * (len(self.volume_frames) - 1))
-        self.volume_level = max(0, min(self.volume_level, len(self.volume_frames) - 1))
-        # Map frame index to actual audio volume (0.0–1.0)
-        volume = self.volume_level / (len(self.volume_frames) - 1)
-        pygame.mixer.music.set_volume(volume)
-        self._create_layout()
 
     def update(self):
         self._create_layout()
 
     def render(self):
         self.draw()
-

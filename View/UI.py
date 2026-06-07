@@ -64,6 +64,33 @@ class HUD:
         timer_surface = self.font.render(timer_text, True, (255, 255, 255))
         surface.blit(timer_surface, (20, 80))
 
+class VolumeSlider:
+    def __init__(self, frames, inner_offset_x=53, inner_offset_y=32, slider_w=265, slider_h=33):
+        self.frames = frames
+        self.inner_x_offset = inner_offset_x
+        self.inner_y_offset = inner_offset_y
+        self.slider_width = slider_w
+        self.slider_height = slider_h
+        self.frame_width = frames[0].get_width() if frames else 340
+        self.frame_height = frames[0].get_height() if frames else 91
+        self.volume_level = 4
+        self.dragging = False
+
+    def update_volume(self, mouse_x, rect, scale_x, scale_y):
+        inner_rect = pygame.Rect(
+            rect.left + int(self.inner_x_offset * scale_x),
+            rect.top + int(self.inner_y_offset * scale_y),
+            int(self.slider_width * scale_x),
+            int(self.slider_height * scale_y)
+        )
+        relative_x = mouse_x - inner_rect.left
+        relative_x = max(0, min(relative_x, inner_rect.width))
+        self.volume_level = round((relative_x / inner_rect.width) * (len(self.frames) - 1))
+        self.volume_level = max(0, min(self.volume_level, len(self.frames) - 1))
+
+        # Map frame index to actual audio volume (0.0–1.0)
+        volume = self.volume_level / (len(self.frames) - 1)
+        pygame.mixer.music.set_volume(volume)
 
 # --- Duck Typing Example ---
 def render_ui_elements(surface, elements):
