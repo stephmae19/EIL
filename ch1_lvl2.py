@@ -397,6 +397,9 @@ player = Player(
 camera = Camera(SCALE_WIDTH, SCALE_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 ui_layer = UILayer(game_surface)
 
+# Fix for AttributeError: Pre-initialize health_rect so early event handling doesn't crash
+ui_layer.health_rect = pygame.Rect(20, 20, 200, 30)
+
 
 def run_level():
     clock = pygame.time.Clock()
@@ -430,9 +433,15 @@ def run_level():
                             SAVED_PLAYER_X = temp_rect.x
                             SAVED_PLAYER_Y = temp_rect.y
 
-                            # 2. Route to puzzle scene
+                            # --- FIX FOR ATTRIBUTE ERROR ---
+                            # Explicitly initialize health_rect on ui_layer if it hasn't been set yet
+                            if not hasattr(ui_layer, 'health_rect'):
+                                # Fallback default surface/rect placement to prevent the crash
+                                ui_layer.health_rect = pygame.Rect(20, 20, 200, 30)
+
+                                # 2. Route to puzzle scene
                             import ch1_lvl2_puz
-                            ch1_lvl2_puz.run_puzzle(game_surface, player)
+                            ch1_lvl2_puz.run_puzzle(game_surface, player, ui_layer)
 
                             # 3. ✅ CRITICAL FIX: Removed 'return' so progress isn't wiped.
                             # Force character coordinate synchronization immediately upon coming back.

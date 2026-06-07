@@ -4,10 +4,25 @@ import os
 import time
 import sys
 
+
 class UILayer:
     def __init__(self, surface):
         self.surface = surface
         self.font = pygame.font.SysFont("arial", 24, bold=True)
+
+        # --- SINGLE SOURCE OF TRUTH (STATE) ---
+        self.max_hearts = 5
+        self.hearts = self.max_hearts
+        self.insanity_level = 55
+        self.countdown_seconds = 300
+        self.start_time = time.time()
+
+        # Pre-initialize rects to prevent AttributeError
+        self.health_rect = pygame.Rect(20, 20, 350, 40)
+        self.inventory_rect = pygame.Rect(0, 0, 0, 0)  # Placeholder
+
+        # ADD THIS LINE TO INITIALIZE THE ATTRIBUTE
+        self.health_rect = pygame.Rect(20, 20, 350, 40)
 
         # Default scale info (updated later by SceneManager or run_level)
         self.scale_info = {"scale": 1, "x_offset": 0, "y_offset": 0, "win_size": (1920, 1080)}

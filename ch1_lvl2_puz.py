@@ -28,11 +28,10 @@ _puzzle_instance = None
 
 
 class PuzzleScene:
-    def __init__(self, surface, player):
+    def __init__(self, surface, player, ui_layer):
         self.surface = surface
         self.player = player
-        self.ui_layer = UILayer(surface)
-        self.ui_layer.health_rect = pygame.Rect(0, 0, 0, 0)
+        self.ui_layer = ui_layer
 
         # ✅ Font for the Back Button text rendering layer
         self.button_font = pygame.font.SysFont("arial", 32, bold=True)
@@ -345,16 +344,17 @@ class PuzzleScene:
         pygame.display.flip()
 
 
-def run_puzzle(surface, player):
+def run_puzzle(game_surface, player, ui_layer):
     clock = pygame.time.Clock()
 
-    # Pull from global container state so items placed remain saved across level scene transitions
     global _puzzle_instance
     if _puzzle_instance is None:
-        _puzzle_instance = PuzzleScene(game_surface, player)
+        # Pass ui_layer into the scene
+        _puzzle_instance = PuzzleScene(game_surface, player, ui_layer)
     else:
-        # ✅ Refresh the player reference inside the persistent instance
+        # Update references if they change
         _puzzle_instance.player = player
+        _puzzle_instance.ui_layer = ui_layer
 
     while True:
         for event in pygame.event.get():
