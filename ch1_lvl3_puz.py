@@ -188,8 +188,8 @@ def run_puzzle(player, ui_layer):
         lbl_color1 = (240, 200, 80) if active_row == 0 else (160, 140, 100)
         lbl_color2 = (240, 200, 80) if active_row == 1 else (160, 140, 100)
 
-        label_r1 = label_font.render("ROW 1:", True, lbl_color1)
-        label_r2 = label_font.render("ROW 2:", True, lbl_color2)
+        label_r1 = label_font.render("BOOK 1:", True, lbl_color1)
+        label_r2 = label_font.render("BOOK 2:", True, lbl_color2)
         game_surface.blit(label_r1, (start_x1 - 180, row1_y + 15))
         game_surface.blit(label_r2, (start_x2 - 180, row2_y + 15))
 
