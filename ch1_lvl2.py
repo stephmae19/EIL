@@ -468,6 +468,7 @@ def run_level():
                             break
 
                         # --- Inventory items ---
+                        # --- Inventory items inside ch1_lvl2.py ---
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
@@ -483,7 +484,8 @@ def run_level():
                                         if orb_static_path:
                                             orb_icon = pygame.image.load(orb_static_path).convert_alpha()
                                             orb_icon = pygame.transform.scale(orb_icon, (40, 40))
-                                            player.inventory.append(orb_icon)
+                                            # ✅ Save BOTH the ID string and the visual icon surface
+                                            player.inventory.append({"id": obj.inventory_item, "icon": orb_icon})
 
                                         obj.already_searched = True
                                         obj.image = None
@@ -502,7 +504,8 @@ def run_level():
                                         if book_path:
                                             book_icon = pygame.image.load(book_path).convert_alpha()
                                             book_icon = pygame.transform.scale(book_icon, (40, 40))
-                                            player.inventory.append(book_icon)
+                                            # ✅ Save BOTH the ID string and the visual icon surface
+                                            player.inventory.append({"id": obj.inventory_item, "icon": book_icon})
 
                                         obj.already_searched = True
                                         obj.image = None
@@ -510,8 +513,8 @@ def run_level():
                                         ui_layer.show_subtitle(f"You picked up {obj.prompt.lower()}", 2000)
 
                                     else:
-                                        # ✅ Normal item pickup
-                                        player.inventory.append(obj.inventory_item)
+                                        # ✅ Normal item fallback pickup
+                                        player.inventory.append({"id": obj.inventory_item, "icon": obj.inventory_item})
                                         obj.already_searched = True
                                         ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!", 2000)
                                 else:

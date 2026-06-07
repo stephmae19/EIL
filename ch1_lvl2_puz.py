@@ -40,13 +40,7 @@ class PuzzleScene:
         self.scale_image = self.scale_bal
         self.scale_rect = self.scale_image.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
 
-        # Slots
-        self.orb_slots = [pygame.Rect(self.scale_rect.left + 100 + i * 80,
-                                      self.scale_rect.centery - 50, 60, 60) for i in range(3)]
-        self.book_slots = [pygame.Rect(self.scale_rect.right - 280 + i * 80,
-                                       self.scale_rect.centery - 50, 60, 60) for i in range(3)]
-
-        # Debug box horizontal offsets
+        # Debug box horizontal offsets (keep these exactly matched to your assets layout)
         LEFT_BOX_OFFSET_X = 10
         RIGHT_BOX_OFFSET_X = -168
 
@@ -54,6 +48,18 @@ class PuzzleScene:
                                           self.scale_rect.centery - 100, 150, 140)
         self.debug_right_box = pygame.Rect(self.scale_rect.right + RIGHT_BOX_OFFSET_X,
                                            self.scale_rect.centery - 100, 150, 140)
+
+        # ✅ Automatically calculate slots inside the visual box bounds to prevent overflow
+        # Spacing is calculated evenly centered across the 150px box width (3 slots of 40px = 120px total)
+        self.orb_slots = [
+            pygame.Rect(self.debug_left_box.left + 10 + i * 45, self.debug_left_box.centery - 20, 40, 40)
+            for i in range(3)
+        ]
+
+        self.book_slots = [
+            pygame.Rect(self.debug_right_box.left + 10 + i * 45, self.debug_right_box.centery - 20, 40, 40)
+            for i in range(3)
+        ]
 
         # Track placed items
         self.orbs_placed = []
@@ -84,20 +90,18 @@ class PuzzleScene:
         return int(virtual_x), int(virtual_y)
 
     def handle_event(self, event):
-        # Pass native event down to UI layer features if needed
         self.ui_layer.handle_input(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             virtual_pos = self.get_virtual_mouse_pos(event.pos)
 
-            # Check inventory slots using virtual positions
+            # Pick up an item dictionary structure from the inventory bar
             for i, slot in enumerate(self.ui_layer.inventory_slots):
                 if slot.collidepoint(virtual_pos) and i < len(self.player.inventory):
                     self.dragging_item = self.player.inventory[i]
                     self.dragged_item_index = i
                     self.ui_layer.selected_slot = i
 
-                    # Calculate offsets from item visual center
                     self.drag_offset_x = virtual_pos[0] - slot.centerx
                     self.drag_offset_y = virtual_pos[1] - slot.centery
                     break
@@ -106,43 +110,52 @@ class PuzzleScene:
             if self.dragging_item is not None:
                 virtual_pos = self.get_virtual_mouse_pos(event.pos)
                 placed = False
-                item_str = str(self.dragging_item)
 
-                # ✅ Rules validation: Orbs on left side
-                if "ORB" in item_str:
-                    for slot in self.orb_slots:
-                        if slot.collidepoint(virtual_pos) and slot not in [s for _, s in self.orbs_placed]:
-                            self.orbs_placed.append((self.dragging_item, slot))
-                            placed = True
-                            break
-                    if not placed and self.debug_left_box.collidepoint(virtual_pos):
-                        self.orbs_placed.append((self.dragging_item, self.debug_left_box))
-                        placed = True
+                # Read the ID string from the dict object directly
+                item_id = self.dragging_item["id"] if isinstance(self.dragging_item, dict) else str(self.dragging_item)
 
-                # ✅ Rules validation: Books on right side
-                elif "BOOK" in item_str:
-                    for slot in self.book_slots:
-                        if slot.collidepoint(virtual_pos) and slot not in [s for _, s in self.books_placed]:
-                            self.books_placed.append((self.dragging_item, slot))
-                            placed = True
-                            break
-                    if not placed and self.debug_right_box.collidepoint(virtual_pos):
-                        self.books_placed.append((self.dragging_item, self.debug_right_box))
-                        placed = True
+                # 1. Check if dropped over the LEFT area (Scale's Orb Side)
+                if self.debug_left_box.collidepoint(virtual_pos) or any(
+                        slot.collidepoint(virtual_pos) for slot in self.orb_slots):
+                    if "ORB" in item_id:
+                        # Find the first vacant target slot on the left
+                        already_taken_slots = [slot for _, slot in self.orbs_placed]
+                        for slot in self.orb_slots:
+                            if slot not in already_taken_slots:
+                                self.orbs_placed.append((self.dragging_item, slot))
+                                placed = True
+                                break
+                    else:
+                        self.message = "Only round orbs fit on the left plate!"
 
-                # Remove from inventory if successfully slotted
+                # 2. Check if dropped over the RIGHT area (Scale's Book Side)
+                elif self.debug_right_box.collidepoint(virtual_pos) or any(
+                        slot.collidepoint(virtual_pos) for slot in self.book_slots):
+                    if "BOOK" in item_id:
+                        # Find the first vacant target slot on the right
+                        already_taken_slots = [slot for _, slot in self.books_placed]
+                        for slot in self.book_slots:
+                            if slot not in already_taken_slots:
+                                self.books_placed.append((self.dragging_item, slot))
+                                placed = True
+                                break
+                    else:
+                        self.message = "Only books belong on the right plate!"
+
+                # Remove from inventory if placed into a target layout slot successfully
                 if placed and self.dragged_item_index is not None:
                     self.player.inventory.pop(self.dragged_item_index)
                     self.ui_layer.selected_slot = None
+                    self.message = ""
 
-                # Reset dragging configuration
+                # Reset drag properties cleanly
                 self.dragging_item = None
                 self.dragged_item_index = None
 
     def check_balance(self):
         if len(self.orbs_placed) == 3 and len(self.books_placed) == 3:
-            orb_names = [str(o[0]) for o in self.orbs_placed]
-            book_names = [str(b[0]) for b in self.books_placed]
+            orb_names = [o[0]["id"] if isinstance(o[0], dict) else str(o[0]) for o in self.orbs_placed]
+            book_names = [b[0]["id"] if isinstance(b[0], dict) else str(b[0]) for b in self.books_placed]
 
             if self.imposter_orb in orb_names or self.imposter_book in book_names:
                 self.message = "The scale refuses to balance..."
@@ -161,33 +174,37 @@ class PuzzleScene:
                 self.scale_image = self.scale_bal
         return False
 
+    def draw_placed_item(self, item, slot):
+        """Helper function to render dictionary items onto target puzzle slots."""
+        item_icon = item["icon"] if isinstance(item, dict) else item
+        item_id = item["id"] if isinstance(item, dict) else str(item)
+
+        if isinstance(item_icon, pygame.Surface):
+            # Scale down the sprite icon slightly if needed to perfectly fit the smaller 40x40 container box bounds
+            if item_icon.get_width() > slot.width or item_icon.get_height() > slot.height:
+                item_icon = pygame.transform.smoothscale(item_icon, (slot.width, slot.height))
+            rect = item_icon.get_rect(center=slot.center)
+            self.surface.blit(item_icon, rect)
+        else:
+            text = self.ui_layer.inventory_font.render(str(item_id)[:4], True, (255, 255, 255))
+            rect = text.get_rect(center=slot.center)
+            self.surface.blit(text, rect)
+
     def draw(self):
         self.surface.fill((0, 0, 0))
         self.surface.blit(self.scale_image, self.scale_rect)
 
-        # Debug bounding blocks
+        # Debug bounding boxes (Comment out or delete these lines once you're satisfied with your alignment)
         pygame.draw.rect(self.surface, (255, 0, 0), self.debug_left_box, 2)
         pygame.draw.rect(self.surface, (0, 0, 255), self.debug_right_box, 2)
 
         # Draw placed orbs
         for item, slot in self.orbs_placed:
-            if isinstance(item, pygame.Surface):
-                rect = item.get_rect(center=slot.center)
-                self.surface.blit(item, rect)
-            else:
-                text = self.ui_layer.inventory_font.render(str(item), True, (255, 255, 255))
-                rect = text.get_rect(center=slot.center)
-                self.surface.blit(text, rect)
+            self.draw_placed_item(item, slot)
 
         # Draw placed books
         for item, slot in self.books_placed:
-            if isinstance(item, pygame.Surface):
-                rect = item.get_rect(center=slot.center)
-                self.surface.blit(item, rect)
-            else:
-                text = self.ui_layer.inventory_font.render(str(item), True, (255, 255, 255))
-                rect = text.get_rect(center=slot.center)
-                self.surface.blit(text, rect)
+            self.draw_placed_item(item, slot)
 
         # Draw UI layer updates
         self.ui_layer.draw(self.player)
@@ -204,11 +221,14 @@ class PuzzleScene:
             render_x = v_mx - self.drag_offset_x
             render_y = v_my - self.drag_offset_y
 
-            if isinstance(self.dragging_item, pygame.Surface):
-                rect = self.dragging_item.get_rect(center=(render_x, render_y))
-                self.surface.blit(self.dragging_item, rect)
+            item_icon = self.dragging_item["icon"] if isinstance(self.dragging_item, dict) else self.dragging_item
+            item_id = self.dragging_item["id"] if isinstance(self.dragging_item, dict) else str(self.dragging_item)
+
+            if isinstance(item_icon, pygame.Surface):
+                rect = item_icon.get_rect(center=(render_x, render_y))
+                self.surface.blit(item_icon, rect)
             else:
-                text = self.ui_layer.inventory_font.render(str(self.dragging_item), True, (255, 255, 255))
+                text = self.ui_layer.inventory_font.render(str(item_id), True, (255, 255, 255))
                 rect = text.get_rect(center=(render_x, render_y))
                 self.surface.blit(text, rect)
 
