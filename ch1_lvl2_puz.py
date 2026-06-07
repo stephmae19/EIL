@@ -397,3 +397,15 @@ def get_placed_item_ids():
     for item, _ in _puzzle_instance.books_placed:
         ids.append(item["id"] if isinstance(item, dict) else str(item))
     return ids
+
+# --- Ensure this logic is in ch1_lvl2_puz.py ---
+def is_puzzle_solved():
+    """
+    Checks the current balance state.
+    Note: If the puzzle is already solved in the main game loop,
+    this will be gated by the logic in ch1_lvl2.py.
+    """
+    global _puzzle_instance
+    if _puzzle_instance is None:
+        return False
+    return _puzzle_instance.check_balance()

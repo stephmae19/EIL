@@ -3,6 +3,7 @@ import pygame
 import sys
 import os
 from ui_layer import UILayer
+import ch1_lvl2_puz
 
 # --- Filenames ---
 WALK_FILE = "Assets/CHARACTERS/player_walk.png"
@@ -419,45 +420,44 @@ def run_level():
                     if player.rect.colliderect(obj.rect):
                         found = True
 
-                        # --- Scale object ---
+                        # --- Within run_level() in ch1_lvl2.py ---
                         if obj.has_scale:
+                            # Check if the puzzle is already completed
+                            if player.puzzle_solved:
+                                ui_layer.show_subtitle("The puzzle has already been deciphered.", 2000)
+                                continue
+
                             obj.already_searched = True
                             ui_layer.show_subtitle("You approach the antique scale...", 2000)
 
-                            # 1. Safely calculate and save coordinates before entering scene
-                            # Tweaking offsets shifts your destination relative to scale center
+                            # 1. Save player coordinates
                             X_OFFSET = 0
                             Y_OFFSET = -83
                             temp_rect = player.image.get_rect(
                                 midbottom=(obj.rect.centerx + X_OFFSET, floor_y + Y_OFFSET))
-                            SAVED_PLAYER_X = temp_rect.x
-                            SAVED_PLAYER_Y = temp_rect.y
+                            SAVED_PLAYER_X, SAVED_PLAYER_Y = temp_rect.x, temp_rect.y
 
-                            # --- FIX FOR ATTRIBUTE ERROR ---
-                            # Explicitly initialize health_rect on ui_layer if it hasn't been set yet
-                            if not hasattr(ui_layer, 'health_rect'):
-                                # Fallback default surface/rect placement to prevent the crash
-                                ui_layer.health_rect = pygame.Rect(20, 20, 200, 30)
-
-                                # 2. Route to puzzle scene
-                            import ch1_lvl2_puz
+                            # 2. Run the puzzle
                             ch1_lvl2_puz.run_puzzle(game_surface, player, ui_layer)
 
-                            # 3. ✅ CRITICAL FIX: Removed 'return' so progress isn't wiped.
-                            # Force character coordinate synchronization immediately upon coming back.
+                            # 3. Check for successful completion
+                            if not player.puzzle_solved and ch1_lvl2_puz.is_puzzle_solved():
+                                player.puzzle_solved = True
+                                player.manuscripts_found += 1  # Increment manuscript count
+                                ui_layer.show_subtitle("The scale balances! You found a manuscript!", 3000)
+
+                            # 4. Restore position
                             player.rect.x = SAVED_PLAYER_X
                             player.rect.y = SAVED_PLAYER_Y
 
-                            # Hide all items that were committed/placed in the puzzle
-                            placed_on_scale = ch1_lvl2_puz.get_placed_item_ids() if hasattr(ch1_lvl2_puz,
-                                                                                            'get_placed_item_ids') else []
+                            # 5. Cleanup placed items
+                            placed_on_scale = ch1_lvl2_puz.get_placed_item_ids()
                             for interactable in interactive_objects:
                                 if interactable.inventory_item and interactable.inventory_item in placed_on_scale:
                                     interactable.already_searched = True
                                     interactable.image = None
                                     interactable.frames = None
-
-                            continue  # Keep running the current map thread loop smoothly
+                            continue
 
                         # --- Manuscript object ---
                         elif obj.has_manuscript:
