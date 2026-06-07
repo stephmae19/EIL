@@ -424,7 +424,7 @@ def run_level():
                             # 1. Safely calculate and save coordinates before entering scene
                             # Tweaking offsets shifts your destination relative to scale center
                             X_OFFSET = 0
-                            Y_OFFSET = 0
+                            Y_OFFSET = -83
                             temp_rect = player.image.get_rect(
                                 midbottom=(obj.rect.centerx + X_OFFSET, floor_y + Y_OFFSET))
                             SAVED_PLAYER_X = temp_rect.x
