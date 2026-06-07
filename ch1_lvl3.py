@@ -3,6 +3,7 @@ import pygame
 import sys
 import os
 from ui_layer import UILayer
+import math
 
 # --- Filenames ---
 WALK_FILE = "Assets/CHARACTERS/player_walk.png"
@@ -456,31 +457,56 @@ def run_level():
 
         # DEBUG + object rendering
         for obj in interactive_objects:
-            # 1. Update the animation state every frame
             obj.update_animation()
 
-            # 2. Draw ONLY IF not already searched
+            # We process visual rendering only if the object hasn't been collected yet
             if not obj.already_searched:
+                # 1. Standard Rendering
                 if obj.image:
                     game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
-                # Draw Prompt if colliding
+                # 2. Pulse Effect (Circular and expanding)
+                if obj.is_glowing:
+                    # Calculate pulse intensity (0.0 to 1.0)
+                    pulse = (math.sin(pygame.time.get_ticks() * 0.005) + 1) / 2
+
+                    # Define a larger radius for the glow area (e.g., 1.5x the object width)
+                    glow_radius = int(max(obj.rect.width, obj.rect.height) * (0.8 + pulse * 0.4))
+                    glow_surf_size = (glow_radius * 2, glow_radius * 2)
+
+                    glow_surf = pygame.Surface(glow_surf_size, pygame.SRCALPHA)
+
+                    # Draw a soft, semi-transparent circle
+                    # We draw a few concentric circles to create a soft-edge 'glow' gradient
+                    for i in range(5):
+                        alpha = int(40 * (1 - (i / 5)))
+                        pygame.draw.circle(
+                            glow_surf,
+                            (255, 255, 200, alpha),
+                            (glow_radius, glow_radius),
+                            glow_radius - (i * 5)
+                        )
+
+                    # Calculate position to center the glow on the object
+                    glow_rect = glow_surf.get_rect(center=obj.rect.center)
+                    game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
+
+                # 3. Prompt Rendering
                 if player.rect.colliderect(obj.rect):
                     prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                     prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
                     game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
-            # 4. Glow/Letter logic
-            if obj.is_glowing and not obj.already_searched:
-                # ... (Keep your existing pulse/glow rendering code here)
+                # 4. Glow/Letter logic (Moved inside 'if not obj.already_searched')
+                if obj.is_glowing and obj.inventory_item and len(str(obj.inventory_item)) == 1:
+                    # Determine color based on set: VIOLET (238, 130, 238) or RED (255, 0, 0)
+                    text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0, 0)
 
-                # Render single letter items (like 'H' or your random chars)
-                if obj.inventory_item and len(str(obj.inventory_item)) == 1:
-                    char_text = h_font.render(str(obj.inventory_item), True, (255, 255, 255))
+                    char_text = h_font.render(str(obj.inventory_item), True, text_color)
                     text_rect = char_text.get_rect(center=obj.rect.center)
                     game_surface.blit(char_text, camera.apply_rect(text_rect))
 
-            # 5. Debug Rect (Optional: remove this if you don't want to see green boxes)
+            # 5. Debug Rect (Optional: kept outside the searched check so you see the hitboxes)
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
         # Draw player
