@@ -10,9 +10,9 @@ class UILayerTemp:
     def click_insanity_loss(self): pass
     def draw(self, player): pass
 
-WALK_FILE = "Assets/CHARACTERS/player_walk.png"
-WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
-IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
+WALK_FILE = "Assets/Characters/player_walk.png"
+WALK2_FILE = "Assets/Characters/player_walk2.png"
+IDLE_FILE = "Assets/Characters/player_idle.png"
 BG_FILE = "Assets/Maps/chapter1/level2/ch1_lvl2.png"
 
 FLOOR_HEIGHT_PERCENTAGE = 0.74

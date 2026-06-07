@@ -14,10 +14,10 @@ import os
 from abc import ABC, abstractmethod
 
 # --- 1. EXACT FILENAMES ---
-WALK_FILE = "assets/characters/player_walk.jpeg"
-IDLE_FILE = "assets/characters/player_idle.jpeg"
+WALK_FILE = "Assets/Characters/player_walk.jpeg"
+IDLE_FILE = "Assets/Characters/player_idle.jpeg"
 BG_FILE = "assets/maps/chapter1_level1.png"
-ENEMY_FILE = "assets/characters/entity.jpeg"
+ENEMY_FILE = "Assets/Characters/entity.jpeg"
 
 # --- 2. TWEAK VARIABLES ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74

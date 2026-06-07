@@ -6,11 +6,11 @@ from ui_layer import UILayer
 import math
 
 # --- Filenames ---
-WALK_FILE = "Assets/CHARACTERS/player_walk.png"
-WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
-IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
+WALK_FILE = "Assets/Characters/player_walk.png"
+WALK2_FILE = "Assets/Characters/player_walk2.png"
+IDLE_FILE = "Assets/Characters/player_idle.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl3.png"
-MANUSCRIPT_FILE = "Assets/OBJECTS-ITEMS/manuscript.png"
+MANUSCRIPT_FILE = "Assets/Objects-Items/manuscript.png"
 
 # --- Orbs ---
 ORB_GLOW_VIOLET = "Assets/MAPS/chapter1/orb_glow_violet.png"
@@ -238,7 +238,7 @@ ui_font = pygame.font.SysFont("arial", 28, bold=True)
 feedback_font = pygame.font.SysFont("arial", 24, italic=True)
 
 # ✅ Load your specific custom font
-CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
+CUSTOM_FONT_PATH = "Assets/Font/VCR_OSD_MONO_1.001.ttf"
 h_font = pygame.font.Font(CUSTOM_FONT_PATH, 50)  # Set size to 50 for visibility
 
 # Background

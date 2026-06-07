@@ -5,7 +5,7 @@ import os
 from ui_layer import UILayer   # ✅ import your UI layer
 
 # --- Filenames ---
-MANU_TEXT_FILE = "Assets/OBJECTS-ITEMS/manu_text.png"
+MANU_TEXT_FILE = "Assets/Objects-Items/manu_text.png"
 
 # --- Puzzle text layout config ---
 TEXT_OFFSET_X = 0        # horizontal offset relative to manuscript center

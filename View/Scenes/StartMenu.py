@@ -2,11 +2,13 @@
 import pygame
 import os
 from View.Scenes.Credits import run_credits
-from View.UI import VolumeSlider  # ✅ Imported our newly migrated widget
+from View.UI import VolumeSlider
 
 class StartMenu:
-    def __init__(self, screen):
+    # ✅ Modified to track and hold game engine scene managers
+    def __init__(self, screen, scene_manager=None):
         self.screen = screen
+        self.scene_manager = scene_manager
 
         # Base design dimensions
         self.base_width = 509
@@ -149,7 +151,13 @@ class StartMenu:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for _, rect, action in self.button_rects:
                 if rect.collidepoint(event.pos):
-                    if action == "options":
+                    # ✅ Route scene initialization via state variables instead of plain strings
+                    if action == "start":
+                        if self.scene_manager:
+                            from View.Scenes.CharacterSelection import CharacterSelection
+                            self.scene_manager.set_scene(CharacterSelection(self.screen, self.scene_manager))
+                        return "start"
+                    elif action == "options":
                         self.current_buttons = "options"
                         self._create_layout()
                         return "options"

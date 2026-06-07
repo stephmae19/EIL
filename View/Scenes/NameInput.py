@@ -6,7 +6,7 @@ import os
 from View.Scenes.ChapterSelect import ChapterSelect
 
 # --- Config ---
-NAMEBOX_FILE = "Assets/SCENERY/name_box.png"
+NAMEBOX_FILE = "Assets/Scenery/name_box.png"
 
 class NameInput:
     def __init__(self, screen, scene_manager, chosen_character):

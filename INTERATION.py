@@ -3,10 +3,10 @@ import sys
 import os
 
 # --- 1. YOUR FILENAMES ---
-WALK_FILE = "assets/characters/player_walk.jpeg"
-IDLE_FILE = "assets/characters/player_idle.jpeg"
+WALK_FILE = "Assets/Characters/player_walk.jpeg"
+IDLE_FILE = "Assets/Characters/player_idle.jpeg"
 BG_FILE = "assets/maps/chapter1_level1.png"
-MANUSCRIPT_FILE = "assets/menu options/manuscript.png" # Updated to your exact filename
+MANUSCRIPT_FILE = "Assets/Menu Options/manuscript.png"  # Updated to your exact filename
 
 # --- 2. EASY TWEAK VARIABLES ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74 
