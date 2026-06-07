@@ -239,16 +239,6 @@ scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 # --- Adaptive Interactive Objects (player-style scaling) ---
 interactive_objects = [
     InteractiveObject(
-        x=int(180 * scale_factor),
-        y=int(floor_y - int(140 * scale_factor)),
-        width=int(50 * scale_factor), # Adjusted width for visibility
-        height=int(80 * scale_factor),
-        has_manuscript=False,
-        inventory_item="H",
-        prompt="I found a letter H.",
-        is_glowing=True # Enable glow
-    ),
-    InteractiveObject(
         x=int(680 * scale_factor),
         y=int(floor_y - int(270 * scale_factor)),
         width=int(80 * scale_factor),
@@ -292,32 +282,45 @@ interactive_objects.append(
 
 import random
 
-# Calculate the upper boundary: Top of map to 320px above the floor
-# Ensuring we don't go into negative coordinates
+# --- Configuration ---
 max_y = floor_y - 320
-min_y = 50  # Start at least 50px from the top of the map
+min_y = 50
+object_width = 60
+object_height = 60
+min_distance = 100  # Minimum pixels between centers
 
-# --- Helper to create glowing letter objects ---
-def create_glowing_letter(char, prompt_text):
-    return InteractiveObject(
-        x=random.randint(200, MAP_WIDTH - 200),
-        y=random.randint(min_y, max_y), # Random Y in upper area
-        width=60, height=60,
-        prompt=prompt_text,
-        is_glowing=True,          # Enables the glow
-        is_repeatable=True
-    )
+
+def is_position_valid(new_rect, existing_objects):
+    for obj in existing_objects:
+        # Check if the new rect is too close to an existing object
+        # We use a buffer to ensure they don't overlap
+        if new_rect.colliderect(obj.rect.inflate(min_distance, min_distance)):
+            return False
+    return True
+
 
 # --- Create sets ---
-for char in "TRAITORS":
-    obj = create_glowing_letter(char, f"You found the letter: {char}")
-    obj.inventory_item = char # Assign char to display in the H-style render
-    interactive_objects.append(obj)
+for char in "TRAITORS" + "DEMONIC":
+    placed = False
+    attempts = 0
+    # Try up to 100 times to find a clear spot
+    while not placed and attempts < 100:
+        spawn_x = random.randint(200, MAP_WIDTH - 200)
+        spawn_y = random.randint(min_y, max_y)
+        new_rect = pygame.Rect(spawn_x, spawn_y, object_width, object_height)
 
-for char in "DEMONIC":
-    obj = create_glowing_letter(char, f"You found the letter: {char}")
-    obj.inventory_item = char
-    interactive_objects.append(obj)
+        if is_position_valid(new_rect, interactive_objects):
+            obj = InteractiveObject(
+                x=spawn_x, y=spawn_y,
+                width=object_width, height=object_height,
+                prompt=f"A faint carving or whisper: {char}",
+                is_glowing=True,
+                is_repeatable=True
+            )
+            obj.inventory_item = char
+            interactive_objects.append(obj)
+            placed = True
+        attempts += 1
 
 # --- Adaptive Player Initialization ---
 player = Player(
