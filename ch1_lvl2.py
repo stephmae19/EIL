@@ -270,15 +270,6 @@ scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 # --- Adaptive Interactive Objects ---
 interactive_objects = [
     InteractiveObject(
-        x=int(180 * scale_factor),
-        y=int(floor_y - int(140 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="H",
-        prompt="A glowing orb."
-    ),
-    InteractiveObject(
         x=int(350 * scale_factor),
         y=int(floor_y - int(200 * scale_factor)),
         width=int(5 * scale_factor),
