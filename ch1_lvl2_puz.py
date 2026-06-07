@@ -79,8 +79,9 @@ class PuzzleScene:
         self.drag_offset_x = 0
         self.drag_offset_y = 0
 
-        self.imposter_orb = "ORB_IMPOSTER"
-        self.imposter_book = "BOOK_IMPOSTER"
+        # ✅ UPDATED: Setting the correct imposter IDs tracking back to level interactive inventory items
+        self.imposter_orb = "ORB_VIOLET"
+        self.imposter_book = "BOOK_BROWN"
 
         self.message = ""
 
