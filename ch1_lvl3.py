@@ -333,9 +333,11 @@ def is_position_valid(new_rect, existing_objects):
 
 # --- Create sets ---
 for char in "TRAITORS" + "DEMONIC":
+    # Determine the set type based on which string the char belongs to
+    current_set = "TRAITORS" if char in "TRAITORS" else "DEMONIC"
+
     placed = False
     attempts = 0
-    # Try up to 100 times to find a clear spot
     while not placed and attempts < 100:
         spawn_x = random.randint(200, MAP_WIDTH - 200)
         spawn_y = random.randint(min_y, max_y)
@@ -350,6 +352,9 @@ for char in "TRAITORS" + "DEMONIC":
                 is_repeatable=True
             )
             obj.inventory_item = char
+            # ✅ ADD THIS LINE: Assign the set name so the rendering loop knows the color
+            obj.set_type = current_set
+
             interactive_objects.append(obj)
             placed = True
         attempts += 1
