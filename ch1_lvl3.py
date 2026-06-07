@@ -447,7 +447,7 @@ def run_level():
                                     ui_layer.show_subtitle("You examine the manuscript again...", 2000)
                                 # ✅ Connected to level 3 puzzle module
                                 import ch1_lvl3_puz
-                                ch1_lvl3_puz.run_puzzle(player, ui_layer)
+                                ch1_lvl3_puz.run_puzzle(player, ui_layer, screen)
                             break
 
                         # --- Inventory logic ---

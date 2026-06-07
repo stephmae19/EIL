@@ -12,15 +12,13 @@ BACK_BUTTON_Y = 230  # Adjust this value to change the vertical position of the 
 pygame.init()
 pygame.font.init()
 
-# Setup display configurations locally
-info = pygame.display.Info()
-native_width, native_height = info.current_w, info.current_h
-screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
-
-def run_puzzle(player, ui_layer):
+def run_puzzle(player, ui_layer, screen=None):
     clock = pygame.time.Clock()
+
+    if screen is None:
+        screen = pygame.display.get_surface()  # fallback if not passed
 
     # Load custom text layout fonts
     if os.path.exists(CUSTOM_FONT_PATH):
