@@ -96,6 +96,7 @@ class UILayer:
         self.insanity_frames = []
         self.insanity_level = 55
         self.dragging = False
+        self.is_dragging = False
 
         if os.path.exists(insanity_path):
             insanity_sheet = pygame.image.load(insanity_path).convert_alpha()
@@ -161,24 +162,42 @@ class UILayer:
         # Track selected slot
         self.selected_slot = None
 
-    def handle_inventory_drag(self, event, player, mouse_pos):
+    def handle_inventory_drag(self, event, player, adj_mouse_pos):
+        # 1. Start Dragging
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for i, slot in enumerate(self.inventory_slots):
-                if slot.collidepoint(mouse_pos) and i < len(player.inventory):
+                # Ensure we use the scaled mouse coordinates
+                if slot.collidepoint(adj_mouse_pos) and i < len(player.inventory):
                     self.dragging_item = player.inventory.pop(i)
+                    self.is_dragging = True
                     break
+
+        # 2. Release Drag (Consolidated)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            if self.dragging_item:
-                player.inventory.append(self.dragging_item)
+            if getattr(self, 'is_dragging', False):
+                dropped_in_slot = False
+                for slot in self.inventory_slots:
+                    if slot.collidepoint(adj_mouse_pos):
+                        # Re-insert into inventory
+                        player.inventory.append(self.dragging_item)
+                        dropped_in_slot = True
+                        break
+
+                # Return it to the inventory if dropped anywhere else in the world
+                if not dropped_in_slot:
+                    player.inventory.append(self.dragging_item)
+
                 self.dragging_item = None
+                self.is_dragging = False
 
     def draw_dragged_item(self, mouse_pos):
-        # Only draw if an item is currently being dragged
-        if self.dragging_item and self.dragging_item.get("icon"):
-            # Scale the icon to 80x80 as requested
-            icon = pygame.transform.scale(self.dragging_item["icon"], (80, 80))
-            # Blit centered on the mouse position
-            self.surface.blit(icon, (mouse_pos[0] - 40, mouse_pos[1] - 40))
+        if self.dragging_item and isinstance(self.dragging_item, dict):
+            icon = self.dragging_item.get("icon")
+            if icon:
+                # Scale the orb to 80x80 as requested
+                drag_img = pygame.transform.scale(icon, (80, 80))
+                # Center the 80x80 image on the cursor (offset by 40)
+                self.surface.blit(drag_img, (mouse_pos[0] - 40, mouse_pos[1] - 40))
 
     def set_scale_info(self, scale_info):
         """Update scale info from SceneManager so UI adapts to window size."""
@@ -368,7 +387,7 @@ class UILayer:
                     self.dragging = True
                     self.update_insanity(event.pos[0], inner_rect)
             elif event.type == pygame.MOUSEBUTTONUP:
-                self.dragging = False
+                self.is_dragging = False
             elif event.type == pygame.MOUSEMOTION and self.dragging:
                 inner_rect = pygame.Rect(
                     bar_rect.left + int(50 * (self.bar_width / 397)),

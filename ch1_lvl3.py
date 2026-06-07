@@ -388,8 +388,18 @@ def run_level():
 
     while True:
         # 1. Capture Input State
-        mouse_pos = pygame.mouse.get_pos()
+        raw_mouse_pos = pygame.mouse.get_pos()
         now = pygame.time.get_ticks()
+
+        # ✅ Calculate normalized mouse pos relative to the game_surface immediately
+        window_width, window_height = screen.get_size()
+        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
+        offset_x = (window_width - int(BASE_WIDTH * scale)) // 2
+        offset_y = (window_height - int(BASE_HEIGHT * scale)) // 2
+
+        adj_mouse_x = (raw_mouse_pos[0] - offset_x) / scale
+        adj_mouse_y = (raw_mouse_pos[1] - offset_y) / scale
+        adj_mouse_pos = (adj_mouse_x, adj_mouse_y)
 
         # 2. Event Loop
         for event in pygame.event.get():
@@ -397,8 +407,8 @@ def run_level():
                 pygame.quit()
                 sys.exit()
 
-            # Handle Dragging
-            ui_layer.handle_inventory_drag(event, player, mouse_pos)
+            # ✅ Pass the adjusted mouse position to the drag handler
+            ui_layer.handle_inventory_drag(event, player, adj_mouse_pos)
 
             # Escape to exit
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -518,9 +528,24 @@ def run_level():
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
 
+        # ✅ Draw the dragged item exactly once using the adjusted coordinates
+        ui_layer.draw_dragged_item(adj_mouse_pos)
+
         # Draw UI
         ui_layer.draw(player)
-        ui_layer.draw_dragged_item(mouse_pos)  # Draw this LAST
+
+        # Render the dragged item on the game_surface so it follows resolution scaling
+        # We pass the mouse position adjusted for the screen scaling
+        window_width, window_height = screen.get_size()
+        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
+        offset_x = (window_width - int(BASE_WIDTH * scale)) // 2
+        offset_y = (window_height - int(BASE_HEIGHT * scale)) // 2
+
+        # Calculate normalized mouse pos relative to the game_surface
+        adj_mouse_x = (pygame.mouse.get_pos()[0] - offset_x) / scale
+        adj_mouse_y = (pygame.mouse.get_pos()[1] - offset_y) / scale
+
+        ui_layer.draw_dragged_item((adj_mouse_x, adj_mouse_y))
 
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
