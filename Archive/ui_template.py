@@ -8,6 +8,29 @@ class UILayerTemp:
     def __init__(self, surface):
         self.surface = surface
         self.font = pygame.font.SysFont("arial", 24, bold=True)
+        self.dragging_item = None  # Holds the dict: {"id": "...", "icon": surface}
+        self.drag_offset = (0, 0)
+
+    def handle_inventory_drag(self, event, player, mouse_pos):
+        # Start drag
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for i, slot in enumerate(self.inventory_slots):
+                if slot.collidepoint(mouse_pos) and i < len(player.inventory):
+                    self.dragging_item = player.inventory.pop(i)
+                    break
+
+        # End drag
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.dragging_item:
+                # Logic: Return to inventory if dropped outside specific drop zones
+                player.inventory.append(self.dragging_item)
+                self.dragging_item = None
+
+    def draw_dragged_item(self, mouse_pos):
+        if self.dragging_item and self.dragging_item.get("icon"):
+            # Scale to 80px as requested
+            icon = pygame.transform.scale(self.dragging_item["icon"], (80, 80))
+            self.surface.blit(icon, (mouse_pos[0] - 40, mouse_pos[1] - 40))
 
         # Default scale info (updated later by SceneManager or run_level)
         self.scale_info = {"scale": 1, "x_offset": 0, "y_offset": 0, "win_size": (1920, 1080)}

@@ -384,6 +384,7 @@ ui_layer = UILayer(game_surface)
 # --- Main Loop wrapped in a function ---
 def run_level():
     clock = pygame.time.Clock()
+    mouse_pos = pygame.mouse.get_pos()
 
     while True:
         now = pygame.time.get_ticks()
@@ -465,6 +466,8 @@ def run_level():
         player.update(MAP_WIDTH)
         camera.update(player)
 
+        ui_layer.handle_inventory_drag(event, player, mouse_pos)
+
         # --- Render everything to internal surface ---
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
@@ -532,6 +535,7 @@ def run_level():
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
+        ui_layer.draw_dragged_item(mouse_pos)
 
         # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()

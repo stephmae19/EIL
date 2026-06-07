@@ -9,6 +9,7 @@ class UILayer:
     def __init__(self, surface):
         self.surface = surface
         self.font = pygame.font.SysFont("arial", 24, bold=True)
+        self.dragging_item = None  # Add this line
 
         # --- SINGLE SOURCE OF TRUTH (STATE) ---
         self.max_hearts = 5
@@ -159,6 +160,29 @@ class UILayer:
 
         # Track selected slot
         self.selected_slot = None
+
+    def handle_inventory_drag(self, event, player, mouse_pos):
+        # Translate screen mouse_pos to internal game_surface coords if necessary
+        # Assuming mouse_pos is passed correctly from the main loop
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for i, slot in enumerate(self.inventory_slots):
+                if slot.collidepoint(mouse_pos) and i < len(player.inventory):
+                    self.dragging_item = player.inventory.pop(i)
+                    break
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.dragging_item:
+                # Logic: Return to inventory if dropped outside game area
+                # Or handle drop logic here
+                player.inventory.append(self.dragging_item)
+                self.dragging_item = None
+
+    def draw_dragged_item(self, mouse_pos):
+        if self.dragging_item and self.dragging_item.get("icon"):
+            # Ensure the dragged icon size is consistent (e.g., 80x80)
+            icon = pygame.transform.scale(self.dragging_item["icon"], (80, 80))
+            self.surface.blit(icon, (mouse_pos[0] - 40, mouse_pos[1] - 40))
 
     def set_scale_info(self, scale_info):
         """Update scale info from SceneManager so UI adapts to window size."""
