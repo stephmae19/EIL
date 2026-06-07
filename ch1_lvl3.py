@@ -501,8 +501,12 @@ def run_level():
                 if obj.image:
                     game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
+                # ✅ Check if this object is a letter that hasn't been revealed yet
+                is_hidden_letter = hasattr(obj, 'set_type') and not getattr(obj, 'is_revealed', False)
+
                 # 2. Pulse Effect (Circular and expanding)
-                if obj.is_glowing:
+                # ✅ Only show the glow if it's NOT a hidden letter
+                if obj.is_glowing and not is_hidden_letter:
                     # Calculate pulse intensity (0.0 to 1.0)
                     pulse = (math.sin(pygame.time.get_ticks() * 0.005) + 1) / 2
 
@@ -513,7 +517,6 @@ def run_level():
                     glow_surf = pygame.Surface(glow_surf_size, pygame.SRCALPHA)
 
                     # Draw a soft, semi-transparent circle
-                    # We draw a few concentric circles to create a soft-edge 'glow' gradient
                     for i in range(5):
                         alpha = int(40 * (1 - (i / 5)))
                         pygame.draw.circle(
@@ -528,25 +531,27 @@ def run_level():
                     game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
 
                 # 3. Prompt Rendering
-                if player.rect.colliderect(obj.rect):
+                # ✅ Hide the prompt text if the letter is still hidden
+                if player.rect.colliderect(obj.rect) and not is_hidden_letter:
                     prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                     prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
                     game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
-                # 4. Glow/Letter logic (Moved inside 'if not obj.already_searched')
+                # 4. Glow/Letter logic
                 if obj.is_glowing and obj.inventory_item and len(str(obj.inventory_item)) == 1:
 
                     # ✅ Only draw the letter if it has been successfully revealed
                     if getattr(obj, 'is_revealed', False):
                         # Determine color based on set: VIOLET (238, 130, 238) or RED (255, 0, 0)
-                        text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0, 0)
+                        text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0,
+                                                                                                         0)
 
                         char_text = h_font.render(str(obj.inventory_item), True, text_color)
                         text_rect = char_text.get_rect(center=obj.rect.center)
                         game_surface.blit(char_text, camera.apply_rect(text_rect))
 
             # 5. Debug Rect (Optional: kept outside the searched check so you see the hitboxes)
-            pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+            # pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
