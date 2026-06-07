@@ -333,10 +333,19 @@ def is_position_valid(new_rect, existing_objects):
 
 
 # --- Create sets ---
-for char in "TRAITORS" + "DEMONIC":
-    # Determine the set type based on which string the char belongs to
-    current_set = "TRAITORS" if char in "TRAITORS" else "DEMONIC"
+# Explicitly define which letter belongs to which word/color
+# Note: If a letter is in both, this structure gives you full control
+traitors_letters = list("TRAITORS")
+demonic_letters = list("DEMONIC")
 
+# Combine them while tagging them with their word source
+all_char_data = []
+for char in traitors_letters:
+    all_char_data.append((char, "TRAITORS"))
+for char in demonic_letters:
+    all_char_data.append((char, "DEMONIC"))
+
+for char, set_name in all_char_data:
     placed = False
     attempts = 0
     while not placed and attempts < 100:
@@ -353,8 +362,7 @@ for char in "TRAITORS" + "DEMONIC":
                 is_repeatable=True
             )
             obj.inventory_item = char
-            # ✅ ADD THIS LINE: Assign the set name so the rendering loop knows the color
-            obj.set_type = current_set
+            obj.set_type = set_name  # Now explicitly set to "TRAITORS" or "DEMONIC"
 
             interactive_objects.append(obj)
             placed = True
