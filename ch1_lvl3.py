@@ -10,6 +10,7 @@ WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl3.png"
 MANUSCRIPT_FILE = "Assets/OBJECTS-ITEMS/manuscript.png"
+ORB_GLOW_BLUE = "Assets/MAPS/chapter1/orb_glow_blue.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -244,6 +245,16 @@ interactive_objects = [
         prompt="I found a letter H.",
         is_glowing=True # Enable glow
     ),
+    InteractiveObject(
+        x=int(680 * scale_factor),
+        y=int(floor_y - int(270 * scale_factor)),
+        width=int(80 * scale_factor),
+        height=int(80 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_BLUE",
+        prompt="A glowing blue orb.",
+        image_file=ORB_GLOW_BLUE
+    ),
 ]
 
 interactive_objects.append(
@@ -372,7 +383,7 @@ def run_level():
 
                 # 2. Adjust the SPREAD and DENSITY
                 for i in range(10, 0, -1):
-                    alpha = int(150 * (i / 10))
+                    alpha = 50
                     # Inflate dynamically based on the pulse-affected size
                     glow_surf.fill((0, 0, 0, 0)) # Clear previous frame if necessary
                     pygame.draw.ellipse(glow_surf, (255, 255, 0, alpha),
