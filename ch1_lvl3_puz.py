@@ -1,230 +1,190 @@
-# ch1_lvl1_puz.py
+# ch1_lvl3_puz.py
 import pygame
 import sys
 import os
-from ui_layer import UILayer   # ✅ import your UI layer
 
-# --- Filenames ---
-MANU_TEXT_FILE = "Assets/OBJECTS-ITEMS/manu_text.png"
-
-# --- Puzzle text layout config ---
-TEXT_OFFSET_X = 0        # horizontal offset relative to manuscript center
-TEXT_OFFSET_Y = 40       # vertical offset from manuscript top
-LINE_SPACING = 5         # spacing between lines
-FONT_SIZE = 40           # ✅ direct font size control
-
-# --- Config ---
+# --- Layout Configuration ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-
-# --- Answer slots layout config ---
-SLOT_VERTICAL_OFFSET = 330   # distance from bottom of screen
-SLOT_SIZE = 70               # width/height of each slot
-SLOT_SPACING = 100            # spacing between slots
-
-# --- Success message layout config ---
-SUCCESS_MSG_OFFSET_Y = 150   # distance from vertical center
+MANU_TEXT_FILE = "Assets/OBJECTS-ITEMS/manu_text.png"
+CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
 
 pygame.init()
 pygame.font.init()
 
-# --- Display Setup ---
+# Setup display configurations locally
 info = pygame.display.Info()
 native_width, native_height = info.current_w, info.current_h
-os.environ['SDL_VIDEO_CENTERED'] = '1'
-
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 1 - Level 1 Puzzle")
-
-# Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
-clock = pygame.time.Clock()
-ui_font = pygame.font.SysFont("arial", 32, bold=True)
 
-# --- Load manu_text image ---
-if os.path.exists(MANU_TEXT_FILE):
-    manu_text_img = pygame.image.load(MANU_TEXT_FILE).convert_alpha()
-    manu_text_img = pygame.transform.scale(manu_text_img, (int(BASE_WIDTH * 0.6), int(BASE_HEIGHT * 0.6)))
-else:
-    manu_text_img = pygame.Surface((600, 400))
-    manu_text_img.fill((200, 200, 200))
+def run_puzzle(player, ui_layer):
+    clock = pygame.time.Clock()
 
-manu_rect = manu_text_img.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
+    # Load custom text layout fonts
+    if os.path.exists(CUSTOM_FONT_PATH):
+        puzzle_font = pygame.font.Font(CUSTOM_FONT_PATH, 55)
+        label_font = pygame.font.Font(CUSTOM_FONT_PATH, 40)
+    else:
+        puzzle_font = pygame.font.SysFont("mono", 55, bold=True)
+        label_font = pygame.font.SysFont("arial", 40, bold=True)
 
-# --- Puzzle text ---
-puzzle_text = (
-    "I am the surname of the regular visitor "
-    "who met a tragic, blood-curdling end on Aisle 11. "
-    "My name is also a deadly poison."
-)
+    # State values
+    row1_input = []
+    row2_input = []
+    active_row = 0  # 0 for Row 1, 1 for Row 2
 
-# --- Back button ---
-back_button = pygame.Rect(50, 50, 120, 50)
+    # Target solutions
+    ans_row1 = "TRAITORS"
+    ans_row2 = "DEMONIC"
 
-# --- Drag & drop state ---
-dragging_letter = None
-drag_source = None  # "inventory" or "answer"
+    # Box layout math metrics
+    box_size = 75
+    spacing = 20
 
-# --- Answer slots ---
-answer_slots = [None] * 7
-answer_rects = []
-slot_row_y = BASE_HEIGHT - SLOT_VERTICAL_OFFSET   # ✅ adjustable vertical position
-slot_row_x_start = BASE_WIDTH//2 - (3 * SLOT_SPACING + SLOT_SIZE//2)
+    # Calculate center boundaries for columns/rows
+    row1_total_w = (len(ans_row1) * box_size) + ((len(ans_row1) - 1) * spacing)
+    row2_total_w = (len(ans_row2) * box_size) + ((len(ans_row2) - 1) * spacing)
 
-for i in range(7):
-    rect = pygame.Rect(slot_row_x_start + i * SLOT_SPACING, slot_row_y, SLOT_SIZE, SLOT_SIZE)
-    answer_rects.append(rect)
+    start_x1 = (BASE_WIDTH - row1_total_w) // 2 + 100
+    start_x2 = (BASE_WIDTH - row2_total_w) // 2 + 100
 
-# --- Helper: translate mouse coords ---
-def translate_mouse(pos, window_size):
-    window_w, window_h = window_size
-    scale = min(window_w / BASE_WIDTH, window_h / BASE_HEIGHT)
-    scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
-    x_offset = (window_w - scaled_w) // 2
-    y_offset = (window_h - scaled_h) // 2
-    x = (pos[0] - x_offset) / scale
-    y = (pos[1] - y_offset) / scale
-    return int(x), int(y)
-
-# --- Helper: render wrapped text inside manuscript ---
-def render_wrapped_text(surface, text, font, color, rect, offset_x, line_spacing):
-    words = text.split(' ')
-    lines = []
-    current_line = ""
-
-    # Word wrapping
-    for word in words:
-        test_line = current_line + word + " "
-        test_surface = font.render(test_line, True, color)
-        if test_surface.get_width() <= rect.width - 20:  # keep inside manuscript
-            current_line = test_line
-        else:
-            lines.append(current_line)
-            current_line = word + " "
-    if current_line:
-        lines.append(current_line)
-
-    # ✅ Calculate total height of all lines
-    total_height = len(lines) * (font.get_height() + line_spacing) - line_spacing
-
-    # ✅ Center vertically inside manuscript
-    y = rect.centery - total_height // 2
-
-    # Render each line centered horizontally
-    for line in lines:
-        txt_surface = font.render(line, True, color)
-        x = rect.centerx - txt_surface.get_width() // 2 + offset_x
-        surface.blit(txt_surface, (x, y))
-        y += font.get_height() + line_spacing
-
-def run_puzzle(player, ui_layer=None):
-    global dragging_letter, drag_source
-
-    if ui_layer is None or ui_layer.surface != game_surface:
-        ui_layer = UILayer(game_surface)
+    row1_y = 420
+    row2_y = 620
 
     solved = False
-    text_font = pygame.font.SysFont("arial", FONT_SIZE, bold=True)
+    solved_timer = 0
+
+    # Load manuscript background template layout
+    bg_texture = None
+    if os.path.exists(MANU_TEXT_FILE):
+        bg_texture = pygame.image.load(MANU_TEXT_FILE).convert_alpha()
+        bg_texture = pygame.transform.scale(bg_texture, (BASE_WIDTH, BASE_HEIGHT))
 
     while True:
+        # Scale handling variables
+        window_width, window_height = screen.get_size()
+        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
+        offset_x = (window_width - int(BASE_WIDTH * scale)) // 2
+        offset_y = (window_height - int(BASE_HEIGHT * scale)) // 2
+
+        raw_mouse = pygame.mouse.get_pos()
+        adj_mouse_x = (raw_mouse[0] - offset_x) / scale
+        adj_mouse_y = (raw_mouse[1] - offset_y) / scale
+
+        # Event handling layer
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = translate_mouse(event.pos, screen.get_size())
-                if back_button.collidepoint(mouse_pos):
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
                     return
 
-                for i, rect in enumerate(ui_layer.inventory_slots):
-                    if rect.collidepoint(mouse_pos) and i < len(player.inventory):
-                        dragging_letter = i
-                        drag_source = "inventory"
+                # Toggle selection between fields via Arrow Keys or TAB
+                if event.key in [pygame.K_TAB, pygame.K_DOWN, pygame.K_UP]:
+                    active_row = 1 if active_row == 0 else 0
 
-                for j, rect in enumerate(answer_rects):
-                    if rect.collidepoint(mouse_pos) and answer_slots[j]:
-                        dragging_letter = j
-                        drag_source = "answer"
+                elif event.key == pygame.K_BACKSPACE:
+                    if active_row == 0 and len(row1_input) > 0:
+                        row1_input.pop()
+                    elif active_row == 1 and len(row2_input) > 0:
+                        row2_input.pop()
 
-            if event.type == pygame.MOUSEBUTTONUP:
-                mouse_pos = translate_mouse(event.pos, screen.get_size())
-                if dragging_letter is not None:
-                    if drag_source == "inventory":
-                        for j, rect in enumerate(answer_rects):
-                            if rect.collidepoint(mouse_pos) and not answer_slots[j]:
-                                answer_slots[j] = player.inventory[dragging_letter]
-                                player.inventory.pop(dragging_letter)
-                                break
-                    elif drag_source == "answer":
-                        for j, rect in enumerate(answer_rects):
-                            if rect.collidepoint(mouse_pos):
-                                answer_slots[j], answer_slots[dragging_letter] = answer_slots[dragging_letter], answer_slots[j]
-                                break
-                    dragging_letter = None
-                    drag_source = None
+                # Text input processor with automatic forced capitalization conversion
+                elif event.unicode and event.unicode.isalpha():
+                    char_upper = event.unicode.upper()
+                    if active_row == 0 and len(row1_input) < len(ans_row1):
+                        row1_input.append(char_upper)
+                    elif active_row == 1 and len(row2_input) < len(ans_row2):
+                        row2_input.append(char_upper)
 
-        # --- Render ---
-        game_surface.fill((30, 30, 30))
-        game_surface.blit(manu_text_img, manu_rect)
-        ui_layer.draw_inventory_bar(player)
+            # Click selection for typing grids
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # Row 1 alignment bounds check
+                if row1_y <= adj_mouse_y <= row1_y + box_size:
+                    active_row = 0
+                # Row 2 alignment bounds check
+                elif row2_y <= adj_mouse_y <= row2_y + box_size:
+                    active_row = 1
 
-        if all(answer_slots):
-            render_wrapped_text(
-                game_surface,
-                puzzle_text,
-                text_font,
-                (0, 0, 0),
-                manu_rect,
-                TEXT_OFFSET_X,
-                LINE_SPACING
-            )
-            if "".join(answer_slots) == "HEMLOCK":
-                if not solved:
-                    solved = True
-                    player.manuscripts_found += 1
-                    player.puzzle_solved = True
-            if "".join(answer_slots) == "HEMLOCK":
-                if not solved:
-                    solved = True
-                    player.manuscripts_found += 1
-                    player.puzzle_solved = True  # ✅ signal back to level
+                # Back button boundaries check
+                if 40 <= adj_mouse_x <= 180 and 40 <= adj_mouse_y <= 95:
+                    return
 
-        pygame.draw.rect(game_surface, (200, 50, 50), back_button)
-        back_txt = ui_font.render("BACK", True, (255, 255, 255))
-        game_surface.blit(back_txt, back_button.move(20, 10))
+        # Verification check
+        current_r1 = "".join(row1_input)
+        current_r2 = "".join(row2_input)
 
-        for j, rect in enumerate(answer_rects):
-            pygame.draw.rect(game_surface, (255, 255, 255), rect, 2)
-            if answer_slots[j]:
-                color = (0, 255, 0) if solved else (255, 255, 0)
-                letter_txt = ui_font.render(answer_slots[j], True, color)
-                game_surface.blit(letter_txt, rect.move(20, 20))
+        if current_r1 == ans_row1 and current_r2 == ans_row2:
+            if not solved:
+                solved = True
+                player.puzzle_solved = True
+                player.manuscripts_found = max(player.manuscripts_found, 2)
+                solved_timer = pygame.time.get_ticks()
 
+        # Visual Rendering Scene Layer
+        game_surface.fill((30, 25, 25))
+        if bg_texture:
+            game_surface.blit(bg_texture, (0, 0))
+        else:
+            # Simple dark tint container backup overlay
+            pygame.draw.rect(game_surface, (50, 45, 40), (200, 150, BASE_WIDTH - 400, BASE_HEIGHT - 300))
+
+        # Render explicit UI escape back button node
+        pygame.draw.rect(game_surface, (120, 30, 30), (40, 40, 140, 55), border_radius=5)
+        back_txt = label_font.render("BACK", True, (255, 255, 255))
+        game_surface.blit(back_txt, (55, 48))
+
+        # Render Input Labels
+        lbl_color1 = (240, 200, 80) if active_row == 0 else (160, 140, 100)
+        lbl_color2 = (240, 200, 80) if active_row == 1 else (160, 140, 100)
+
+        label_r1 = label_font.render("ROW 1:", True, lbl_color1)
+        label_r2 = label_font.render("ROW 2:", True, lbl_color2)
+        game_surface.blit(label_r1, (start_x1 - 180, row1_y + 15))
+        game_surface.blit(label_r2, (start_x2 - 180, row2_y + 15))
+
+        # Render Row 1 Input Fields (TRAITORS)
+        for i in range(len(ans_row1)):
+            bx = start_x1 + i * (box_size + spacing)
+            box_rect = pygame.Rect(bx, row1_y, box_size, box_size)
+            border_w = 4 if (active_row == 0 and len(row1_input) == i) else 2
+            border_color = (255, 215, 0) if active_row == 0 else (100, 100, 100)
+
+            pygame.draw.rect(game_surface, (20, 20, 20), box_rect)
+            pygame.draw.rect(game_surface, border_color, box_rect, border_w)
+
+            if i < len(row1_input):
+                char_surf = puzzle_font.render(row1_input[i], True, (238, 130, 238))
+                game_surface.blit(char_surf, char_surf.get_rect(center=box_rect.center))
+
+        # Render Row 2 Input Fields (DEMONIC)
+        for i in range(len(ans_row2)):
+            bx = start_x2 + i * (box_size + spacing)
+            box_rect = pygame.Rect(bx, row2_y, box_size, box_size)
+            border_w = 4 if (active_row == 1 and len(row2_input) == i) else 2
+            border_color = (255, 215, 0) if active_row == 1 else (100, 100, 100)
+
+            pygame.draw.rect(game_surface, (20, 20, 20), box_rect)
+            pygame.draw.rect(game_surface, border_color, box_rect, border_w)
+
+            if i < len(row2_input):
+                char_surf = puzzle_font.render(row2_input[i], True, (255, 50, 50))
+                game_surface.blit(char_surf, char_surf.get_rect(center=box_rect.center))
+
+        # Display Success Feedback Metrics
         if solved:
-            success_txt = ui_font.render("Puzzle Solved! The word is HEMLOCK.", True, (0, 255, 0))
-            success_x = BASE_WIDTH // 2 - success_txt.get_width() // 2
-            success_y = BASE_HEIGHT // 2 + SUCCESS_MSG_OFFSET_Y
-            game_surface.blit(success_txt, (success_x, success_y))
+            success_txt = label_font.render("PUZZLE SOLVED COMPLETED!", True, (0, 255, 0))
+            game_surface.blit(success_txt, (BASE_WIDTH // 2 - success_txt.get_width() // 2, 780))
+            if pygame.time.get_ticks() - solved_timer > 1500:
+                return
 
-        window_width, window_height = screen.get_size()
-        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
-        scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
-        scaled_surface = pygame.transform.smoothscale(game_surface, (scaled_w, scaled_h))
-        x_offset = (window_width - scaled_w) // 2
-        y_offset = (window_height - scaled_h) // 2
+        # Adaptive Blit Transformations
+        scaled_surf = pygame.transform.smoothscale(game_surface, (int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)))
         screen.fill((0, 0, 0))
-        screen.blit(scaled_surface, (x_offset, y_offset))
+        screen.blit(scaled_surf, (offset_x, offset_y))
 
         pygame.display.flip()
         clock.tick(60)
-
-if __name__ == "__main__":
-    class DummyPlayer:
-        def __init__(self):
-            self.inventory = ["H", "E", "M", "L", "O", "C", "K"]
-    ui_layer = UILayer(game_surface)
-    run_puzzle(DummyPlayer(), ui_layer)

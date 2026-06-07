@@ -442,8 +442,9 @@ def run_level():
                                     ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                 else:
                                     ui_layer.show_subtitle("You examine the manuscript again...", 2000)
-                                import ch1_lvl1_puz
-                                ch1_lvl1_puz.run_puzzle(player, ui_layer)
+                                # ✅ Connected to level 3 puzzle module
+                                import ch1_lvl3_puz
+                                ch1_lvl3_puz.run_puzzle(player, ui_layer)
                             break
                         # --- Inventory logic ---
                         elif obj.inventory_item:
