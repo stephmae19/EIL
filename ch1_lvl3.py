@@ -360,22 +360,29 @@ def run_level():
                 game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
             if obj.is_glowing and not obj.already_searched:
-                # Create a surface slightly larger than the text/rect
-                glow_size = (int(obj.rect.width * 1.5), int(obj.rect.height * 1.5))
+                # --- Pulse Effect ---
+                import math
+                pulse = 1.0 + (0.2 * math.sin(pygame.time.get_ticks() / 200))
+
+                # 1. Apply pulse to size here
+                base_w = int(obj.rect.width * 1.5)
+                base_h = int(obj.rect.height * 1.5)
+                glow_size = (int(base_w * pulse), int(base_h * pulse)) # Apply pulse!
                 glow_surf = pygame.Surface(glow_size, pygame.SRCALPHA)
 
-                # Draw concentric circles to create a soft radial gradient
-                # Inner (brighter/more opaque) to outer (fainter/transparent)
+                # 2. Adjust the SPREAD and DENSITY
                 for i in range(10, 0, -1):
-                    alpha = int(150 * (i / 10))  # Gradient intensity
+                    alpha = int(150 * (i / 10))
+                    # Inflate dynamically based on the pulse-affected size
+                    glow_surf.fill((0, 0, 0, 0)) # Clear previous frame if necessary
                     pygame.draw.ellipse(glow_surf, (255, 255, 0, alpha),
                                         glow_surf.get_rect().inflate(-i * 5, -i * 5))
 
                 glow_rect = glow_surf.get_rect(center=obj.rect.center)
                 game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
 
-                # ✅ Render the text "H" using the custom font (Always render it)
-                if obj.inventory_item == "H" and not obj.already_searched:
+                # ✅ Render the text "H"
+                if obj.inventory_item == "H":
                     h_text = h_font.render("H", True, (255, 255, 255))
                     text_rect = h_text.get_rect(center=obj.rect.center)
                     game_surface.blit(h_text, camera.apply_rect(text_rect))
