@@ -1,4 +1,4 @@
-# ch3_lvl6.py
+# ch2_lvl6.py
 import pygame
 import sys
 import os
@@ -193,7 +193,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Start with resizable window
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 3 - Level 6")
+pygame.display.set_caption("Chapter 2 - Level 6")
 
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
