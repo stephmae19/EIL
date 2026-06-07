@@ -1,3 +1,5 @@
+# View/Scenes/NameInput
+
 import pygame
 import sys
 import os

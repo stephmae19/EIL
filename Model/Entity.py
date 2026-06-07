@@ -1,3 +1,5 @@
+# Model/Entity.py
+
 import pygame
 import os
 

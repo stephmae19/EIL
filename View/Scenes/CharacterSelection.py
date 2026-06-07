@@ -1,4 +1,4 @@
-# characterSelection.py
+# View/Scenes/CharacterSelection.py
 import pygame
 import os
 from View.Scenes.StartMenu import StartMenu

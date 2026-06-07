@@ -1,4 +1,4 @@
-# ChapterSelect.py
+# View/Scenes/ChapterSelect.py
 import pygame
 import os
 from ch1_lvl1 import run_level   # ✅ import the level
