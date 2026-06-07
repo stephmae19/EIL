@@ -32,8 +32,10 @@ class PuzzleScene:
 
         # --- Scale images ---
         self.scale_bal = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_bal.png")).convert_alpha()
-        self.scale_left = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_left.png")).convert_alpha()
-        self.scale_right = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_right.png")).convert_alpha()
+        self.scale_left = pygame.image.load(
+            os.path.join("Assets", "MAPS", "chapter1", "scale_left.png")).convert_alpha()
+        self.scale_right = pygame.image.load(
+            os.path.join("Assets", "MAPS", "chapter1", "scale_right.png")).convert_alpha()
 
         self.scale_image = self.scale_bal
         self.scale_rect = self.scale_image.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
@@ -45,8 +47,8 @@ class PuzzleScene:
                                        self.scale_rect.centery - 50, 60, 60) for i in range(3)]
 
         # Debug box horizontal offsets
-        LEFT_BOX_OFFSET_X = 10  # adjust this value to move left box horizontally
-        RIGHT_BOX_OFFSET_X = -168  # adjust this value to move right box horizontally
+        LEFT_BOX_OFFSET_X = 10
+        RIGHT_BOX_OFFSET_X = -168
 
         self.debug_left_box = pygame.Rect(self.scale_rect.left + LEFT_BOX_OFFSET_X,
                                           self.scale_rect.centery - 100, 150, 140)
@@ -57,45 +59,85 @@ class PuzzleScene:
         self.orbs_placed = []
         self.books_placed = []
 
+        # Dragging states
         self.dragging_item = None
-        self.drag_offset = (0, 0)
+        self.dragged_item_index = None
+        self.drag_offset_x = 0
+        self.drag_offset_y = 0
 
         self.imposter_orb = "ORB_IMPOSTER"
         self.imposter_book = "BOOK_IMPOSTER"
 
         self.message = ""
 
+    def get_virtual_mouse_pos(self, screen_pos):
+        """Converts physical window mouse coordinates into virtual 1920x1080 space."""
+        window_width, window_height = screen.get_size()
+        scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
+        scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
+
+        x_offset = (window_width - scaled_w) // 2
+        y_offset = (window_height - scaled_h) // 2
+
+        virtual_x = (screen_pos[0] - x_offset) / scale
+        virtual_y = (screen_pos[1] - y_offset) / scale
+        return int(virtual_x), int(virtual_y)
+
     def handle_event(self, event):
+        # Pass native event down to UI layer features if needed
         self.ui_layer.handle_input(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            # Start dragging from inventory
-            if self.ui_layer.selected_slot is not None and self.ui_layer.selected_slot < len(self.player.inventory):
-                item = self.player.inventory[self.ui_layer.selected_slot]
-                self.dragging_item = item
-                self.drag_offset = (event.pos[0], event.pos[1])
+            virtual_pos = self.get_virtual_mouse_pos(event.pos)
+
+            # Check inventory slots using virtual positions
+            for i, slot in enumerate(self.ui_layer.inventory_slots):
+                if slot.collidepoint(virtual_pos) and i < len(self.player.inventory):
+                    self.dragging_item = self.player.inventory[i]
+                    self.dragged_item_index = i
+                    self.ui_layer.selected_slot = i
+
+                    # Calculate offsets from item visual center
+                    self.drag_offset_x = virtual_pos[0] - slot.centerx
+                    self.drag_offset_y = virtual_pos[1] - slot.centery
+                    break
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            if self.dragging_item:
-                # Drop into orb slots
-                if "ORB" in str(self.dragging_item):
+            if self.dragging_item is not None:
+                virtual_pos = self.get_virtual_mouse_pos(event.pos)
+                placed = False
+                item_str = str(self.dragging_item)
+
+                # ✅ Rules validation: Orbs on left side
+                if "ORB" in item_str:
                     for slot in self.orb_slots:
-                        if slot.collidepoint(event.pos) and slot not in [s for _, s in self.orbs_placed]:
+                        if slot.collidepoint(virtual_pos) and slot not in [s for _, s in self.orbs_placed]:
                             self.orbs_placed.append((self.dragging_item, slot))
+                            placed = True
                             break
-                    # ✅ Debug left box
-                    if self.debug_left_box.collidepoint(event.pos):
+                    if not placed and self.debug_left_box.collidepoint(virtual_pos):
                         self.orbs_placed.append((self.dragging_item, self.debug_left_box))
-                # Drop into book slots
-                elif "BOOK" in str(self.dragging_item):
+                        placed = True
+
+                # ✅ Rules validation: Books on right side
+                elif "BOOK" in item_str:
                     for slot in self.book_slots:
-                        if slot.collidepoint(event.pos) and slot not in [s for _, s in self.books_placed]:
+                        if slot.collidepoint(virtual_pos) and slot not in [s for _, s in self.books_placed]:
                             self.books_placed.append((self.dragging_item, slot))
+                            placed = True
                             break
-                    # ✅ Debug right box
-                    if self.debug_right_box.collidepoint(event.pos):
+                    if not placed and self.debug_right_box.collidepoint(virtual_pos):
                         self.books_placed.append((self.dragging_item, self.debug_right_box))
+                        placed = True
+
+                # Remove from inventory if successfully slotted
+                if placed and self.dragged_item_index is not None:
+                    self.player.inventory.pop(self.dragged_item_index)
+                    self.ui_layer.selected_slot = None
+
+                # Reset dragging configuration
                 self.dragging_item = None
+                self.dragged_item_index = None
 
     def check_balance(self):
         if len(self.orbs_placed) == 3 and len(self.books_placed) == 3:
@@ -111,7 +153,6 @@ class PuzzleScene:
                 self.scale_image = self.scale_bal
                 return True
         else:
-            # Tilt depending on imbalance
             if len(self.orbs_placed) > len(self.books_placed):
                 self.scale_image = self.scale_left
             elif len(self.books_placed) > len(self.orbs_placed):
@@ -124,7 +165,7 @@ class PuzzleScene:
         self.surface.fill((0, 0, 0))
         self.surface.blit(self.scale_image, self.scale_rect)
 
-        # Debug boxes
+        # Debug bounding blocks
         pygame.draw.rect(self.surface, (255, 0, 0), self.debug_left_box, 2)
         pygame.draw.rect(self.surface, (0, 0, 255), self.debug_right_box, 2)
 
@@ -148,7 +189,7 @@ class PuzzleScene:
                 rect = text.get_rect(center=slot.center)
                 self.surface.blit(text, rect)
 
-        # Draw UI layer
+        # Draw UI layer updates
         self.ui_layer.draw(self.player)
 
         # Show feedback message
@@ -156,15 +197,19 @@ class PuzzleScene:
             self.ui_layer.show_subtitle(self.message, duration=3000)
         self.ui_layer.draw_subtitle()
 
-        # Draw dragged item while moving
-        if self.dragging_item:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
+        # Render dragged object locked to virtual mouse position
+        if self.dragging_item is not None:
+            raw_mouse = pygame.mouse.get_pos()
+            v_mx, v_my = self.get_virtual_mouse_pos(raw_mouse)
+            render_x = v_mx - self.drag_offset_x
+            render_y = v_my - self.drag_offset_y
+
             if isinstance(self.dragging_item, pygame.Surface):
-                rect = self.dragging_item.get_rect(center=(mouse_x, mouse_y))
+                rect = self.dragging_item.get_rect(center=(render_x, render_y))
                 self.surface.blit(self.dragging_item, rect)
             else:
                 text = self.ui_layer.inventory_font.render(str(self.dragging_item), True, (255, 255, 255))
-                rect = text.get_rect(center=(mouse_x, mouse_y))
+                rect = text.get_rect(center=(render_x, render_y))
                 self.surface.blit(text, rect)
 
         # --- Scale & Blit to window ---
