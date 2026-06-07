@@ -12,23 +12,23 @@ BG_FILE = "Assets/MAPS/chapter1/ch1_lvl2.png"
 
 SCALE_FILE = "Assets/MAPS/chapter1/scale.png"
 # --- Orb Variations ---
-ORB_GLOW_BLUE   = "Assets/MAPS/chapter1/orb_glow_blue.png"
+ORB_GLOW_BLUE = "Assets/MAPS/chapter1/orb_glow_blue.png"
 ORB_STATIC_BLUE = "Assets/MAPS/chapter1/orb_static_blue.png"
 
-ORB_GLOW_GREEN   = "Assets/MAPS/chapter1/orb_glow_green.png"
+ORB_GLOW_GREEN = "Assets/MAPS/chapter1/orb_glow_green.png"
 ORB_STATIC_GREEN = "Assets/MAPS/chapter1/orb_static_green.png"
 
-ORB_GLOW_RED   = "Assets/MAPS/chapter1/orb_glow_red.png"
+ORB_GLOW_RED = "Assets/MAPS/chapter1/orb_glow_red.png"
 ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
 
-ORB_GLOW_VIOLET   = "Assets/MAPS/chapter1/orb_glow_violet.png"
+ORB_GLOW_VIOLET = "Assets/MAPS/chapter1/orb_glow_violet.png"
 ORB_STATIC_VIOLET = "Assets/MAPS/chapter1/orb_static_violet.png"
 
 # --- Book Variations ---
-BOOK_BLUE   = "Assets/MAPS/chapter1/book_blue.png"
-BOOK_RED    = "Assets/MAPS/chapter1/book_red.png"
-BOOK_GREEN  = "Assets/MAPS/chapter1/book_green.png"
-BOOK_BROWN  = "Assets/MAPS/chapter1/book_brown.png"
+BOOK_BLUE = "Assets/MAPS/chapter1/book_blue.png"
+BOOK_RED = "Assets/MAPS/chapter1/book_red.png"
+BOOK_GREEN = "Assets/MAPS/chapter1/book_green.png"
+BOOK_BROWN = "Assets/MAPS/chapter1/book_brown.png"
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -60,17 +60,16 @@ class Camera:
 
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
-                 has_manuscript=False, has_scale=False,  # ✅ add this
+                 has_manuscript=False, has_scale=False,
                  inventory_item=None,
                  prompt="Press 'E' to interact", image_file=None):
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
-        self.has_scale = has_scale   # ✅ store it
+        self.has_scale = has_scale
         self.inventory_item = inventory_item
         self.already_searched = False
         self.prompt = prompt
 
-        # ✅ Load image with aspect ratio preserved OR animate if spritesheet
         self.image = None
         self.frames = None
         self.frame_index = 0
@@ -78,10 +77,9 @@ class InteractiveObject:
         self.frame_duration = 1000 // 12  # 12 FPS default
 
         if image_file and os.path.exists(image_file):
-            # ✅ Animate any orb glow file
             if image_file and "orb_glow" in image_file:
                 sheet = pygame.image.load(image_file).convert_alpha()
-                rows, cols = 2, 2  # adjust based on your spritesheet layout
+                rows, cols = 2, 2
                 w, h = sheet.get_width() // cols, sheet.get_height() // rows
                 self.frames = []
                 for r in range(rows):
@@ -94,7 +92,6 @@ class InteractiveObject:
                 self.image = self.frames[self.frame_index]
                 self.image_rect = self.image.get_rect(center=self.rect.center)
             else:
-                # --- Static image case ---
                 raw = pygame.image.load(image_file).convert_alpha()
                 raw_w, raw_h = raw.get_size()
                 scale_factor = min(width / raw_w, height / raw_h)
@@ -114,12 +111,10 @@ class InteractiveObject:
                 self.image_rect = self.image.get_rect(center=self.rect.center)
 
     def resize(self, new_width, new_height):
-        """Resize the interactive object rectangle."""
         self.rect.width = new_width
         self.rect.height = new_height
 
     def move(self, new_x, new_y):
-        """Move the interactive object to a new position."""
         self.rect.x = new_x
         self.rect.y = new_y
 
@@ -127,9 +122,8 @@ class InteractiveObject:
 class Player(pygame.sprite.Sprite):
     def __init__(self, floor_y, x=400, y=None, scale=0.45):
         super().__init__()
-        self.scale = scale  # ✅ adjustable scale factor
+        self.scale = scale
 
-        # Load frames with transparency and scaling
         self.walk_frames = self.load_frames(WALK_FILE, 5, 5)
         self.idle_frames = self.load_frames(IDLE_FILE, 5, 5)
 
@@ -137,9 +131,7 @@ class Player(pygame.sprite.Sprite):
         self.frame_index = 0
         self.image = self.current_frames[self.frame_index]
 
-        # ✅ adjustable position
         if y is None:
-            # Default: place at floor level
             self.rect = self.image.get_rect(midbottom=(x, floor_y))
         else:
             self.rect = self.image.get_rect(topleft=(x, y))
@@ -170,7 +162,6 @@ class Player(pygame.sprite.Sprite):
 
         sheet = pygame.image.load(filename).convert_alpha()
 
-        # Apply transparency to almost-black pixels
         sheet = sheet.copy()
         width, height = sheet.get_size()
         for x in range(width):
@@ -179,18 +170,16 @@ class Player(pygame.sprite.Sprite):
                 if r < JPG_BLACK_TOLERANCE and g < JPG_BLACK_TOLERANCE and b < JPG_BLACK_TOLERANCE:
                     sheet.set_at((x, y), (r, g, b, 0))
 
-        # Slice into frames
         w, h = sheet.get_width() // cols, sheet.get_height() // rows
         frames = []
         for r in range(rows):
             for c in range(cols):
                 frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
-                # ✅ use scale factor
                 scaled_frame = pygame.transform.scale(frame, (int(w * self.scale), int(h * self.scale)))
                 frames.append(scaled_frame)
         return frames
 
-    def update_logic(self,scale_width):
+    def update_logic(self, scale_width):
         keys = pygame.key.get_pressed()
         self.is_moving = False
         self.is_running = False
@@ -201,7 +190,6 @@ class Player(pygame.sprite.Sprite):
         else:
             self.speed = self.walk_speed
 
-        # Movement: A/D and Arrow keys
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.rect.x -= self.speed
             self.facing_right = False
@@ -242,19 +230,15 @@ class Player(pygame.sprite.Sprite):
 pygame.init()
 pygame.font.init()
 
-# --- Base Resolution (Design Target) ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 
-# --- Display Setup ---
 info = pygame.display.Info()
 native_width, native_height = info.current_w, info.current_h
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-# Start with resizable window
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
 pygame.display.set_caption("Chapter 1 - Level 2")
 
-# Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
 clock = pygame.time.Clock()
@@ -275,18 +259,14 @@ else:
 SCALE_WIDTH, SCALE_HEIGHT = bg_image.get_width(), bg_image.get_height()
 floor_y = int(SCALE_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 
-# --- Scaling ratios based on design resolution ---
 DESIGN_WIDTH = 1920
 DESIGN_HEIGHT = 1080
 
-# Use BASE_WIDTH/BASE_HEIGHT instead of SCREEN_WIDTH/SCREEN_HEIGHT
 scale_x = BASE_WIDTH / DESIGN_WIDTH
 scale_y = BASE_HEIGHT / DESIGN_HEIGHT
-
-# Player-style scaling factor
 scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 
-# --- Adaptive Interactive Objects (player-style scaling) ---
+# --- Adaptive Interactive Objects ---
 interactive_objects = [
     InteractiveObject(
         x=int(180 * scale_factor),
@@ -298,13 +278,13 @@ interactive_objects = [
         prompt="A glowing orb."
     ),
     InteractiveObject(
-            x=int(350 * scale_factor),
-            y=int(floor_y - int(200 * scale_factor)),
-            width=int(5 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            prompt="An alchemy book."
-        ),
+        x=int(350 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="An alchemy book."
+    ),
     InteractiveObject(
         x=int(680 * scale_factor),
         y=int(floor_y - int(270 * scale_factor)),
@@ -397,31 +377,27 @@ interactive_objects = [
 
 interactive_objects.append(
     InteractiveObject(
-        x=int(SCALE_WIDTH * 0.68),  # right side
-        y=int(floor_y - int(BASE_HEIGHT * 0.22)),  # center vertically above floor
+        x=int(SCALE_WIDTH * 0.68),
+        y=int(floor_y - int(BASE_HEIGHT * 0.22)),
         width=int(91 * scale_factor),
         height=int(138 * scale_factor),
-        has_scale=True,   # ✅ use a new flag instead of has_manuscript
+        has_scale=True,
         prompt="An antique scale...",
         image_file=SCALE_FILE
     )
 )
 
-
-# --- Adaptive Player Initialization ---
 player = Player(
     floor_y,
     x=int(BASE_WIDTH * 0.6),
     y=int(BASE_HEIGHT * 0.48),
-    scale=(BASE_HEIGHT / 1080) * 1.1   # adaptive + manual multiplier
+    scale=(BASE_HEIGHT / 1080) * 1.1
 )
 
 camera = Camera(SCALE_WIDTH, SCALE_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
-
-# ✅ UI Layer
 ui_layer = UILayer(game_surface)
 
-# --- Main Loop wrapped in a function ---
+
 def run_level():
     clock = pygame.time.Clock()
 
@@ -432,7 +408,6 @@ def run_level():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # ✅ Instead of quitting the whole program, return control to ChapterSelect
                 return
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
@@ -446,10 +421,34 @@ def run_level():
                             obj.already_searched = True
                             ui_layer.show_subtitle("You approach the antique scale...", 2000)
 
-                            # ✅ Route to puzzle scene
+                            # 1. Safely calculate and save coordinates before entering scene
+                            # Tweaking offsets shifts your destination relative to scale center
+                            X_OFFSET = 0
+                            Y_OFFSET = 0
+                            temp_rect = player.image.get_rect(
+                                midbottom=(obj.rect.centerx + X_OFFSET, floor_y + Y_OFFSET))
+                            SAVED_PLAYER_X = temp_rect.x
+                            SAVED_PLAYER_Y = temp_rect.y
+
+                            # 2. Route to puzzle scene
                             import ch1_lvl2_puz
                             ch1_lvl2_puz.run_puzzle(game_surface, player)
-                            return
+
+                            # 3. ✅ CRITICAL FIX: Removed 'return' so progress isn't wiped.
+                            # Force character coordinate synchronization immediately upon coming back.
+                            player.rect.x = SAVED_PLAYER_X
+                            player.rect.y = SAVED_PLAYER_Y
+
+                            # Hide all items that were committed/placed in the puzzle
+                            placed_on_scale = ch1_lvl2_puz.get_placed_item_ids() if hasattr(ch1_lvl2_puz,
+                                                                                            'get_placed_item_ids') else []
+                            for interactable in interactive_objects:
+                                if interactable.inventory_item and interactable.inventory_item in placed_on_scale:
+                                    interactable.already_searched = True
+                                    interactable.image = None
+                                    interactable.frames = None
+
+                            continue  # Keep running the current map thread loop smoothly
 
                         # --- Manuscript object ---
                         elif obj.has_manuscript:
@@ -462,18 +461,15 @@ def run_level():
                                 else:
                                     ui_layer.show_subtitle("You already searched this part.", 2000)
 
-                                # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
                                 ch1_lvl1_puz.run_puzzle(player, ui_layer)
                             break
 
                         # --- Inventory items ---
-                        # --- Inventory items inside ch1_lvl2.py ---
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
                                     if obj.inventory_item.startswith("ORB"):
-                                        # ✅ Orb pickup logic
                                         orb_map = {
                                             "ORB_BLUE": ORB_STATIC_BLUE,
                                             "ORB_GREEN": ORB_STATIC_GREEN,
@@ -484,7 +480,6 @@ def run_level():
                                         if orb_static_path:
                                             orb_icon = pygame.image.load(orb_static_path).convert_alpha()
                                             orb_icon = pygame.transform.scale(orb_icon, (40, 40))
-                                            # ✅ Save BOTH the ID string and the visual icon surface
                                             player.inventory.append({"id": obj.inventory_item, "icon": orb_icon})
 
                                         obj.already_searched = True
@@ -493,7 +488,6 @@ def run_level():
                                         ui_layer.show_subtitle(f"You picked up a {obj.prompt.lower()}", 2000)
 
                                     elif obj.inventory_item.startswith("BOOK"):
-                                        # ✅ Book pickup logic
                                         book_map = {
                                             "BOOK_BLUE": BOOK_BLUE,
                                             "BOOK_RED": BOOK_RED,
@@ -504,7 +498,6 @@ def run_level():
                                         if book_path:
                                             book_icon = pygame.image.load(book_path).convert_alpha()
                                             book_icon = pygame.transform.scale(book_icon, (40, 40))
-                                            # ✅ Save BOTH the ID string and the visual icon surface
                                             player.inventory.append({"id": obj.inventory_item, "icon": book_icon})
 
                                         obj.already_searched = True
@@ -513,7 +506,6 @@ def run_level():
                                         ui_layer.show_subtitle(f"You picked up {obj.prompt.lower()}", 2000)
 
                                     else:
-                                        # ✅ Normal item fallback pickup
                                         player.inventory.append({"id": obj.inventory_item, "icon": obj.inventory_item})
                                         obj.already_searched = True
                                         ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!", 2000)
@@ -522,7 +514,6 @@ def run_level():
                             else:
                                 ui_layer.show_subtitle("You already picked this up.", 2000)
 
-                        # --- Other prompts ---
                         else:
                             if obj.prompt.startswith("The scales weigh not gold"):
                                 ui_layer.show_subtitle(obj.prompt, 4000)
@@ -538,45 +529,35 @@ def run_level():
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
 
-                # ✅ UI input handling
                 ui_layer.handle_input(event)
                 ui_layer.click_insanity_loss()
 
-        # Update
         player.update(SCALE_WIDTH)
         camera.update(player)
         for obj in interactive_objects:
             obj.update()
 
-            # --- Render everything to internal surface ---
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
-        # DEBUG + object rendering
         for obj in interactive_objects:
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
-            # ✅ Render object image if available
             if obj.image:
                 game_surface.blit(obj.image, camera.apply_rect(obj.image_rect))
 
-            # Show prompt when player collides
             if player.rect.colliderect(obj.rect):
                 prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                 prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
                 game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
-        # Draw player
         game_surface.blit(player.image, camera.apply(player))
 
-        # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 1", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
-        # ✅ Draw UI overlay last
         ui_layer.draw(player)
 
-        # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
         scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
@@ -586,12 +567,12 @@ def run_level():
         x_offset = (window_width - scaled_w) // 2
         y_offset = (window_height - scaled_h) // 2
 
-        screen.fill((0, 0, 0))  # black padding
+        screen.fill((0, 0, 0))
         screen.blit(scaled_surface, (x_offset, y_offset))
 
         pygame.display.flip()
         clock.tick(60)
 
-# ✅ Allow standalone execution
+
 if __name__ == "__main__":
     run_level()

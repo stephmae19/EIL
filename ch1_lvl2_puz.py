@@ -3,7 +3,7 @@ import pygame
 import sys
 import os
 from ui_layer import UILayer
-import ch1_lvl2  # ✅ Import your main level file
+# ❌ REMOVED: import ch1_lvl2 to break circular execution loops
 
 # --- Base Resolution (Design Target) ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
@@ -269,8 +269,7 @@ def run_puzzle(surface, player):
     if _puzzle_instance is None:
         _puzzle_instance = PuzzleScene(game_surface, player)
     else:
-        # ✅ CRITICAL FIX: Refresh the player reference inside the persistent instance
-        # so freshly picked items from ch1_lvl2.py display correctly in the UI bar.
+        # ✅ Refresh the player reference inside the persistent instance
         _puzzle_instance.player = player
 
     while True:
@@ -281,13 +280,13 @@ def run_puzzle(surface, player):
 
             # Escape key handles tracking exactly like a Back Button event
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                ch1_lvl2.run_level()
+                # ✅ FIX: Just return to drop out of this scene loop cleanly!
                 return
 
             # Process structural click interaction feedback loops
             action = _puzzle_instance.handle_event(event)
             if action == "BACK":
-                ch1_lvl2.run_level()
+                # ✅ FIX: Just return to drop out of this scene loop cleanly!
                 return
 
         solved = _puzzle_instance.check_balance()
@@ -297,7 +296,7 @@ def run_puzzle(surface, player):
             pygame.time.delay(2000)
             # Reset persistent layout context upon a successful puzzle solution run
             _puzzle_instance = None
-            ch1_lvl2.run_level()
+            # ✅ FIX: Just return to let ch1_lvl2 handle the completion layout
             return
 
         clock.tick(60)
