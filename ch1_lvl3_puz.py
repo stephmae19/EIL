@@ -44,8 +44,8 @@ def run_puzzle(player, ui_layer, screen=None):
     active_row = 0  # 0 for Row 1, 1 for Row 2
 
     # Target solutions
-    ans_row1 = "TRAITORS"
-    ans_row2 = "DEMONIC"
+    ans_row1 = "DEMONIC"   # ✅ Now Book 2 goes on top
+    ans_row2 = "TRAITORS"  # ✅ Now Book 1 goes below
 
     # Box layout math metrics
     box_size = 75
@@ -57,6 +57,9 @@ def run_puzzle(player, ui_layer, screen=None):
 
     start_x1 = (BASE_WIDTH - row1_total_w) // 2 + 100
     start_x2 = (BASE_WIDTH - row2_total_w) // 2 + 100
+
+    row1_y = 420   # Top row now shows BOOK 2 (DEMONIC)
+    row2_y = 620   # Bottom row now shows BOOK 1 (TRAITORS)
 
     row1_y = 420
     row2_y = 620
@@ -186,8 +189,8 @@ def run_puzzle(player, ui_layer, screen=None):
         lbl_color1 = (240, 200, 80) if active_row == 0 else (160, 140, 100)
         lbl_color2 = (240, 200, 80) if active_row == 1 else (160, 140, 100)
 
-        label_r1 = label_font.render("BOOK 1:", True, lbl_color1)
-        label_r2 = label_font.render("BOOK 2:", True, lbl_color2)
+        label_r1 = label_font.render("BOOK 1:", True, lbl_color1)  # ✅ Top row now Book 2
+        label_r2 = label_font.render("BOOK 2:", True, lbl_color2)  # ✅ Bottom row now Book 1
         game_surface.blit(label_r1, (start_x1 - 180, row1_y + 15))
         game_surface.blit(label_r2, (start_x2 - 180, row2_y + 15))
 
