@@ -386,6 +386,10 @@ def run_level():
     clock = pygame.time.Clock()
     mouse_pos = pygame.mouse.get_pos()
 
+    for event in pygame.event.get():
+        # Handle the drag logic here
+        ui_layer.handle_inventory_drag(event, player, mouse_pos)
+
     while True:
         now = pygame.time.get_ticks()
         for event in pygame.event.get():
@@ -535,7 +539,8 @@ def run_level():
 
         # ✅ Draw UI overlay last
         ui_layer.draw(player)
-        ui_layer.draw_dragged_item(mouse_pos)
+        ui_layer.draw_dragged_item(mouse_pos)  # Render dragged item last
+        pygame.display.flip()
 
         # --- Scale & Blit to window with aspect ratio preserved ---
         window_width, window_height = screen.get_size()
