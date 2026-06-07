@@ -23,8 +23,9 @@ pygame.display.set_caption("Chapter 1 - Level 2 Puzzle")
 
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
-# ✅ Persistent Puzzle State Instance reference variable
+# --- Persistent Puzzle State Instance ---
 _puzzle_instance = None
+_puzzle_completed = False  # ✅ Add this persistent flag
 
 
 class PuzzleScene:
@@ -346,13 +347,11 @@ class PuzzleScene:
 
 def run_puzzle(game_surface, player, ui_layer):
     clock = pygame.time.Clock()
+    global _puzzle_instance, _puzzle_completed # Access the flags
 
-    global _puzzle_instance
     if _puzzle_instance is None:
-        # Pass ui_layer into the scene
         _puzzle_instance = PuzzleScene(game_surface, player, ui_layer)
     else:
-        # Update references if they change
         _puzzle_instance.player = player
         _puzzle_instance.ui_layer = ui_layer
 
@@ -377,11 +376,10 @@ def run_puzzle(game_surface, player, ui_layer):
         _puzzle_instance.draw()
 
         if solved:
-            pygame.time.delay(2000)
-            # Reset persistent layout context upon a successful puzzle solution run
-            _puzzle_instance = None
-            # ✅ FIX: Just return to let ch1_lvl2 handle the completion layout
-            return
+            _puzzle_completed = True  # ✅ Mark as solved
+            pygame.time.delay(1000)
+            _puzzle_instance = None  # Reset instance
+            return  # Exit to main loop
 
         clock.tick(60)
 
@@ -400,12 +398,6 @@ def get_placed_item_ids():
 
 # --- Ensure this logic is in ch1_lvl2_puz.py ---
 def is_puzzle_solved():
-    """
-    Checks the current balance state.
-    Note: If the puzzle is already solved in the main game loop,
-    this will be gated by the logic in ch1_lvl2.py.
-    """
-    global _puzzle_instance
-    if _puzzle_instance is None:
-        return False
-    return _puzzle_instance.check_balance()
+    """Returns the persistent completion status."""
+    global _puzzle_completed
+    return _puzzle_completed

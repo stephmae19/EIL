@@ -416,48 +416,49 @@ def run_level():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
                 for obj in interactive_objects:
-                    obj.update()
                     if player.rect.colliderect(obj.rect):
                         found = True
 
-                        # --- Within run_level() in ch1_lvl2.py ---
+                        # --- SCALE INTERACTION BLOCK ---
                         if obj.has_scale:
-                            # Check if the puzzle is already completed
-                            if player.puzzle_solved:
+                            # 1. Permanent Gatekeeper: Check the module status
+                            if ch1_lvl2_puz.is_puzzle_solved():
                                 ui_layer.show_subtitle("The puzzle has already been deciphered.", 2000)
-                                continue
+                                obj.has_scale = False  # Ensure it's disabled if it wasn't already
+                                break
 
-                            obj.already_searched = True
+                            # 2. Logic to run the puzzle
                             ui_layer.show_subtitle("You approach the antique scale...", 2000)
+                            SAVED_PLAYER_X, SAVED_PLAYER_Y = player.rect.x, player.rect.y
 
-                            # 1. Save player coordinates
-                            X_OFFSET = 0
-                            Y_OFFSET = -83
-                            temp_rect = player.image.get_rect(
-                                midbottom=(obj.rect.centerx + X_OFFSET, floor_y + Y_OFFSET))
-                            SAVED_PLAYER_X, SAVED_PLAYER_Y = temp_rect.x, temp_rect.y
-
-                            # 2. Run the puzzle
                             ch1_lvl2_puz.run_puzzle(game_surface, player, ui_layer)
 
-                            # 3. Check for successful completion
-                            if not player.puzzle_solved and ch1_lvl2_puz.is_puzzle_solved():
-                                player.puzzle_solved = True
-                                player.manuscripts_found += 1  # Increment manuscript count
-                                ui_layer.show_subtitle("The scale balances! You found a manuscript!", 3000)
+                            # 3. Post-Puzzle Evaluation
+                            # Use the module function to check the persistent flag
+                            if ch1_lvl2_puz.is_puzzle_solved():
+                                # Only increment if not already solved (prevent double-counting)
+                                if not player.puzzle_solved:
+                                    player.manuscripts_found += 1
+                                    player.puzzle_solved = True
+                                    ui_layer.show_subtitle("The scale balances! You found a manuscript!", 3000)
 
-                            # 4. Restore position
+                                # Disable interaction
+                                obj.has_scale = False
+                                obj.prompt = "The scale is already balanced."
+
+                            # Cleanup/Reset
                             player.rect.x = SAVED_PLAYER_X
                             player.rect.y = SAVED_PLAYER_Y
+                            break
 
-                            # 5. Cleanup placed items
+                            # Remove items from world (Logic remains the same as yours)
                             placed_on_scale = ch1_lvl2_puz.get_placed_item_ids()
                             for interactable in interactive_objects:
                                 if interactable.inventory_item and interactable.inventory_item in placed_on_scale:
                                     interactable.already_searched = True
                                     interactable.image = None
                                     interactable.frames = None
-                            continue
+                            break
 
                         # --- Manuscript object ---
                         elif obj.has_manuscript:
