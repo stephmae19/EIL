@@ -284,10 +284,6 @@ class PuzzleScene:
         self.surface.fill((0, 0, 0))
         self.surface.blit(self.scale_image, self.scale_rect)
 
-        # Debug bounding boxes
-        pygame.draw.rect(self.surface, (255, 0, 0), self.debug_left_box, 2)
-        pygame.draw.rect(self.surface, (0, 0, 255), self.debug_right_box, 2)
-
         # ✅ Draw Back Button elements onto layout layer
         pygame.draw.rect(self.surface, (200, 50, 50), self.back_button)
         back_txt = self.button_font.render("BACK", True, (255, 255, 255))
