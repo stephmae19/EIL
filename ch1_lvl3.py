@@ -360,7 +360,8 @@ for char, set_name in all_char_data:
     placed = False
     attempts = 0
     while not placed and attempts < 100:
-        spawn_x = random.randint(100, MAP_WIDTH - 100)
+        # ✅ Adjusted boundaries to keep positions away from the left 350px and right 350px of the map
+        spawn_x = random.randint(350, MAP_WIDTH - 350)
         spawn_y = random.randint(min_y, max_y)
         new_rect = pygame.Rect(spawn_x, spawn_y, object_width, object_height)
 
