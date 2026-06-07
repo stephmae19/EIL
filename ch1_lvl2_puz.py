@@ -17,11 +17,9 @@ info = pygame.display.Info()
 native_width, native_height = info.current_w, info.current_h
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-# ✅ Resizable window consistent with ch1_lvl1.py and ch1_lvl2.py
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
 pygame.display.set_caption("Chapter 1 - Level 2 Puzzle")
 
-# Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
 
@@ -30,54 +28,68 @@ class PuzzleScene:
         self.surface = surface
         self.player = player
         self.ui_layer = UILayer(surface)
-
-        # ✅ Always initialize health_rect so it's safe to use
         self.ui_layer.health_rect = pygame.Rect(0, 0, 0, 0)
 
-        # Load balanced scale background
-        scale_path = os.path.join("Assets", "MAPS", "chapter1", "scale_bal.png")
-        if os.path.exists(scale_path):
-            self.scale_image = pygame.image.load(scale_path).convert_alpha()
-        else:
-            self.scale_image = pygame.Surface((800, 400))
-            self.scale_image.fill((120, 120, 120))
+        # --- Scale images ---
+        self.scale_bal = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_bal.png")).convert_alpha()
+        self.scale_left = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_left.png")).convert_alpha()
+        self.scale_right = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_right.png")).convert_alpha()
 
+        self.scale_image = self.scale_bal
         self.scale_rect = self.scale_image.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
 
-        # Slots for orbs (left) and books (right)
+        # Slots
         self.orb_slots = [pygame.Rect(self.scale_rect.left + 100 + i * 80,
                                       self.scale_rect.centery - 50, 60, 60) for i in range(3)]
         self.book_slots = [pygame.Rect(self.scale_rect.right - 280 + i * 80,
                                        self.scale_rect.centery - 50, 60, 60) for i in range(3)]
 
+        # Debug box horizontal offsets
+        LEFT_BOX_OFFSET_X = 10  # adjust this value to move left box horizontally
+        RIGHT_BOX_OFFSET_X = -168  # adjust this value to move right box horizontally
+
+        self.debug_left_box = pygame.Rect(self.scale_rect.left + LEFT_BOX_OFFSET_X,
+                                          self.scale_rect.centery - 100, 150, 140)
+        self.debug_right_box = pygame.Rect(self.scale_rect.right + RIGHT_BOX_OFFSET_X,
+                                           self.scale_rect.centery - 100, 150, 140)
+
         # Track placed items
         self.orbs_placed = []
         self.books_placed = []
 
-        # Imposters (they can be placed but will never balance)
+        self.dragging_item = None
+        self.drag_offset = (0, 0)
+
         self.imposter_orb = "ORB_IMPOSTER"
         self.imposter_book = "BOOK_IMPOSTER"
 
-        # Subtitle feedback
         self.message = ""
 
     def handle_event(self, event):
         self.ui_layer.handle_input(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Start dragging from inventory
             if self.ui_layer.selected_slot is not None and self.ui_layer.selected_slot < len(self.player.inventory):
                 item = self.player.inventory[self.ui_layer.selected_slot]
+                self.dragging_item = item
+                self.drag_offset = (event.pos[0], event.pos[1])
 
-                if "ORB" in str(item):
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.dragging_item:
+                # Drop into orb slots
+                if "ORB" in str(self.dragging_item):
                     for slot in self.orb_slots:
                         if slot.collidepoint(event.pos) and slot not in [s for _, s in self.orbs_placed]:
-                            self.orbs_placed.append((item, slot))
+                            self.orbs_placed.append((self.dragging_item, slot))
                             break
-                elif "BOOK" in str(item):
+                # Drop into book slots
+                elif "BOOK" in str(self.dragging_item):
                     for slot in self.book_slots:
                         if slot.collidepoint(event.pos) and slot not in [s for _, s in self.books_placed]:
-                            self.books_placed.append((item, slot))
+                            self.books_placed.append((self.dragging_item, slot))
                             break
+                self.dragging_item = None
 
     def check_balance(self):
         if len(self.orbs_placed) == 3 and len(self.books_placed) == 3:
@@ -86,15 +98,29 @@ class PuzzleScene:
 
             if self.imposter_orb in orb_names or self.imposter_book in book_names:
                 self.message = "The scale refuses to balance..."
+                self.scale_image = self.scale_left if self.imposter_orb in orb_names else self.scale_right
                 return False
             else:
                 self.message = "The scale balances perfectly!"
+                self.scale_image = self.scale_bal
                 return True
+        else:
+            # Tilt depending on imbalance
+            if len(self.orbs_placed) > len(self.books_placed):
+                self.scale_image = self.scale_left
+            elif len(self.books_placed) > len(self.orbs_placed):
+                self.scale_image = self.scale_right
+            else:
+                self.scale_image = self.scale_bal
         return False
 
     def draw(self):
         self.surface.fill((0, 0, 0))
         self.surface.blit(self.scale_image, self.scale_rect)
+
+        # Debug boxes
+        pygame.draw.rect(self.surface, (255, 0, 0), self.debug_left_box, 2)
+        pygame.draw.rect(self.surface, (0, 0, 255), self.debug_right_box, 2)
 
         # Draw placed orbs
         for item, slot in self.orbs_placed:
@@ -124,7 +150,7 @@ class PuzzleScene:
             self.ui_layer.show_subtitle(self.message, duration=3000)
         self.ui_layer.draw_subtitle()
 
-        # --- Scale & Blit to window with aspect ratio preserved ---
+        # --- Scale & Blit to window ---
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
         scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
@@ -148,7 +174,6 @@ def run_puzzle(surface, player):
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # ✅ Allow exit back to main level
                 ch1_lvl2.run_level()
                 return
             puzzle.handle_event(event)
@@ -158,7 +183,7 @@ def run_puzzle(surface, player):
 
         if solved:
             pygame.time.delay(2000)
-            ch1_lvl2.run_level()  # ✅ return to main level
+            ch1_lvl2.run_level()
             return
 
         clock.tick(60)
