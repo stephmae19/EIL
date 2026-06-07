@@ -344,11 +344,11 @@ def is_position_valid(new_rect, existing_objects):
 
 
 # --- Create sets ---
-# Explicitly define which letter belongs to which word/color
-traitors_letters = list("TRAITORS")
-demonic_letters = list("DEMONIC")
+# Remove dict.fromkeys from "TRAITORS" to prevent duplicate letters ('T' and 'R') from being filtered out
+traitors_letters = list("TRAITORS")  # Results in: ['T', 'R', 'A', 'I', 'T', 'O', 'R', 'S']
+demonic_letters = list(dict.fromkeys("DEMONIC"))    # Results in: ['D', 'E', 'M', 'O', 'N', 'I', 'C']
 
-# Combine them while tagging them with their word source
+# Combine them while tagging them with their correct word source
 all_char_data = []
 for char in traitors_letters:
     all_char_data.append((char, "TRAITORS"))
@@ -359,7 +359,7 @@ for char, set_name in all_char_data:
     placed = False
     attempts = 0
     while not placed and attempts < 100:
-        # ✅ Adjusted boundaries to keep positions away from the left 350px and right 350px of the map
+        # Adjusted boundaries to keep positions away from the left 350px and right 350px of the map
         spawn_x = random.randint(350, MAP_WIDTH - 350)
         spawn_y = random.randint(min_y, max_y)
         new_rect = pygame.Rect(spawn_x, spawn_y, object_width, object_height)
@@ -373,7 +373,7 @@ for char, set_name in all_char_data:
                 is_repeatable=True
             )
             obj.inventory_item = char
-            obj.set_type = set_name  # Now explicitly set to "TRAITORS" or "DEMONIC"
+            obj.set_type = set_name  # Explicitly sets independent "TRAITORS" or "DEMONIC" copies
 
             interactive_objects.append(obj)
             placed = True
