@@ -407,15 +407,23 @@ def run_level():
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
-                                    # ✅ Successfully pick up item
-                                    player.inventory.append(obj.inventory_item)
+                                    # 1. Determine the icon based on the item type
+                                    item_data = {"id": obj.inventory_item, "icon": None}
+
+                                    # If it's an orb, add its static image as the icon
+                                    if obj.inventory_item.startswith("ORB"):
+                                        if obj.static_image:
+                                            item_data["icon"] = obj.static_image
+
+                                    # 2. Append the dictionary
+                                    player.inventory.append(item_data)
+
+                                    # 3. Mark as searched to trigger disappearance from map
                                     obj.already_searched = True
                                     ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!")
                                 else:
-                                    # ✅ Inventory full, but item not yet picked up
                                     ui_layer.show_subtitle("My inventory is full.", 2000)
                             else:
-                                # ✅ Item was already picked up before
                                 ui_layer.show_subtitle("You already picked this up.", 2000)
 
                         # --- Other prompts ---
@@ -448,18 +456,19 @@ def run_level():
 
         # DEBUG + object rendering
         for obj in interactive_objects:
-            # 1. Update the animation state every frame!
+            # 1. Update the animation state every frame
             obj.update_animation()
 
-            # 2. Draw the object image (if it exists)
-            if obj.image:
-                game_surface.blit(obj.image, camera.apply_rect(obj.rect))
+            # 2. Draw ONLY IF not already searched
+            if not obj.already_searched:
+                if obj.image:
+                    game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
-            # 3. Draw Prompt if colliding
-            if player.rect.colliderect(obj.rect):
-                prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
-                prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
-                game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
+                # Draw Prompt if colliding
+                if player.rect.colliderect(obj.rect):
+                    prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
+                    prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
+                    game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
             # 4. Glow/Letter logic
             if obj.is_glowing and not obj.already_searched:
