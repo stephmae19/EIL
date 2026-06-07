@@ -43,15 +43,18 @@ class Camera:
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
-                 prompt="Press 'E' to interact", image_file=None, is_glowing=False):
+                 prompt="Press 'E' to interact", image_file=None, is_glowing=False,
+                 is_repeatable=False): # Add this parameter
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
         self.inventory_item = inventory_item
         self.already_searched = False
         self.prompt = prompt
-        self.is_glowing = is_glowing  # New attribute
+        self.is_glowing = is_glowing
+        self.is_repeatable = is_repeatable # Store it
 
         self.image = None
+
         if image_file and os.path.exists(image_file):
             raw = pygame.image.load(image_file).convert_alpha()
             self.image = pygame.transform.scale(raw, (width, height))
@@ -255,6 +258,24 @@ interactive_objects = [
         prompt="A glowing blue orb.",
         image_file=ORB_GLOW_BLUE
     ),
+    InteractiveObject(
+        x=int(2300 * scale_factor),
+        y=int(floor_y - int(280 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="Driven by fear of the angry mob, this is what the library's once-loyal visitors have turned into.",
+        is_repeatable=True  # <--- Set to True
+    ),
+    InteractiveObject(
+        x=int(1800 * scale_factor),
+        y=int(floor_y - int(280 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="Driven by guesses and fear, this is the dark, supernatural nature of what the townspeople now believe is happening within the library's walls.",
+        is_repeatable=True  # <--- Set to True
+    ),
 ]
 
 interactive_objects.append(
@@ -335,11 +356,16 @@ def run_level():
 
                         # --- Other prompts ---
                         else:
-                            if not obj.already_searched:
-                                obj.already_searched = True
-                                ui_layer.show_subtitle(obj.prompt, 2000)
+                            if obj.is_repeatable:
+                                # Always show the prompt, never set already_searched
+                                ui_layer.show_subtitle(obj.prompt, 3000)
                             else:
-                                ui_layer.show_subtitle("You already searched this part.", 2000)
+                                # Original behavior for normal items
+                                if not obj.already_searched:
+                                    obj.already_searched = True
+                                    ui_layer.show_subtitle(obj.prompt, 2000)
+                                else:
+                                    ui_layer.show_subtitle("You already searched this part.", 2000)
                         break
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
