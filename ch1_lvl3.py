@@ -19,7 +19,6 @@ ORB_GLOW_RED = "Assets/MAPS/chapter1/orb_glow_red.png"
 ORB_STATIC_VIOLET = "Assets/MAPS/chapter1/orb_static_violet.png"
 ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
 
-
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
 JPG_BLACK_TOLERANCE = 25
@@ -51,13 +50,14 @@ class Camera:
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
-                 prompt="Press 'E' to interact", image_file=None, static_image=None,
+                 prompt="Press 'E' to interact", prompt_duration=None, image_file=None, static_image=None,
                  is_glowing=False, is_repeatable=False, rows=1, cols=1):
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
         self.inventory_item = inventory_item
         self.already_searched = False
         self.prompt = prompt
+        self.prompt_duration = prompt_duration  # ✅ New attribute to control text screen time
         self.is_glowing = is_glowing
         self.is_repeatable = is_repeatable
         self.is_revealed = False
@@ -239,7 +239,7 @@ feedback_font = pygame.font.SysFont("arial", 24, italic=True)
 
 # ✅ Load your specific custom font
 CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
-h_font = pygame.font.Font(CUSTOM_FONT_PATH, 50) # Set size to 50 for visibility
+h_font = pygame.font.Font(CUSTOM_FONT_PATH, 50)  # Set size to 50 for visibility
 
 # Background
 if not os.path.exists(BG_FILE):
@@ -275,11 +275,21 @@ interactive_objects = [
         rows=2, cols=2
     ),
     InteractiveObject(
-        x=int(800 * scale_factor), y=int(floor_y - 270 * scale_factor),
+        x=int(2000 * scale_factor), y=int(floor_y - 270 * scale_factor),
         width=int(80 * scale_factor), height=int(80 * scale_factor),
         inventory_item="ORB_RED", prompt="A glowing red orb.",
         image_file=ORB_GLOW_RED, static_image=ORB_STATIC_RED,
         rows=2, cols=2
+    ),
+    InteractiveObject(
+        x=int(1300 * scale_factor),
+        y=int(floor_y - int(280 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="The spheres whisper to the walls, and the tomes guard their riddles. Inscribe the true sequence upon the drifting parchment, for only balanced letters reveal the hidden way.",
+        prompt_duration=8000,  # ✅ Kept on screen for 8 seconds
+        is_repeatable=True
     ),
     InteractiveObject(
         x=int(2300 * scale_factor),
@@ -288,7 +298,7 @@ interactive_objects = [
         height=int(40 * scale_factor),
         has_manuscript=False,
         prompt="Driven by fear of the angry mob, this is what the library's once-loyal visitors have turned into.",
-        is_repeatable=True  # <--- Set to True
+        is_repeatable=True
     ),
     InteractiveObject(
         x=int(1800 * scale_factor),
@@ -297,7 +307,7 @@ interactive_objects = [
         height=int(40 * scale_factor),
         has_manuscript=False,
         prompt="Driven by guesses and fear, this is the dark, supernatural nature of what the townspeople now believe is happening within the library's walls.",
-        is_repeatable=True  # <--- Set to True
+        is_repeatable=True
     ),
 ]
 
@@ -374,7 +384,7 @@ player = Player(
     floor_y,
     x=int(BASE_WIDTH * 0.10),
     y=int(BASE_HEIGHT * 0.48),
-    scale=(BASE_HEIGHT / 1080) * 1.1   # adaptive + manual multiplier
+    scale=(BASE_HEIGHT / 1080) * 1.1  # adaptive + manual multiplier
 )
 
 camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
@@ -449,11 +459,15 @@ def run_level():
                             else:
                                 ui_layer.show_subtitle("You already picked this up.", 2000)
                         else:
+                            # ✅ Use custom duration if it exists, otherwise fall back to 3s/2s
+                            display_time = obj.prompt_duration if obj.prompt_duration else (
+                                3000 if obj.is_repeatable else 2000)
+
                             if obj.is_repeatable:
-                                ui_layer.show_subtitle(obj.prompt, 3000)
+                                ui_layer.show_subtitle(obj.prompt, display_time)
                             elif not obj.already_searched:
                                 obj.already_searched = True
-                                ui_layer.show_subtitle(obj.prompt, 2000)
+                                ui_layer.show_subtitle(obj.prompt, display_time)
                         break
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
@@ -543,8 +557,7 @@ def run_level():
                     # ✅ Only draw the letter if it has been successfully revealed
                     if getattr(obj, 'is_revealed', False):
                         # Determine color based on set: VIOLET (238, 130, 238) or RED (255, 0, 0)
-                        text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0,
-                                                                                                         0)
+                        text_color = (238, 130, 238) if getattr(obj, 'set_type', '') == "TRAITORS" else (255, 0, 0)
 
                         char_text = h_font.render(str(obj.inventory_item), True, text_color)
                         text_rect = char_text.get_rect(center=obj.rect.center)
@@ -577,6 +590,7 @@ def run_level():
 
         pygame.display.flip()
         clock.tick(60)
+
 
 # ✅ Allow standalone execution
 if __name__ == "__main__":
