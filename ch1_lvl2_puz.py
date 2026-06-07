@@ -22,6 +22,9 @@ pygame.display.set_caption("Chapter 1 - Level 2 Puzzle")
 
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
+# ✅ Persistent Puzzle State Instance reference variable
+_puzzle_instance = None
+
 
 class PuzzleScene:
     def __init__(self, surface, player):
@@ -29,6 +32,9 @@ class PuzzleScene:
         self.player = player
         self.ui_layer = UILayer(surface)
         self.ui_layer.health_rect = pygame.Rect(0, 0, 0, 0)
+
+        # ✅ Font for the Back Button text rendering layer
+        self.button_font = pygame.font.SysFont("arial", 32, bold=True)
 
         # --- Scale images ---
         self.scale_bal = pygame.image.load(os.path.join("Assets", "MAPS", "chapter1", "scale_bal.png")).convert_alpha()
@@ -40,7 +46,10 @@ class PuzzleScene:
         self.scale_image = self.scale_bal
         self.scale_rect = self.scale_image.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
 
-        # Debug box horizontal offsets (keep these exactly matched to your assets layout)
+        # ✅ Back Button Hitbox Area Rectangle definition (Match Level 1 style)
+        self.back_button = pygame.Rect(50, 50, 120, 50)
+
+        # Debug box horizontal offsets
         LEFT_BOX_OFFSET_X = 10
         RIGHT_BOX_OFFSET_X = -168
 
@@ -49,8 +58,7 @@ class PuzzleScene:
         self.debug_right_box = pygame.Rect(self.scale_rect.right + RIGHT_BOX_OFFSET_X,
                                            self.scale_rect.centery - 100, 150, 140)
 
-        # ✅ Automatically calculate slots inside the visual box bounds to prevent overflow
-        # Spacing is calculated evenly centered across the 150px box width (3 slots of 40px = 120px total)
+        # Automatically calculate slots inside the visual box bounds to prevent overflow
         self.orb_slots = [
             pygame.Rect(self.debug_left_box.left + 10 + i * 45, self.debug_left_box.centery - 20, 40, 40)
             for i in range(3)
@@ -95,6 +103,10 @@ class PuzzleScene:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             virtual_pos = self.get_virtual_mouse_pos(event.pos)
 
+            # ✅ Check if the player clicked on the custom Back Button bounding frame
+            if self.back_button.collidepoint(virtual_pos):
+                return "BACK"
+
             # Pick up an item dictionary structure from the inventory bar
             for i, slot in enumerate(self.ui_layer.inventory_slots):
                 if slot.collidepoint(virtual_pos) and i < len(self.player.inventory):
@@ -118,7 +130,6 @@ class PuzzleScene:
                 if self.debug_left_box.collidepoint(virtual_pos) or any(
                         slot.collidepoint(virtual_pos) for slot in self.orb_slots):
                     if "ORB" in item_id:
-                        # Find the first vacant target slot on the left
                         already_taken_slots = [slot for _, slot in self.orbs_placed]
                         for slot in self.orb_slots:
                             if slot not in already_taken_slots:
@@ -132,7 +143,6 @@ class PuzzleScene:
                 elif self.debug_right_box.collidepoint(virtual_pos) or any(
                         slot.collidepoint(virtual_pos) for slot in self.book_slots):
                     if "BOOK" in item_id:
-                        # Find the first vacant target slot on the right
                         already_taken_slots = [slot for _, slot in self.books_placed]
                         for slot in self.book_slots:
                             if slot not in already_taken_slots:
@@ -151,6 +161,7 @@ class PuzzleScene:
                 # Reset drag properties cleanly
                 self.dragging_item = None
                 self.dragged_item_index = None
+        return None
 
     def check_balance(self):
         if len(self.orbs_placed) == 3 and len(self.books_placed) == 3:
@@ -180,7 +191,6 @@ class PuzzleScene:
         item_id = item["id"] if isinstance(item, dict) else str(item)
 
         if isinstance(item_icon, pygame.Surface):
-            # Scale down the sprite icon slightly if needed to perfectly fit the smaller 40x40 container box bounds
             if item_icon.get_width() > slot.width or item_icon.get_height() > slot.height:
                 item_icon = pygame.transform.smoothscale(item_icon, (slot.width, slot.height))
             rect = item_icon.get_rect(center=slot.center)
@@ -194,9 +204,14 @@ class PuzzleScene:
         self.surface.fill((0, 0, 0))
         self.surface.blit(self.scale_image, self.scale_rect)
 
-        # Debug bounding boxes (Comment out or delete these lines once you're satisfied with your alignment)
+        # Debug bounding boxes
         pygame.draw.rect(self.surface, (255, 0, 0), self.debug_left_box, 2)
         pygame.draw.rect(self.surface, (0, 0, 255), self.debug_right_box, 2)
+
+        # ✅ Draw Back Button elements onto layout layer
+        pygame.draw.rect(self.surface, (200, 50, 50), self.back_button)
+        back_txt = self.button_font.render("BACK", True, (255, 255, 255))
+        self.surface.blit(back_txt, self.back_button.move(20, 10))
 
         # Draw placed orbs
         for item, slot in self.orbs_placed:
@@ -248,23 +263,40 @@ class PuzzleScene:
 
 def run_puzzle(surface, player):
     clock = pygame.time.Clock()
-    puzzle = PuzzleScene(game_surface, player)
+
+    # Pull from global container state so items placed remain saved across level scene transitions
+    global _puzzle_instance
+    if _puzzle_instance is None:
+        _puzzle_instance = PuzzleScene(game_surface, player)
+    else:
+        # ✅ CRITICAL FIX: Refresh the player reference inside the persistent instance
+        # so freshly picked items from ch1_lvl2.py display correctly in the UI bar.
+        _puzzle_instance.player = player
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            # Escape key handles tracking exactly like a Back Button event
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 ch1_lvl2.run_level()
                 return
-            puzzle.handle_event(event)
 
-        solved = puzzle.check_balance()
-        puzzle.draw()
+            # Process structural click interaction feedback loops
+            action = _puzzle_instance.handle_event(event)
+            if action == "BACK":
+                ch1_lvl2.run_level()
+                return
+
+        solved = _puzzle_instance.check_balance()
+        _puzzle_instance.draw()
 
         if solved:
             pygame.time.delay(2000)
+            # Reset persistent layout context upon a successful puzzle solution run
+            _puzzle_instance = None
             ch1_lvl2.run_level()
             return
 
