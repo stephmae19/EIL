@@ -315,11 +315,12 @@ interactive_objects.append(
 import random
 
 # --- Configuration ---
+# Letters will spawn between 100px from top and 320px above the floor
+min_y = 100
 max_y = floor_y - 320
-min_y = 50
 object_width = 60
 object_height = 60
-min_distance = 100  # Minimum pixels between centers
+min_distance = 100
 
 
 def is_position_valid(new_rect, existing_objects):
@@ -339,7 +340,7 @@ for char in "TRAITORS" + "DEMONIC":
     placed = False
     attempts = 0
     while not placed and attempts < 100:
-        spawn_x = random.randint(200, MAP_WIDTH - 200)
+        spawn_x = random.randint(100, MAP_WIDTH - 100)
         spawn_y = random.randint(min_y, max_y)
         new_rect = pygame.Rect(spawn_x, spawn_y, object_width, object_height)
 
