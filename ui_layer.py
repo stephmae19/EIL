@@ -173,8 +173,11 @@ class UILayer:
                 self.dragging_item = None
 
     def draw_dragged_item(self, mouse_pos):
+        # Only draw if an item is currently being dragged
         if self.dragging_item and self.dragging_item.get("icon"):
+            # Scale the icon to 80x80 as requested
             icon = pygame.transform.scale(self.dragging_item["icon"], (80, 80))
+            # Blit centered on the mouse position
             self.surface.blit(icon, (mouse_pos[0] - 40, mouse_pos[1] - 40))
 
     def set_scale_info(self, scale_info):
@@ -205,6 +208,10 @@ class UILayer:
 
     # ---------------- INSANITY BAR ----------------
     def drain_insanity(self):
+        # If we are currently dragging an item, do not drain insanity
+        if self.dragging_item is not None:
+            return
+
         now = time.time()
         if now - self.last_drain >= self.drain_rate:
             self.insanity_level -= self.drain_amount

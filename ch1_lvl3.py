@@ -381,35 +381,38 @@ camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
 # ✅ UI Layer
 ui_layer = UILayer(game_surface)
 
+
 # --- Main Loop wrapped in a function ---
 def run_level():
     clock = pygame.time.Clock()
-    mouse_pos = pygame.mouse.get_pos()
-
-    for event in pygame.event.get():
-        # Handle the drag logic here
-        ui_layer.handle_inventory_drag(event, player, mouse_pos)
 
     while True:
+        # 1. Capture Input State
+        mouse_pos = pygame.mouse.get_pos()
         now = pygame.time.get_ticks()
+
+        # 2. Event Loop
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            # Handle Dragging
+            ui_layer.handle_inventory_drag(event, player, mouse_pos)
+
+            # Escape to exit
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # ✅ Instead of quitting the whole program, return control to ChapterSelect
                 return
+
+            # Interact with objects
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
                 for obj in interactive_objects:
-                    obj.update_animation()
                     if player.rect.colliderect(obj.rect):
                         found = True
-
-                        # --- Manuscript object ---
+                        # --- Manuscript logic ---
                         if obj.has_manuscript:
                             if player.puzzle_solved:
-                                # ✅ Puzzle already solved, don’t allow re-entry
                                 ui_layer.show_subtitle("You already searched this part.", 2000)
                             else:
                                 if not obj.already_searched:
@@ -417,72 +420,54 @@ def run_level():
                                     ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                 else:
                                     ui_layer.show_subtitle("You examine the manuscript again...", 2000)
-
-                                # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
                                 ch1_lvl1_puz.run_puzzle(player, ui_layer)
                             break
-
-                        # --- Inventory items ---
+                        # --- Inventory logic ---
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
-                                    # 1. Determine the icon based on the item type
-                                    item_data = {"id": obj.inventory_item, "icon": None}
-
-                                    # If it's an orb, add its static image as the icon
-                                    if obj.inventory_item.startswith("ORB"):
-                                        if obj.static_image:
-                                            item_data["icon"] = obj.static_image
-
-                                    # 2. Append the dictionary
+                                    item_data = {"id": obj.inventory_item,
+                                                 "icon": obj.static_image if obj.inventory_item.startswith(
+                                                     "ORB") else None}
                                     player.inventory.append(item_data)
-
-                                    # 3. Mark as searched to trigger disappearance from map
                                     obj.already_searched = True
                                     ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!")
                                 else:
                                     ui_layer.show_subtitle("My inventory is full.", 2000)
                             else:
                                 ui_layer.show_subtitle("You already picked this up.", 2000)
-
-                        # --- Other prompts ---
                         else:
                             if obj.is_repeatable:
-                                # Always show the prompt, never set already_searched
                                 ui_layer.show_subtitle(obj.prompt, 3000)
-                            else:
-                                # Original behavior for normal items
-                                if not obj.already_searched:
-                                    obj.already_searched = True
-                                    ui_layer.show_subtitle(obj.prompt, 2000)
-                                else:
-                                    ui_layer.show_subtitle("You already searched this part.", 2000)
+                            elif not obj.already_searched:
+                                obj.already_searched = True
+                                ui_layer.show_subtitle(obj.prompt, 2000)
                         break
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
 
-                # ✅ UI input handling
-                ui_layer.handle_input(event)
-                ui_layer.click_insanity_loss()
+            # UI input handling
+            ui_layer.handle_input(event)
 
-        # Update
+            # Updated: Check for any mouse button (1=Left, 2=Middle, 3=Right)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # If it IS one of the mouse buttons, check if it's NOT in the inventory
+                if event.button in [1, 2, 3]:
+                    if not any(slot.collidepoint(mouse_pos) for slot in ui_layer.inventory_slots):
+                        ui_layer.click_insanity_loss()
+
+        # 3. Update
         player.update(MAP_WIDTH)
         camera.update(player)
 
-        ui_layer.handle_inventory_drag(event, player, mouse_pos)
-
-        # --- Render everything to internal surface ---
+        # 4. Render
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
-        # DEBUG + object rendering
         for obj in interactive_objects:
             obj.update_animation()
-
-            # We process visual rendering only if the object hasn't been collected yet
             if not obj.already_searched:
-                # 1. Standard Rendering
                 if obj.image:
                     game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
@@ -533,27 +518,22 @@ def run_level():
         # Draw player
         game_surface.blit(player.image, camera.apply(player))
 
+        # Draw UI
+        ui_layer.draw(player)
+        ui_layer.draw_dragged_item(mouse_pos)  # Draw this LAST
+
         # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 2", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
-        # ✅ Draw UI overlay last
-        ui_layer.draw(player)
-        ui_layer.draw_dragged_item(mouse_pos)  # Render dragged item last
-        pygame.display.flip()
-
-        # --- Scale & Blit to window with aspect ratio preserved ---
+        # 5. Display Scaling
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
         scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
-
         scaled_surface = pygame.transform.smoothscale(game_surface, (scaled_w, scaled_h))
 
-        x_offset = (window_width - scaled_w) // 2
-        y_offset = (window_height - scaled_h) // 2
-
-        screen.fill((0, 0, 0))  # black padding
-        screen.blit(scaled_surface, (x_offset, y_offset))
+        screen.fill((0, 0, 0))
+        screen.blit(scaled_surface, ((window_width - scaled_w) // 2, (window_height - scaled_h) // 2))
 
         pygame.display.flip()
         clock.tick(60)
