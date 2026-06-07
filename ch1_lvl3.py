@@ -454,8 +454,8 @@ def run_level():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # If it IS one of the mouse buttons, check if it's NOT in the inventory
                 if event.button in [1, 2, 3]:
-                    if not any(slot.collidepoint(mouse_pos) for slot in ui_layer.inventory_slots):
-                        ui_layer.click_insanity_loss()
+                    # The insanity loss logic has been removed to prevent draining on clicks
+                    pass
 
         # 3. Update
         player.update(MAP_WIDTH)
