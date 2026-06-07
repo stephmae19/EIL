@@ -469,8 +469,12 @@ def run_level():
                                 obj.already_searched = True
                                 ui_layer.show_subtitle(obj.prompt, display_time)
                         break
+
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
+
+                # ✅ ADDED: Accelerate the insanity drain on 'E' press, matching ch1_lvl2.py
+                ui_layer.click_insanity_loss()
 
             # UI input handling
             ui_layer.handle_input(event)
@@ -543,13 +547,6 @@ def run_level():
                     # Calculate position to center the glow on the object
                     glow_rect = glow_surf.get_rect(center=obj.rect.center)
                     game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
-
-                # 3. Prompt Rendering
-                # ✅ Hide the prompt text if the letter is still hidden
-                if player.rect.colliderect(obj.rect) and not is_hidden_letter:
-                    prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
-                    prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
-                    game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
                 # 4. Glow/Letter logic
                 if obj.is_glowing and obj.inventory_item and len(str(obj.inventory_item)) == 1:
