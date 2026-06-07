@@ -135,14 +135,30 @@ def run_puzzle(player, ui_layer):
         current_r2 = "".join(row2_input)
 
         # Handle Book 1 Solving State independently
-        if current_r1 == ans_row1 and not player.book1_solved:
-            player.book1_solved = True
-            player.manuscripts_found += 1
+        if len(row1_input) == len(ans_row1) and not player.book1_solved:
+            if current_r1 == ans_row1:
+                player.book1_solved = True
+                player.manuscripts_found += 1
+            else:
+                # ✅ Clear slots and drain insanity cleanly without interrupting the loop
+                if hasattr(ui_layer, 'click_insanity_loss'):
+                    ui_layer.click_insanity_loss()
+                elif hasattr(ui_layer, 'insanity_level'):
+                    ui_layer.insanity_level = max(0, ui_layer.insanity_level - 5)
+                row1_input.clear()
 
         # Handle Book 2 Solving State independently
-        if current_r2 == ans_row2 and not player.book2_solved:
-            player.book2_solved = True
-            player.manuscripts_found += 1
+        if len(row2_input) == len(ans_row2) and not player.book2_solved:
+            if current_r2 == ans_row2:
+                player.book2_solved = True
+                player.manuscripts_found += 1
+            else:
+                # ✅ Clear slots and drain insanity cleanly without interrupting the loop
+                if hasattr(ui_layer, 'click_insanity_loss'):
+                    ui_layer.click_insanity_loss()
+                elif hasattr(ui_layer, 'insanity_level'):
+                    ui_layer.insanity_level = max(0, ui_layer.insanity_level - 5)
+                row2_input.clear()
 
         # Check for universal puzzle solution
         if player.book1_solved and player.book2_solved:
@@ -150,16 +166,6 @@ def run_puzzle(player, ui_layer):
                 solved = True
                 player.puzzle_solved = True
                 solved_timer = pygame.time.get_ticks()
-
-        # 🚨 Accelerated Insanity Drain Mechanic
-        # If slots are maxed out/filled but the string combination is incorrect
-        if len(row1_input) == len(ans_row1) and current_r1 != ans_row1:
-            if hasattr(ui_layer, 'insanity_level'):
-                ui_layer.insanity_level = max(0, ui_layer.insanity_level - 0.4)
-
-        if len(row2_input) == len(ans_row2) and current_r2 != ans_row2:
-            if hasattr(ui_layer, 'insanity_level'):
-                ui_layer.insanity_level = max(0, ui_layer.insanity_level - 0.4)
 
         # Sync live changes to persistent state memory
         player.row1_input_saved = list(row1_input)
