@@ -3,6 +3,7 @@ import pygame
 import sys
 import os
 from ui_layer import UILayer
+
 # ❌ REMOVED: import ch1_lvl2 to break circular execution loops
 
 # --- Base Resolution (Design Target) ---
@@ -76,6 +77,7 @@ class PuzzleScene:
         # Dragging states
         self.dragging_item = None
         self.dragged_item_index = None
+        self.drag_source = None  # Track state origins: "INVENTORY", "ORBS", or "BOOKS"
         self.drag_offset_x = 0
         self.drag_offset_y = 0
 
@@ -84,6 +86,7 @@ class PuzzleScene:
         self.imposter_book = "BOOK_BROWN"
 
         self.message = ""
+        self.last_checked_message = ""  # Track state to prevent resetting the 3-second timer constantly
 
     def get_virtual_mouse_pos(self, screen_pos):
         """Converts physical window mouse coordinates into virtual 1920x1080 space."""
@@ -108,16 +111,39 @@ class PuzzleScene:
             if self.back_button.collidepoint(virtual_pos):
                 return "BACK"
 
-            # Pick up an item dictionary structure from the inventory bar
+            # 1. Try to pick up an item directly from the inventory bar
             for i, slot in enumerate(self.ui_layer.inventory_slots):
                 if slot.collidepoint(virtual_pos) and i < len(self.player.inventory):
                     self.dragging_item = self.player.inventory[i]
                     self.dragged_item_index = i
+                    self.drag_source = "INVENTORY"
                     self.ui_layer.selected_slot = i
 
                     self.drag_offset_x = virtual_pos[0] - slot.centerx
                     self.drag_offset_y = virtual_pos[1] - slot.centery
-                    break
+                    return None
+
+            # 2. Allow picking up items already dropped onto the LEFT orb plate
+            for i, (item, slot) in enumerate(self.orbs_placed):
+                if slot.collidepoint(virtual_pos):
+                    self.dragging_item = item
+                    self.dragged_item_index = i
+                    self.drag_source = "ORBS"
+                    self.drag_offset_x = virtual_pos[0] - slot.centerx
+                    self.drag_offset_y = virtual_pos[1] - slot.centery
+                    self.orbs_placed.pop(i)  # ⚠️ REMOVE IMMEDIATELY to prevent multiple copies
+                    return None
+
+            # 3. Allow picking up items already dropped onto the RIGHT book plate
+            for i, (item, slot) in enumerate(self.books_placed):
+                if slot.collidepoint(virtual_pos):
+                    self.dragging_item = item
+                    self.dragged_item_index = i
+                    self.drag_source = "BOOKS"
+                    self.drag_offset_x = virtual_pos[0] - slot.centerx
+                    self.drag_offset_y = virtual_pos[1] - slot.centery
+                    self.books_placed.pop(i)  # ⚠️ REMOVE IMMEDIATELY to prevent multiple copies
+                    return None
 
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.dragging_item is not None:
@@ -137,6 +163,8 @@ class PuzzleScene:
                                 self.orbs_placed.append((self.dragging_item, slot))
                                 placed = True
                                 break
+                        if not placed:
+                            self.message = "The orb plate is completely full!"
                     else:
                         self.message = "Only round orbs fit on the left plate!"
 
@@ -150,33 +178,51 @@ class PuzzleScene:
                                 self.books_placed.append((self.dragging_item, slot))
                                 placed = True
                                 break
+                        if not placed:
+                            self.message = "The book plate is completely full!"
                     else:
                         self.message = "Only books belong on the right plate!"
 
-                # Remove from inventory if placed into a target layout slot successfully
-                if placed and self.dragged_item_index is not None:
-                    self.player.inventory.pop(self.dragged_item_index)
-                    self.ui_layer.selected_slot = None
+                # Resolution of states to completely block items duplicating
+                if placed:
+                    # Successfully transferred from inventory to plate layout slot
+                    if self.drag_source == "INVENTORY" and self.dragged_item_index is not None:
+                        self.player.inventory.pop(self.dragged_item_index)
                     self.message = ""
+                else:
+                    # Item was dropped in open space: return safely back inside user inventory bar
+                    if self.drag_source == "INVENTORY":
+                        pass
+                    else:
+                        self.player.inventory.append(self.dragging_item)
+                        self.message = "Returned item back into your inventory bar."
+
+                # ✅ Trigger the 3-second UI subtitle timer on dropping/returning an item
+                if self.message:
+                    self.ui_layer.show_subtitle(self.message, duration=3000)
 
                 # Reset drag properties cleanly
                 self.dragging_item = None
                 self.dragged_item_index = None
+                self.drag_source = None
+                self.ui_layer.selected_slot = None
         return None
 
     def check_balance(self):
+        new_msg = ""
+        is_balanced = False
+
         if len(self.orbs_placed) == 3 and len(self.books_placed) == 3:
             orb_names = [o[0]["id"] if isinstance(o[0], dict) else str(o[0]) for o in self.orbs_placed]
             book_names = [b[0]["id"] if isinstance(b[0], dict) else str(b[0]) for b in self.books_placed]
 
             if self.imposter_orb in orb_names or self.imposter_book in book_names:
-                self.message = "The scale refuses to balance..."
+                new_msg = "The scale refuses to balance..."
                 self.scale_image = self.scale_left if self.imposter_orb in orb_names else self.scale_right
-                return False
             else:
-                self.message = "The scale balances perfectly!"
+                new_msg = "The scale balances perfectly!"
                 self.scale_image = self.scale_bal
-                return True
+                is_balanced = True
         else:
             if len(self.orbs_placed) > len(self.books_placed):
                 self.scale_image = self.scale_left
@@ -184,7 +230,15 @@ class PuzzleScene:
                 self.scale_image = self.scale_right
             else:
                 self.scale_image = self.scale_bal
-        return False
+
+        # ✅ Only trigger subtitle update if the balancing state message actually changed
+        if new_msg != self.last_checked_message:
+            self.last_checked_message = new_msg
+            self.message = new_msg
+            if self.message:
+                self.ui_layer.show_subtitle(self.message, duration=3000)
+
+        return is_balanced
 
     def draw_placed_item(self, item, slot):
         """Helper function to render dictionary items onto target puzzle slots."""
@@ -225,10 +279,12 @@ class PuzzleScene:
         # Draw UI layer updates
         self.ui_layer.draw(self.player)
 
-        # Show feedback message
-        if self.message:
-            self.ui_layer.show_subtitle(self.message, duration=3000)
+        # ✅ Render subtitle using its internal timer ticks safely
         self.ui_layer.draw_subtitle()
+
+        # Clear external tracking variable if UILayer internally finishes displaying it
+        if not getattr(self.ui_layer, 'subtitle_text', None):
+            self.message = ""
 
         # Render dragged object locked to virtual mouse position
         if self.dragging_item is not None:
