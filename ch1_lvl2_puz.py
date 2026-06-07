@@ -48,7 +48,7 @@ class PuzzleScene:
         self.scale_rect = self.scale_image.get_rect(center=(BASE_WIDTH // 2, BASE_HEIGHT // 2))
 
         # ✅ Back Button Hitbox Area Rectangle definition (Match Level 1 style)
-        self.back_button = pygame.Rect(50, 50, 120, 50)
+        self.back_button = pygame.Rect(50, 200, 120, 50)
 
         # =============================================================
         # ⚙️ POSITION CONFIGURATIONS FOR ACTIVE AREAS
