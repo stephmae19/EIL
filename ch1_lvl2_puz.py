@@ -83,12 +83,18 @@ class PuzzleScene:
                         if slot.collidepoint(event.pos) and slot not in [s for _, s in self.orbs_placed]:
                             self.orbs_placed.append((self.dragging_item, slot))
                             break
+                    # ✅ Debug left box
+                    if self.debug_left_box.collidepoint(event.pos):
+                        self.orbs_placed.append((self.dragging_item, self.debug_left_box))
                 # Drop into book slots
                 elif "BOOK" in str(self.dragging_item):
                     for slot in self.book_slots:
                         if slot.collidepoint(event.pos) and slot not in [s for _, s in self.books_placed]:
                             self.books_placed.append((self.dragging_item, slot))
                             break
+                    # ✅ Debug right box
+                    if self.debug_right_box.collidepoint(event.pos):
+                        self.books_placed.append((self.dragging_item, self.debug_right_box))
                 self.dragging_item = None
 
     def check_balance(self):
@@ -149,6 +155,17 @@ class PuzzleScene:
         if self.message:
             self.ui_layer.show_subtitle(self.message, duration=3000)
         self.ui_layer.draw_subtitle()
+
+        # Draw dragged item while moving
+        if self.dragging_item:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            if isinstance(self.dragging_item, pygame.Surface):
+                rect = self.dragging_item.get_rect(center=(mouse_x, mouse_y))
+                self.surface.blit(self.dragging_item, rect)
+            else:
+                text = self.ui_layer.inventory_font.render(str(self.dragging_item), True, (255, 255, 255))
+                rect = text.get_rect(center=(mouse_x, mouse_y))
+                self.surface.blit(text, rect)
 
         # --- Scale & Blit to window ---
         window_width, window_height = screen.get_size()
