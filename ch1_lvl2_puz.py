@@ -50,14 +50,15 @@ class PuzzleScene:
         # ✅ Back Button Hitbox Area Rectangle definition (Match Level 1 style)
         self.back_button = pygame.Rect(50, 50, 120, 50)
 
-        # Debug box horizontal offsets
+        # --- Scale Area Placement Settings ---
         LEFT_BOX_OFFSET_X = 10
         RIGHT_BOX_OFFSET_X = -168
+        BOX_OFFSET_Y = -10    #💡 Adjust this value to shift the hitboxes vertically (e.g., -50 to lower, -150 to raise)
 
         self.debug_left_box = pygame.Rect(self.scale_rect.left + LEFT_BOX_OFFSET_X,
-                                          self.scale_rect.centery - 100, 150, 140)
+                                          self.scale_rect.centery + BOX_OFFSET_Y, 150, 50)
         self.debug_right_box = pygame.Rect(self.scale_rect.right + RIGHT_BOX_OFFSET_X,
-                                           self.scale_rect.centery - 100, 150, 140)
+                                           self.scale_rect.centery + BOX_OFFSET_Y, 150, 50)
 
         # Automatically calculate slots inside the visual box bounds to prevent overflow
         self.orb_slots = [
