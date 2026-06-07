@@ -290,6 +290,32 @@ interactive_objects.append(
     )
 )
 
+import random
+
+# --- Create TRAITORS set ---
+for char in "TRAITORS":
+    interactive_objects.append(
+        InteractiveObject(
+            x=random.randint(200, MAP_WIDTH - 200),
+            y=int(floor_y - 100),
+            width=50, height=50,
+            prompt=f"A small carving in the wall: {char}",
+            is_repeatable=True
+        )
+    )
+
+# --- Create DEMONIC set ---
+for char in "DEMONIC":
+    interactive_objects.append(
+        InteractiveObject(
+            x=random.randint(200, MAP_WIDTH - 200),
+            y=int(floor_y - 200),
+            width=50, height=50,
+            prompt=f"A faint whisper seems to emanate from this spot: {char}",
+            is_repeatable=True
+        )
+    )
+
 # --- Adaptive Player Initialization ---
 player = Player(
     floor_y,
