@@ -10,7 +10,14 @@ WALK2_FILE = "Assets/CHARACTERS/player_walk2.png"
 IDLE_FILE = "Assets/CHARACTERS/player_idle.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl3.png"
 MANUSCRIPT_FILE = "Assets/OBJECTS-ITEMS/manuscript.png"
-ORB_GLOW_BLUE = "Assets/MAPS/chapter1/orb_glow_blue.png"
+
+# --- Orbs ---
+ORB_GLOW_VIOLET = "Assets/MAPS/chapter1/orb_glow_violet.png"
+ORB_GLOW_RED = "Assets/MAPS/chapter1/orb_glow_red.png"
+
+ORB_STATIC_VIOLET = "Assets/MAPS/chapter1/orb_static_violet.png"
+ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
+
 
 # --- Config ---
 FLOOR_HEIGHT_PERCENTAGE = 0.74
@@ -43,21 +50,41 @@ class Camera:
 class InteractiveObject:
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
-                 prompt="Press 'E' to interact", image_file=None, is_glowing=False,
-                 is_repeatable=False): # Add this parameter
+                 prompt="Press 'E' to interact", image_file=None, static_image=None,
+                 is_glowing=False, is_repeatable=False, rows=1, cols=1):
         self.rect = pygame.Rect(x, y, width, height)
         self.has_manuscript = has_manuscript
         self.inventory_item = inventory_item
         self.already_searched = False
         self.prompt = prompt
         self.is_glowing = is_glowing
-        self.is_repeatable = is_repeatable # Store it
+        self.is_repeatable = is_repeatable
 
-        self.image = None
+        self.static_image = None
+        if static_image and os.path.exists(static_image):
+            self.static_image = pygame.transform.scale(pygame.image.load(static_image).convert_alpha(), (width, height))
+
+        self.frames = []
+        self.frame_index = 0
+        self.last_update = pygame.time.get_ticks()
 
         if image_file and os.path.exists(image_file):
-            raw = pygame.image.load(image_file).convert_alpha()
-            self.image = pygame.transform.scale(raw, (width, height))
+            sheet = pygame.image.load(image_file).convert_alpha()
+            w, h = sheet.get_width() // cols, sheet.get_height() // rows
+            for r in range(rows):
+                for c in range(cols):
+                    frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
+                    self.frames.append(pygame.transform.scale(frame, (width, height)))
+        self.image = self.frames[0] if self.frames else None
+
+    def update_animation(self):
+        if self.frames and not self.already_searched:
+            if pygame.time.get_ticks() - self.last_update > 150:
+                self.frame_index = (self.frame_index + 1) % len(self.frames)
+                self.image = self.frames[self.frame_index]
+                self.last_update = pygame.time.get_ticks()
+        elif self.already_searched and self.static_image:
+            self.image = self.static_image
 
     def resize(self, new_width, new_height):
         """Resize the interactive object rectangle."""
@@ -239,14 +266,18 @@ scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
 # --- Adaptive Interactive Objects (player-style scaling) ---
 interactive_objects = [
     InteractiveObject(
-        x=int(680 * scale_factor),
-        y=int(floor_y - int(270 * scale_factor)),
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
-        has_manuscript=False,
-        inventory_item="ORB_BLUE",
-        prompt="A glowing blue orb.",
-        image_file=ORB_GLOW_BLUE
+        x=int(680 * scale_factor), y=int(floor_y - 270 * scale_factor),
+        width=int(80 * scale_factor), height=int(80 * scale_factor),
+        inventory_item="ORB_VIOLET", prompt="A glowing violet orb.",
+        image_file=ORB_GLOW_VIOLET, static_image=ORB_STATIC_VIOLET,
+        rows=2, cols=2
+    ),
+    InteractiveObject(
+        x=int(800 * scale_factor), y=int(floor_y - 270 * scale_factor),
+        width=int(80 * scale_factor), height=int(80 * scale_factor),
+        inventory_item="ORB_RED", prompt="A glowing red orb.",
+        image_file=ORB_GLOW_RED, static_image=ORB_STATIC_RED,
+        rows=2, cols=2
     ),
     InteractiveObject(
         x=int(2300 * scale_factor),
@@ -351,6 +382,7 @@ def run_level():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
                 for obj in interactive_objects:
+                    obj.update_animation()
                     if player.rect.colliderect(obj.rect):
                         found = True
 
@@ -416,51 +448,30 @@ def run_level():
 
         # DEBUG + object rendering
         for obj in interactive_objects:
-            pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
+            # 1. Update the animation state every frame!
+            obj.update_animation()
 
-            # --- Original object rendering ---
+            # 2. Draw the object image (if it exists)
             if obj.image:
                 game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
-            # Show prompt when player collides
+            # 3. Draw Prompt if colliding
             if player.rect.colliderect(obj.rect):
                 prompt_text = ui_font.render(obj.prompt, True, (255, 255, 255))
                 prompt_rect = prompt_text.get_rect(midbottom=(obj.rect.centerx, obj.rect.top - 20))
                 game_surface.blit(prompt_text, camera.apply_rect(prompt_rect))
 
+            # 4. Glow/Letter logic
             if obj.is_glowing and not obj.already_searched:
-                # --- Pulse Effect ---
-                import math
-                pulse = 1.0 + (0.2 * math.sin(pygame.time.get_ticks() / 200))
+                # ... (Keep your existing pulse/glow rendering code here)
 
+                # Render single letter items (like 'H' or your random chars)
                 if obj.inventory_item and len(str(obj.inventory_item)) == 1:
                     char_text = h_font.render(str(obj.inventory_item), True, (255, 255, 255))
                     text_rect = char_text.get_rect(center=obj.rect.center)
                     game_surface.blit(char_text, camera.apply_rect(text_rect))
 
-                # 1. Apply pulse to size here
-                base_w = int(obj.rect.width * 1.5)
-                base_h = int(obj.rect.height * 1.5)
-                glow_size = (int(base_w * pulse), int(base_h * pulse)) # Apply pulse!
-                glow_surf = pygame.Surface(glow_size, pygame.SRCALPHA)
-
-                # 2. Adjust the SPREAD and DENSITY
-                for i in range(10, 0, -1):
-                    alpha = 50
-                    # Inflate dynamically based on the pulse-affected size
-                    glow_surf.fill((0, 0, 0, 0)) # Clear previous frame if necessary
-                    pygame.draw.ellipse(glow_surf, (255, 255, 0, alpha),
-                                        glow_surf.get_rect().inflate(-i * 5, -i * 5))
-
-                glow_rect = glow_surf.get_rect(center=obj.rect.center)
-                game_surface.blit(glow_surf, camera.apply_rect(glow_rect))
-
-                # ✅ Render the text "H"
-                if obj.inventory_item == "H":
-                    h_text = h_font.render("H", True, (255, 255, 255))
-                    text_rect = h_text.get_rect(center=obj.rect.center)
-                    game_surface.blit(h_text, camera.apply_rect(text_rect))
-
+            # 5. Debug Rect (Optional: remove this if you don't want to see green boxes)
             pygame.draw.rect(game_surface, (0, 255, 0), camera.apply_rect(obj.rect), 2)
 
         # Draw player
