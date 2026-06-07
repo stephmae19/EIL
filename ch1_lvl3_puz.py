@@ -5,8 +5,8 @@ import os
 
 # --- Layout Configuration ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-MANU_TEXT_FILE = "Assets/OBJECTS-ITEMS/manu_text.png"
-CUSTOM_FONT_PATH = "Assets/FONT/VCR_OSD_MONO_1.001.ttf"
+MANU_TEXT_FILE = "Assets/Objects-Items/manu_text.png"
+CUSTOM_FONT_PATH = "Assets/Font/VCR_OSD_MONO_1.001.ttf"
 BACK_BUTTON_Y = 230  # Adjust this value to change the vertical position of the back button
 
 pygame.init()

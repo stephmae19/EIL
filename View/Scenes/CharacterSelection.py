@@ -1,4 +1,4 @@
-# characterSelection.py
+# View/Scenes/CharacterSelection.py
 import pygame
 import os
 from View.Scenes.StartMenu import StartMenu
@@ -152,11 +152,12 @@ class CharacterSelection:
                 return "boy"
             if self.back_btn_rect.collidepoint(mouse_pos):
                 if self.scene_manager:
-                    self.scene_manager.set_scene(StartMenu(self.screen))
+                    self.scene_manager.set_scene(StartMenu(self.screen, self.scene_manager))
                 return "back"
             if self.confirm_btn_rect.collidepoint(mouse_pos):
                 if self.chosen_character and self.scene_manager:
-                    self.scene_manager.set_scene(ChapterSelect(self.screen))
+                    # ✅ Dynamically pass chosen_character onward during state changes
+                    self.scene_manager.set_scene(ChapterSelect(self.screen, self.scene_manager, self.chosen_character))
                     return "confirm"
                 else:
                     self.warning_message = "Please select a character first!"

@@ -1,11 +1,14 @@
-# ChapterSelect.py
+# View/Scenes/ChapterSelect.py
 import pygame
 import os
-from ch1_lvl1 import run_level   # ✅ import the level
+from ch1_lvl1 import run_level   # import the level
 
 class ChapterSelect:
-    def __init__(self, screen):
+    # ✅ Signature updated to accept scene constraints gracefully
+    def __init__(self, screen, scene_manager=None, chosen_character=None):
         self.screen = screen
+        self.scene_manager = scene_manager
+        self.chosen_character = chosen_character
 
         # Load fonts
         font_path = os.path.join("assets", "font", "VCR_OSD_MONO_1.001.ttf")
@@ -269,9 +272,13 @@ class ChapterSelect:
                     return f"{self.selected_chapter} - {level}"
             # Buttons
             if self.back_btn_rect.collidepoint(mouse_pos):
+                # ✅ Support returning to CharacterSelection safely via scene_manager
+                if self.scene_manager:
+                    from View.Scenes.CharacterSelection import CharacterSelection
+                    self.scene_manager.set_scene(CharacterSelection(self.screen, self.scene_manager))
                 return "back"
             if self.start_btn_rect.collidepoint(mouse_pos):
-                # ✅ Only run if Chapter 1 Level 1 is selected
+                # Only run if Chapter 1 Level 1 is selected
                 if self.selected_chapter == "CHAPTER 1: THE BEGINNING":
                     run_level()
                 return "start"

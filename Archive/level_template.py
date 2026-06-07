@@ -5,9 +5,9 @@ import os
 from ui_layer import UILayerTemp
 
 # --- Filenames ---
-WALK_FILE = "../Assets/CHARACTERS/player_walk.png"
-WALK2_FILE = "../Assets/CHARACTERS/player_walk2.png"
-IDLE_FILE = "../Assets/CHARACTERS/player_idle.png"
+WALK_FILE = "../Assets/Characters/player_walk.png"
+WALK2_FILE = "../Assets/Characters/player_walk2.png"
+IDLE_FILE = "../Assets/Characters/player_idle.png"
 BG_FILE = "../Assets/MAPS/chapter1/level1/ch1_lvl1.png"
 
 # --- Config ---

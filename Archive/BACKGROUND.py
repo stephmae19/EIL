@@ -3,8 +3,8 @@ import sys
 import os
 
 # --- 1. YOUR FILENAMES ---
-WALK_FILE = "../Assets/CHARACTERS/player_walk.jpeg"
-IDLE_FILE = "../Assets/CHARACTERS/player_idle.jpeg"
+WALK_FILE = "../Assets/Characters/player_walk.jpeg"
+IDLE_FILE = "../Assets/Characters/player_idle.jpeg"
 BG_FILE = "../Assets/Maps/chapter1_level1.png"
 
 # --- 2. EASY TWEAK VARIABLES ---
