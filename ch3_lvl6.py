@@ -1,4 +1,4 @@
-# ch2_lvl6.py
+# ch3_lvl6.py
 import pygame
 import sys
 import os
@@ -8,7 +8,7 @@ from ui_layer import UILayer
 WALK_FILE = "Assets/Characters/player_walk.png"
 WALK2_FILE = "Assets/Characters/player_walk2.png"
 IDLE_FILE = "Assets/Characters/player_idle.png"
-BG_FILE = "Assets/MAPS/chapter1/ch1_lvl3.png"
+BG_FILE = "Assets/MAPS/chapter3/ch3_lvl6_night.png"
 MANUSCRIPT_FILE = "Assets/Objects-Items/manuscript.png"
 
 # --- Config ---
@@ -193,7 +193,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Start with resizable window
 screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 2 - Level 6")
+pygame.display.set_caption("Chapter 3 - Level 6")
 
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
