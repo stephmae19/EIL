@@ -294,21 +294,23 @@ def run_level(chosen_character=None):
         pygame.display.flip()
         clock.tick(60)
 
-        # ✅ Check for Game Over state
+        # ✅ Check for Game Over state (generic handler)
         if ui_layer.is_game_over:
-            action = gameover.show_game_over(screen)
+            result = gameover.handle_game_over(
+                screen,
+                ui_layer,
+                player,
+                respawn_pos=(int(BASE_WIDTH * 0.10), floor_y),
+                base_width=BASE_WIDTH,
+                floor_y=floor_y,
+            )
 
-            if action == "restart":
-                player.health = 100
-                player.rect.midbottom = (int(BASE_WIDTH * 0.10), floor_y)
-                ui_layer.hearts = ui_layer.max_hearts
-                ui_layer.insanity_level = len(ui_layer.insanity_frames) - 1
-                ui_layer.reset_timer()
-                ui_layer.is_game_over = False
+            if result == "continue":
+                # Restarted: loop continues
                 continue
-
-            elif action == "menu":
+            elif result == "menu":
                 return "menu"
+
 
 
 # ✅ Allow standalone execution (safely hooks back into main loop if requested)

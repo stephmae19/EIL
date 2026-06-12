@@ -5,6 +5,7 @@ import os
 from ui_layer import UILayer
 import ch1_lvl2_puz
 from Model.Player import Player
+import gameover
 
 # --- Filenames ---
 WALK_FILE = "Assets/Characters/player_walk.png"
@@ -457,6 +458,23 @@ def run_level(chosen_character=None):
 
         pygame.display.flip()
         clock.tick(60)
+        # ✅ Shared game-over handling (same behavior as Level 1)
+        if ui_layer.is_game_over:
+            result = gameover.handle_game_over(
+                screen,
+                ui_layer,
+                player,
+                respawn_pos=(int(BASE_WIDTH * 0.10), floor_y),  # Level 2 respawn
+                base_width=BASE_WIDTH,
+                floor_y=floor_y,
+            )
+
+            if result == "continue":
+                # Restarted: loop continues with reset state
+                continue
+            elif result == "menu":
+                return "menu"
+
 
 
 if __name__ == "__main__":
