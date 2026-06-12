@@ -70,8 +70,16 @@ class InteractiveObject:
         self.rect.y = new_y
 
 # --- Main Loop wrapped in a function ---
-def run_level(chosen_character=None):
-    pygame.font.init()
+def run_level(screen=None, chosen_character=None):
+    # 2. Add this smart fallback initialization check
+    if screen is None:
+        pygame.init()
+        pygame.mixer.init()
+
+        # Now this info call is safe because pygame.init() was just called above!
+        info = pygame.display.Info()
+        native_width, native_height = info.current_w, info.current_h
+        os.environ['SDL_VIDEO_CENTERED'] = '1'
 
     # --- Base Resolution (Design Target) ---
     BASE_WIDTH, BASE_HEIGHT = 1920, 1080

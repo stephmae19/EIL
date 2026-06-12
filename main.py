@@ -120,15 +120,16 @@ def main():
                             except (IndexError, ValueError):
                                 level_num = 1
 
+                            # ✅ Pass the actual window 'screen' to eliminate the resizing/recreation glitch
                             if level_num == 1:
                                 from ch1_lvl1 import run_level
-                                level_result = run_level(chosen_character=chosen_character)
+                                level_result = run_level(screen, chosen_character=chosen_character)
                             elif level_num == 2:
                                 from ch1_lvl2 import run_level
-                                level_result = run_level(chosen_character=chosen_character)
+                                level_result = run_level(screen, chosen_character=chosen_character)
                             elif level_num == 3:
                                 from ch1_lvl3 import run_level
-                                level_result = run_level(chosen_character=chosen_character)
+                                level_result = run_level(screen, chosen_character=chosen_character)
                             else:
                                 level_result = "menu"
 
@@ -136,6 +137,12 @@ def main():
                                 scene_manager.set_scene(StartMenu(game_surface, scene_manager))
                             else:
                                 scene_manager.set_scene(ChapterSelect(game_surface, scene_manager, chosen_character))
+
+                            # ✅ Restart menu music seamlessly when returning from gameplay
+                            if os.path.exists(music_path) and not pygame.mixer.music.get_busy():
+                                pygame.mixer.music.load(music_path)
+                                pygame.mixer.music.set_volume(0.5)
+                                pygame.mixer.music.play(-1)
 
                             pygame.event.clear()
                         else:
