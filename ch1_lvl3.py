@@ -26,16 +26,6 @@ ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
 FLOOR_HEIGHT_PERCENTAGE = 0.74
 JPG_BLACK_TOLERANCE = 25
 
-# 1. ADD THESE TWO LINES BACK RIGHT HERE:
-BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-
-# 2. Make sure they are ABOVE your surface and font initialization:
-game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
-clock = pygame.time.Clock()
-
-ui_font = pygame.font.SysFont("arial", 28, bold=True)
-feedback_font = pygame.font.SysFont("arial", 24, italic=True)
-
 
 class Camera:
     def __init__(self, width, height, screen_w, screen_h):
@@ -60,7 +50,7 @@ class Camera:
         self.camera = pygame.Rect(x, y, self.width, self.height)
 
 
-class InteractiveObject:
+class InteractiveObject(pygame.sprite.Sprite):
     def __init__(self, x, y, width=150, height=250,
                  has_manuscript=False, inventory_item=None,
                  prompt="Press 'E' to interact", prompt_duration=None, image_file=None, static_image=None,
@@ -92,6 +82,9 @@ class InteractiveObject:
                     self.frames.append(pygame.transform.scale(frame, (width, height)))
         self.image = self.frames[0] if self.frames else None
 
+    def update(self):
+        self.update_animation()
+
     def update_animation(self):
         if self.frames and not self.already_searched:
             if pygame.time.get_ticks() - self.last_update > 150:
@@ -118,6 +111,15 @@ pygame.font.init()
 # --- Base Resolution (Design Target) ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 
+# --- Display Setup ---
+info = pygame.display.Info()
+native_width, native_height = info.current_w, info.current_h
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+# Start with resizable window
+screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+pygame.display.set_caption("Chapter 1 - Level 3")
+
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
@@ -140,6 +142,9 @@ else:
     scale_factor = BASE_HEIGHT / original_bg.get_height()
     new_bg_width = int(original_bg.get_width() * scale_factor)
     bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
+
+SCALE_WIDTH, SCALE_HEIGHT = bg_image.get_width(), bg_image.get_height()
+floor_y = int(SCALE_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
 
 MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
 floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
@@ -276,22 +281,8 @@ ui_layer = UILayer(game_surface)
 
 
 # --- Main Loop wrapped in a function ---
-def run_level(screen=None, chosen_character=None):
-    # --- Safe Window Initialization ---
-    if screen is None:
-        pygame.init()
-        pygame.mixer.init()
-        info = pygame.display.Info()
-        native_width, native_height = info.current_w, info.current_h
-        os.environ['SDL_VIDEO_CENTERED'] = '1'
-        screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-    else:
-        screen = pygame.display.get_surface()
-
-    pygame.display.set_caption("Chapter 1 - Level 3")
-
+def run_level(chosen_character=None):
     clock = pygame.time.Clock()
-
     # --- Adaptive Player Initialization ---
     player = Player(
         floor_y=floor_y,
@@ -299,7 +290,7 @@ def run_level(screen=None, chosen_character=None):
         y=int(BASE_HEIGHT * 0.48),
         scale=(BASE_HEIGHT / 1080) * 1.1,
         chosen_character=chosen_character,
-        map_width=MAP_WIDTH,  # or SCALE_WIDTH; MAP_WIDTH is usually the scroll width
+        map_width=SCALE_WIDTH,
     )
     while True:
         # 1. Capture Input State
@@ -391,8 +382,10 @@ def run_level(screen=None, chosen_character=None):
             ui_layer.handle_input(event)
 
         # 3. Update
-        player.update()
+        player.update(SCALE_WIDTH)
         camera.update(player)
+        for obj in interactive_objects:
+            obj.update()
 
         # ✅ Check for Drag Collisions (Orb Reveal Logic)
         if ui_layer.is_dragging and ui_layer.dragging_item:
@@ -498,12 +491,15 @@ def run_level(screen=None, chosen_character=None):
 
         # --- Level completion: all manuscripts found ---
         if player.manuscripts_found >= 1:
-            SaveManagement.save_progress(chapter=1, level=3)  # Make sure this saves lvl 3
+            # Save progress for Chapter 1, Level 1
+            SaveManagement.save_progress(chapter=1, level=1)
+
+            # Fade out current level view
             SaveManagement.fade_to_black(screen, duration_ms=1000)
 
+            # Import and start next level
             from ch1_lvl2 import run_level as run_level2
-            # Pass the screen variable!
-            return run_level2(screen, chosen_character=chosen_character)
+            return run_level2(chosen_character=chosen_character)
 
 
 
