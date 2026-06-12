@@ -153,11 +153,18 @@ class StartMenu:
                 if rect.collidepoint(event.pos):
                     # ✅ Route scene initialization via state variables instead of plain strings
                     if action == "start":
-                        if self.scene_manager:
-                            from View.Scenes.CharacterSelection import CharacterSelection
-                            self.scene_manager.set_scene(CharacterSelection(self.screen, self.scene_manager))
+                        # Remove the scene manager calls here!
+                        # Let main.py catch this return value to wipe the save and change the scene.
                         return "start"
+
+                    elif action == "continue":
+                        # Allow main.py to handle loading and transitioning
+                        return "continue"
+
                     elif action == "options":
+                        self.current_buttons = "options"
+                        self._create_layout()
+                        return "options"
                         self.current_buttons = "options"
                         self._create_layout()
                         return "options"

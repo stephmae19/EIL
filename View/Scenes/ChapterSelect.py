@@ -124,6 +124,11 @@ class ChapterSelect:
         self.status_header_rect = self.status_header.get_rect(topleft=(left_x + 340, inner_top + 60))
         self.levels_header_rect = self.levels_header.get_rect(topleft=(right_x, inner_top + 60))
 
+        # ✅ Load save data once for the layout
+        save = SaveManagement.load_save()
+        current_ch = save.get("current_chapter", 1)
+        current_lv = save.get("current_level", 1)
+
         # Chapter rows
         self.chapter_rows.clear()
         for i, chapter in enumerate(self.chapters.keys()):
@@ -137,45 +142,53 @@ class ChapterSelect:
                 rect = surf.get_rect(topleft=(book_rect.right + 10, row_y + j * 30))
                 text_surfaces.append((surf, rect))
 
+            # ✅ Dynamically check if this chapter is unlocked based on save data
+            chapter_num = i + 1
+            is_ch_unlocked = (chapter_num <= current_ch)
+
             status_surface = self.font.render(
-                "Unlocked" if chapter == "CHAPTER 1: THE BEGINNING" else "Locked",
+                "Unlocked" if is_ch_unlocked else "Locked",
                 True, (255, 255, 255)
             )
             status_rect = status_surface.get_rect(topleft=(left_x + 340, row_y))
-            self.chapter_rows.append((book_rect, text_surfaces, status_surface, status_rect, chapter))
+
+            # Store the unlocked state so we can prevent clicking on locked chapters
+            self.chapter_rows.append((book_rect, text_surfaces, status_surface, status_rect, chapter, is_ch_unlocked))
 
         # Levels
         self.level_rects.clear()
         if self.selected_chapter:
-            icon_size = 64  # smaller icon size
-            padding_x = 20  # horizontal spacing
-            padding_y = 20  # vertical spacing
-            max_per_row = 4  # wrap after 4 icons
+            icon_size = 64
+            padding_x = 20
+            padding_y = 20
+            max_per_row = 4
+
+            # ✅ Parse the selected chapter number (e.g. "CHAPTER 2: THE WHISPERS" -> 2)
+            try:
+                sel_ch_num = int(self.selected_chapter.split(" ")[1].replace(":", ""))
+            except (IndexError, ValueError):
+                sel_ch_num = 1
 
             for i, level in enumerate(self.chapters[self.selected_chapter]):
-                # Always load the base icon
                 icon = self.level_icons.get(level)
                 if isinstance(icon, pygame.Surface):
                     icon = pygame.transform.smoothscale(icon, (icon_size, icon_size))
 
-                unlocked = False
+                # ✅ Parse the level number dynamically (e.g. "Level 2" -> 2)
+                try:
+                    level_num = int(level.split()[-1])
+                except ValueError:
+                    level_num = 1
 
-                if self.selected_chapter == "CHAPTER 1: THE BEGINNING":
-                    save = SaveManagement.load_save()
-                    current_ch, current_lv = save["current_chapter"], save["current_level"]
-                    # Unlock all levels up to current_level
-                    if current_ch >= 1:
-                        # Levels are "Level 1", "Level 2", ...
-                        try:
-                            level_num = int(level.split()[-1])
-                        except ValueError:
-                            level_num = 1
-                        unlocked = (level_num <= current_lv)
+                # ✅ Determine if this specific level is unlocked
+                if sel_ch_num < current_ch:
+                    unlocked = True  # Previous chapters are completely unlocked
+                elif sel_ch_num == current_ch:
+                    unlocked = (level_num <= current_lv)  # Current chapter relies on current_level
                 else:
-                    # For now, other chapters are locked
-                    unlocked = False
+                    unlocked = False  # Future chapters are locked
 
-                # Grey out locked icons (but still visible)
+                # Grey out locked icons
                 display_icon = icon
                 if not unlocked:
                     grey_icon = icon.copy()
@@ -190,7 +203,6 @@ class ChapterSelect:
 
                 rect = display_icon.get_rect(topleft=(pos_x, pos_y))
                 if rect.bottom <= inner_bottom:
-                    # Store both the display icon and unlocked state
                     self.level_rects.append((level, rect, unlocked, display_icon))
         else:
             placeholder = "Select a chapter to view levels"
@@ -207,7 +219,8 @@ class ChapterSelect:
 
         button_y = self.menu_box_rect.bottom + 20
         self.back_btn_rect = self.back_btn.get_rect(midtop=(self.menu_box_rect.centerx - btn_width // 2 - 40, button_y))
-        self.start_btn_rect = self.start_btn.get_rect(midtop=(self.menu_box_rect.centerx + btn_width // 2 + 40, button_y))
+        self.start_btn_rect = self.start_btn.get_rect(
+            midtop=(self.menu_box_rect.centerx + btn_width // 2 + 40, button_y))
 
     def draw(self):
         self.screen.fill((20, 20, 20))
@@ -224,12 +237,12 @@ class ChapterSelect:
             return  # skip hover if not set yet
         hovered = None
 
-        # Draw chapters
-        for book_rect, text_surfaces, status_surface, status_rect, chapter in self.chapter_rows:
+        # Draw chapters (✅ Unpacks all 6 variables now!)
+        for book_rect, text_surfaces, status_surface, status_rect, chapter, is_ch_unlocked in self.chapter_rows:
             self.screen.blit(self.book_icon, book_rect)
             for surf, rect in text_surfaces:
                 self.screen.blit(surf, rect)
-                if rect.collidepoint(mouse_pos):
+                if rect.collidepoint(mouse_pos) and is_ch_unlocked:
                     hovered = chapter
             self.screen.blit(status_surface, status_rect)
 
@@ -243,7 +256,7 @@ class ChapterSelect:
                 if rect.collidepoint(mouse_pos) and unlocked:
                     hovered = level
 
-        # Buttons (same hover logic)
+        # Buttons
         if self.back_btn_rect.collidepoint(mouse_pos):
             back_hover = pygame.transform.smoothscale(
                 self.back_btn_original,
@@ -266,7 +279,7 @@ class ChapterSelect:
         else:
             self.screen.blit(self.start_btn, self.start_btn_rect)
 
-        # Play hover sound only when entering a new element
+        # Play hover sound
         if hovered is not None and hovered != self.last_hovered:
             self.hover_sound.play()
         self.last_hovered = hovered
@@ -274,20 +287,23 @@ class ChapterSelect:
     def handle_input(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
-            # Check chapter clicks
-            for _, text_surfaces, _, _, chapter in self.chapter_rows:
+
+            # Check chapter clicks (✅ Unpacks all 6 variables now!)
+            for _, text_surfaces, _, _, chapter, is_ch_unlocked in self.chapter_rows:
                 for _, rect in text_surfaces:
-                    if rect.collidepoint(mouse_pos):
+                    # Only allow selection if the chapter is actually unlocked!
+                    if rect.collidepoint(mouse_pos) and is_ch_unlocked:
                         self.selected_chapter = chapter
                         self._create_layout()
                         return chapter
+
             # Check level clicks
             for level, rect, unlocked, _ in self.level_rects:
                 if rect.collidepoint(mouse_pos) and unlocked:
                     return f"{self.selected_chapter} - {level}"
+
             # Buttons
             if self.back_btn_rect.collidepoint(mouse_pos):
-                # ✅ Support returning to CharacterSelection safely via scene_manager
                 if self.scene_manager:
                     from View.Scenes.CharacterSelection import CharacterSelection
                     self.scene_manager.set_scene(CharacterSelection(self.screen, self.scene_manager))
