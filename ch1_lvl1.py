@@ -4,6 +4,7 @@ import sys
 import os
 import gameover  # Add this import
 from ui_layer import UILayer
+from Model.Player import Player
 
 # --- Filenames ---
 WALK_FILE = "Assets/Characters/player_walk.png"
@@ -66,128 +67,6 @@ class InteractiveObject:
         """Move the interactive object to a new position."""
         self.rect.x = new_x
         self.rect.y = new_y
-
-
-class Player(pygame.sprite.Sprite):
-    def __init__(self, floor_y, x=400, y=None, scale=0.45, chosen_character=None):
-        super().__init__()
-        self.scale = scale
-
-        # Select files based on character
-        if chosen_character == "charlie":  # Charlie
-            walk_file = WALK_FILE2
-            idle_file = IDLE_FILE2
-        else:
-            walk_file = WALK_FILE
-            idle_file = IDLE_FILE
-
-        # Load frames with transparency and scaling
-        self.walk_frames = self.load_frames(walk_file, 5, 5)
-        self.idle_frames = self.load_frames(idle_file, 5, 5)
-
-        self.current_frames = self.idle_frames
-        self.frame_index = 0
-        self.image = self.current_frames[self.frame_index]
-
-        # ✅ adjustable position
-        if y is None:
-            # Default: place at floor level
-            self.rect = self.image.get_rect(midbottom=(x, floor_y))
-        else:
-            self.rect = self.image.get_rect(topleft=(x, y))
-
-        self.walk_speed = 4
-        self.run_speed = 9
-        self.speed = self.walk_speed
-
-        self.facing_right = True
-        self.is_moving = False
-        self.is_running = False
-
-        self.manuscripts_found = 0
-        self.puzzle_solved = False
-
-        self.health = 100
-
-        self.last_update = pygame.time.get_ticks()
-        self.frame_duration = 1000 // 12
-
-        self.inventory = []
-
-    def load_frames(self, filename, rows, cols):
-        if not os.path.exists(filename):
-            surf = pygame.Surface((32, 32))
-            surf.fill((255, 0, 0))
-            return [surf]
-
-        sheet = pygame.image.load(filename).convert_alpha()
-
-        # Apply transparency to almost-black pixels
-        sheet = sheet.copy()
-        width, height = sheet.get_size()
-        for x in range(width):
-            for y in range(height):
-                r, g, b, a = sheet.get_at((x, y))
-                if r < JPG_BLACK_TOLERANCE and g < JPG_BLACK_TOLERANCE and b < JPG_BLACK_TOLERANCE:
-                    sheet.set_at((x, y), (r, g, b, 0))
-
-        # Slice into frames
-        w, h = sheet.get_width() // cols, sheet.get_height() // rows
-        frames = []
-        for r in range(rows):
-            for c in range(cols):
-                frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
-                # ✅ use scale factor
-                scaled_frame = pygame.transform.scale(frame, (int(w * self.scale), int(h * self.scale)))
-                frames.append(scaled_frame)
-        return frames
-
-    def update_logic(self, map_width):
-        keys = pygame.key.get_pressed()
-        self.is_moving = False
-        self.is_running = False
-
-        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
-            self.is_running = True
-            self.speed = self.run_speed
-        else:
-            self.speed = self.walk_speed
-
-        # Movement: A/D and Arrow keys
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.rect.x -= self.speed
-            self.facing_right = False
-            self.is_moving = True
-        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.rect.x += self.speed
-            self.facing_right = True
-            self.is_moving = True
-
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > map_width:
-            self.rect.right = map_width
-
-    def animate(self):
-        now = pygame.time.get_ticks()
-        target_frames = self.walk_frames if self.is_moving else self.idle_frames
-        self.frame_duration = 1000 // (36 if self.is_running else (20 if self.is_moving else 12))
-
-        if self.current_frames != target_frames:
-            self.current_frames = target_frames
-            self.frame_index = 0
-            self.last_update = now
-
-        if now - self.last_update > self.frame_duration:
-            self.last_update = now
-            self.frame_index = (self.frame_index + 1) % len(self.current_frames)
-            raw_image = self.current_frames[self.frame_index]
-            self.image = pygame.transform.flip(raw_image, True, False) if not self.facing_right else raw_image
-
-    def update(self, map_width):
-        self.update_logic(map_width)
-        self.animate()
-
 
 # --- Main Loop wrapped in a function ---
 def run_level(chosen_character=None):
@@ -311,11 +190,12 @@ def run_level(chosen_character=None):
 
     # ✨ FIX: Instantiate player once with the correct character choice
     player = Player(
-        floor_y,
+        floor_y=floor_y,
         x=int(BASE_WIDTH * 0.10),
         y=int(BASE_HEIGHT * 0.48),
         scale=(BASE_HEIGHT / 1080) * 1.1,
-        chosen_character=chosen_character
+        chosen_character=chosen_character,
+        map_width=MAP_WIDTH,
     )
 
     camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
@@ -381,7 +261,7 @@ def run_level(chosen_character=None):
                 ui_layer.click_insanity_loss()
 
         # Update Game Logic
-        player.update(MAP_WIDTH)
+        player.update()
         camera.update(player)
 
         # Render Game Surface

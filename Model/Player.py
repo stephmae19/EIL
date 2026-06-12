@@ -30,7 +30,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
 
         self.scale = scale
-        self.map_width = map_width
+        self.map_width = map_width  # used for horizontal clamping
 
         # --- Select files based on character ---
         # Adjust this condition to match how you name characters:
@@ -90,7 +90,11 @@ class Player(pygame.sprite.Sprite):
         for x in range(width):
             for y in range(height):
                 r, g, b, a = sheet.get_at((x, y))
-                if r < JPG_BLACK_TOLERANCE and g < JPG_BLACK_TOLERANCE and b < JPG_BLACK_TOLERANCE:
+                if (
+                    r < JPG_BLACK_TOLERANCE
+                    and g < JPG_BLACK_TOLERANCE
+                    and b < JPG_BLACK_TOLERANCE
+                ):
                     sheet.set_at((x, y), (r, g, b, 0))
 
         # Slice into frames
@@ -101,13 +105,12 @@ class Player(pygame.sprite.Sprite):
             for c in range(cols):
                 frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
                 scaled_frame = pygame.transform.scale(
-                    frame,
-                    (int(w * self.scale), int(h * self.scale)),
+                    frame, (int(w * self.scale), int(h * self.scale))
                 )
                 frames.append(scaled_frame)
         return frames
 
-    # ---------- INPUT HANDLING ----------
+    # ---------- OPTIONAL PER‑EVENT INPUT HANDLER ----------
     def handle_input(self, event):
         """Optional per-event handler, if you want explicit keydown/keyup logic."""
         if event.type == pygame.KEYDOWN:
@@ -127,7 +130,18 @@ class Player(pygame.sprite.Sprite):
                 self.is_running = False
 
     # ---------- FRAME-BASED LOGIC (POLLED EACH TICK) ----------
-    def update_logic(self):
+    def update_logic(self, map_width=None):
+        """
+        Movement logic called each frame.
+        If map_width is given, it overrides self.map_width for clamping.
+        This mirrors the behavior from ch1_lvl2.Player.update_logic(scale_width).
+        """
+        if map_width is None:
+            map_width = self.map_width
+        else:
+            # keep internal map_width in sync if caller passes a new one
+            self.map_width = map_width
+
         keys = pygame.key.get_pressed()
         self.is_moving = False
 
@@ -148,20 +162,24 @@ class Player(pygame.sprite.Sprite):
             self.facing_right = True
             self.is_moving = True
 
-        # Clamp horizontally
+        # Clamp horizontally (equivalent to ch1_lvl2's use of SCALE_WIDTH)
         if self.rect.left < 0:
             self.rect.left = 0
-        if self.rect.right > self.map_width:
-            self.rect.right = self.map_width
+        if self.rect.right > map_width:
+            self.rect.right = map_width
 
     def animate(self):
+        """
+        Animation behavior equivalent to ch1_lvl2.Player.animate:
+        - uses different fps for running/walking/idle
+        - flips sprite when facing left
+        """
         now = pygame.time.get_ticks()
         target_frames = self.walk_frames if self.is_moving else self.idle_frames
 
-        # Adjust fps based on state
-        self.frame_duration = 1000 // (
-            36 if self.is_running else (20 if self.is_moving else 12)
-        )
+        # Adjust fps based on state (same logic as in ch1_lvl2)
+        fps = 36 if self.is_running else (20 if self.is_moving else 12)
+        self.frame_duration = 1000 // fps
 
         if self.current_frames != target_frames:
             self.current_frames = target_frames
@@ -178,9 +196,14 @@ class Player(pygame.sprite.Sprite):
                 else raw_image
             )
 
-    def update(self):
-        """Call once per frame from the level: does both logic + animation."""
-        self.update_logic()
+    def update(self, map_width=None):
+        """
+        Call once per frame from the level: does both logic + animation.
+
+        - If map_width is provided, behaves like ch1_lvl2.Player.update(scale_width).
+        - If not, uses self.map_width set in __init__.
+        """
+        self.update_logic(map_width)
         self.animate()
 
     def render(self, screen):
