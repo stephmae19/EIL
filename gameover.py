@@ -54,7 +54,7 @@ def show_game_over(screen):
     if os.path.exists(retry_path):
         retry_image = pygame.image.load(retry_path).convert_alpha()
         # Scale to fit nicely inside the container bar width
-        btn_w = int(bar_rect.width * 0.38)
+        btn_w = int(bar_rect.width * 0.6)
         btn_h = int(
             retry_image.get_height() * (btn_w / retry_image.get_width())
         )
@@ -68,7 +68,7 @@ def show_game_over(screen):
     # Load/Create Exit Button
     if os.path.exists(exit_path):
         exit_image = pygame.image.load(exit_path).convert_alpha()
-        btn_w = int(bar_rect.width * 0.38)
+        btn_w = int(bar_rect.width * 0.6)
         btn_h = int(exit_image.get_height() * (btn_w / exit_image.get_width()))
         exit_image = pygame.transform.smoothscale(exit_image, (btn_w, btn_h))
     else:
@@ -77,12 +77,21 @@ def show_game_over(screen):
         txt = btn_font.render("EXIT", True, (255, 255, 255))
         exit_image.blit(txt, txt.get_rect(center=(75, 25)))
 
-    # Align buttons side-by-side inside the placeholder bar bounds
-    retry_rect = retry_image.get_rect(
-        center=(bar_rect.centerx - int(bar_rect.width * 0.24), bar_rect.centery)
-    )
+    # Align buttons vertically centered INSIDE the bar_rect
+    gap = int(bar_rect.height * 0.10)  # 10% of bar height as spacing
+
+    total_buttons_height = retry_image.get_height() + exit_image.get_height() + gap
+
+    # Top y so that the whole vertical group is centered in the bar
+    start_y = bar_rect.centery - total_buttons_height // 2
+
+    # Common horizontal center inside the bar
+    center_x = bar_rect.centerx
+
+    # Retry on top, Exit below
+    retry_rect = retry_image.get_rect(midtop=(center_x, start_y))
     exit_rect = exit_image.get_rect(
-        center=(bar_rect.centerx + int(bar_rect.width * 0.24), bar_rect.centery)
+        midtop=(center_x, start_y + retry_image.get_height() + gap)
     )
 
     # ---------------- 2. FADE-IN TRANSITION ----------------
