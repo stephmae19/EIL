@@ -26,6 +26,16 @@ ORB_STATIC_RED = "Assets/MAPS/chapter1/orb_static_red.png"
 FLOOR_HEIGHT_PERCENTAGE = 0.74
 JPG_BLACK_TOLERANCE = 25
 
+# 1. ADD THESE TWO LINES BACK RIGHT HERE:
+BASE_WIDTH, BASE_HEIGHT = 1920, 1080
+
+# 2. Make sure they are ABOVE your surface and font initialization:
+game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
+clock = pygame.time.Clock()
+
+ui_font = pygame.font.SysFont("arial", 28, bold=True)
+feedback_font = pygame.font.SysFont("arial", 24, italic=True)
+
 
 class Camera:
     def __init__(self, width, height, screen_w, screen_h):
@@ -107,15 +117,6 @@ pygame.font.init()
 
 # --- Base Resolution (Design Target) ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-
-# --- Display Setup ---
-info = pygame.display.Info()
-native_width, native_height = info.current_w, info.current_h
-os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-# Start with resizable window
-screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 1 - Level 3")
 
 # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
 game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
@@ -275,8 +276,22 @@ ui_layer = UILayer(game_surface)
 
 
 # --- Main Loop wrapped in a function ---
-def run_level(chosen_character=None):
+def run_level(screen=None, chosen_character=None):
+    # --- Safe Window Initialization ---
+    if screen is None:
+        pygame.init()
+        pygame.mixer.init()
+        info = pygame.display.Info()
+        native_width, native_height = info.current_w, info.current_h
+        os.environ['SDL_VIDEO_CENTERED'] = '1'
+        screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+    else:
+        screen = pygame.display.get_surface()
+
+    pygame.display.set_caption("Chapter 1 - Level 3")
+
     clock = pygame.time.Clock()
+
     # --- Adaptive Player Initialization ---
     player = Player(
         floor_y=floor_y,
@@ -484,15 +499,12 @@ def run_level(chosen_character=None):
 
         # --- Level completion: all manuscripts found ---
         if player.manuscripts_found >= 1:
-            # Save progress for Chapter 1, Level 1
-            SaveManagement.save_progress(chapter=1, level=1)
-
-            # Fade out current level view
+            SaveManagement.save_progress(chapter=1, level=3)  # Make sure this saves lvl 3
             SaveManagement.fade_to_black(screen, duration_ms=1000)
 
-            # Import and start next level
             from ch1_lvl2 import run_level as run_level2
-            return run_level2(chosen_character=chosen_character)
+            # Pass the screen variable!
+            return run_level2(screen, chosen_character=chosen_character)
 
 
 
