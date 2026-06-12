@@ -6,6 +6,8 @@ import gameover  # Add this import
 from ui_layer import UILayer
 from Model.Player import Player
 import SaveManagement
+from game_utils import get_or_create_screen
+
 
 # --- Filenames ---
 WALK_FILE = "Assets/Characters/player_walk.png"

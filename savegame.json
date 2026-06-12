@@ -1,8 +1,5 @@
 {
   "current_chapter": 1,
-  "current_level": 3,
-  "completed_levels": [
-    "CH1_L1",
-    "CH1_L2"
-  ]
+  "current_level": 1,
+  "completed_levels": []
 }

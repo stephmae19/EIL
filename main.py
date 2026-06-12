@@ -1,4 +1,3 @@
-# main.py
 import pygame
 import os
 import SaveManagement
@@ -8,19 +7,38 @@ from View.Scenes.CharacterSelection import CharacterSelection
 from View.Scenes.Level import Level
 from Controller.SceneManager import SceneManager
 from Model.AssetLoader import AssetLoader
+from game_utils import get_or_create_screen
+
+# Import levels
 import ch1_lvl1
+import ch1_lvl2
+import ch1_lvl3
 
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
+
+
+def run_level_by_id(level_id, screen, character):
+    """
+    Central dispatcher to run a level by ID string.
+    Returns the ID of the next level to run, or "menu" if quitting.
+    """
+    levels = {
+        "lvl1": ch1_lvl1.run_level,
+        "lvl2": ch1_lvl2.run_level,
+        "lvl3": ch1_lvl3.run_level,
+    }
+
+    if level_id in levels:
+        return levels[level_id](screen, chosen_character=character)
+    return "menu"
+
 
 def main():
     pygame.init()
     pygame.mixer.init()
 
-    info = pygame.display.Info()
-    native_width, native_height = info.current_w, info.current_h
     os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-    screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+    screen = get_or_create_screen()
     pygame.display.set_caption("Echoes of Whispers")
 
     game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
@@ -28,10 +46,14 @@ def main():
     # --- Preload Assets ---
     assets = AssetLoader()
     music_path = os.path.join("Sounds", "bg_music.mp3")
-    if os.path.exists(music_path):
-        pygame.mixer.music.load(music_path)
-        pygame.mixer.music.set_volume(0.5)
-        pygame.mixer.music.play(-1)
+
+    def play_music():
+        if os.path.exists(music_path) and not pygame.mixer.music.get_busy():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(-1)
+
+    play_music()
 
     font_path = os.path.join("Assets", "Font", "VCR_OSD_MONO_1.001.ttf")
     game_font = pygame.font.Font(font_path, 48)
@@ -59,14 +81,14 @@ def main():
                 running = False
 
             elif event.type == pygame.VIDEORESIZE:
-                screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-                scene_manager.set_window_size(event.w, event.h)
+                screen = get_or_create_screen()
+                scene_manager.set_window_size(*screen.get_size())
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F11:
-                    screen = pygame.display.set_mode((native_width, native_height), pygame.FULLSCREEN)
+                    screen = pygame.display.set_mode(screen.get_size(), pygame.FULLSCREEN)
                 elif event.key == pygame.K_F10:
-                    screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+                    screen = get_or_create_screen()
 
             else:
                 action = scene_manager.handle_input(event)
@@ -74,79 +96,51 @@ def main():
                 # --- Scene Logic ---
                 if isinstance(scene_manager.current_scene, StartMenu):
                     if action == "start":
-                        # ✅ Reset save file before starting new game
                         with open(SaveManagement.SAVE_FILE, "w", encoding="utf-8") as f:
                             import json
-                            # Force reset to Level 1 only
                             json.dump(SaveManagement._default_save(), f, indent=2)
-
                         scene_manager.set_scene(CharacterSelection(game_surface, scene_manager))
 
                     elif action == "continue":
-                        # ✅ Load existing save without resetting
                         save = SaveManagement.load_save()
-                        print(f"Continuing game at Chapter {save['current_chapter']} Level {save['current_level']}")
                         scene_manager.set_scene(CharacterSelection(game_surface, scene_manager))
 
                     elif action == "exit":
                         running = False
-                    elif action == "options":
-                        print("Options menu...")
-                    elif action == "credits":
-                        print("Credits scene...")
 
                 elif isinstance(scene_manager.current_scene, CharacterSelection):
                     if action == "back":
                         scene_manager.set_scene(StartMenu(game_surface, scene_manager))
                     elif action in ["charlie", "blake"]:
                         chosen_character = action
-                        print(f"Character chosen: {chosen_character}")
                     elif action == "confirm":
                         if chosen_character:
                             scene_manager.set_scene(ChapterSelect(game_surface, scene_manager, chosen_character))
-                        else:
-                            print("Confirm clicked but no character selected.")
 
                 elif isinstance(scene_manager.current_scene, ChapterSelect):
                     if isinstance(action, str) and action.startswith("CHAPTER"):
                         chosen_chapter = action
-                        print(f"Chapter selected: {chosen_chapter}")
 
                     elif action == "start" and chosen_chapter:
+                        # 1. Determine starting level ID
+                        current_level_id = None
                         if "CHAPTER 1" in chosen_chapter:
                             try:
-                                level_str = chosen_chapter.split("-")[-1].strip()
-                                level_num = int(level_str.split()[-1])
+                                level_num = int(chosen_chapter.split("-")[-1].strip().split()[-1])
+                                current_level_id = f"lvl{level_num}"
                             except (IndexError, ValueError):
-                                level_num = 1
+                                current_level_id = "lvl1"
 
-                            # ✅ Pass the actual window 'screen' to eliminate the resizing/recreation glitch
-                            if level_num == 1:
-                                from ch1_lvl1 import run_level
-                                level_result = run_level(screen, chosen_character=chosen_character)
-                            elif level_num == 2:
-                                from ch1_lvl2 import run_level
-                                level_result = run_level(screen, chosen_character=chosen_character)
-                            elif level_num == 3:
-                                from ch1_lvl3 import run_level
-                                level_result = run_level(screen, chosen_character=chosen_character)
-                            else:
-                                level_result = "menu"
+                        # 2. Level Execution Loop (Orchestrator)
+                        # We stay in this loop until the level returns "menu" or quits
+                        while current_level_id and current_level_id != "menu":
+                            # Run current level, get next level ID string
+                            current_level_id = run_level_by_id(current_level_id, screen, chosen_character)
 
-                            if level_result == "menu":
-                                scene_manager.set_scene(StartMenu(game_surface, scene_manager))
-                            else:
-                                scene_manager.set_scene(ChapterSelect(game_surface, scene_manager, chosen_character))
-
-                            # ✅ Restart menu music seamlessly when returning from gameplay
-                            if os.path.exists(music_path) and not pygame.mixer.music.get_busy():
-                                pygame.mixer.music.load(music_path)
-                                pygame.mixer.music.set_volume(0.5)
-                                pygame.mixer.music.play(-1)
-
-                            pygame.event.clear()
-                        else:
-                            scene_manager.set_scene(Level(game_surface, chapter_id=chosen_chapter, character=chosen_character))
+                        # 3. Post-Gameplay Reset
+                        scene_manager.set_scene(StartMenu(game_surface, scene_manager))
+                        play_music()
+                        pygame.event.clear()
 
                     elif action == "back":
                         scene_manager.set_scene(CharacterSelection(game_surface, scene_manager))
@@ -160,14 +154,11 @@ def main():
         # --- Scale & Blit ---
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
-        scaled_width = int(BASE_WIDTH * scale)
-        scaled_height = int(BASE_HEIGHT * scale)
-
-        scaled_surface = pygame.transform.smoothscale(game_surface, (scaled_width, scaled_height))
+        scaled_surface = pygame.transform.smoothscale(game_surface, (int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)))
 
         screen.fill((0, 0, 0))
-        x_offset = (window_width - scaled_width) // 2
-        y_offset = (window_height - scaled_height) // 2
+        x_offset = (window_width - scaled_surface.get_width()) // 2
+        y_offset = (window_height - scaled_surface.get_height()) // 2
         screen.blit(scaled_surface, (x_offset, y_offset))
 
         scale_info = {
@@ -182,6 +173,7 @@ def main():
         clock.tick(60)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
