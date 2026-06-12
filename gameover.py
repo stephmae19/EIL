@@ -41,7 +41,7 @@ def show_game_over(screen):
         bar_image = pygame.Surface((450, 120), pygame.SRCALPHA)
         bar_image.fill((30, 30, 40, 200))  # Semi-transparent fallback
 
-    bar_rect = bar_image.get_rect(center=(window_w // 2, int(window_h * 0.65)))
+    bar_rect = bar_image.get_rect(center=(window_w // 2, int(window_h * 0.8)))
 
     # Buttons Setup
     retry_path = os.path.join("Assets", "Scenery", "retry_btn.png")
