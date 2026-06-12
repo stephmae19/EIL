@@ -142,34 +142,32 @@ def show_game_over(screen):
         pygame.display.flip()
         clock.tick(60)
 
-def handle_game_over(screen, ui_layer, player, respawn_pos=None, base_width=None, floor_y=None):
+
+def handle_game_over(screen, ui_layer, player, base_width, base_height):
     """
-    Generic game-over handler usable by any level.
+    Generic game-over handler.
+    Respawns player at the specific hardcoded initial position.
 
     - screen: main window surface
     - ui_layer: UILayer instance
     - player: Player instance
-    - respawn_pos: (x, y) or None. If None and base_width/floor_y are provided,
-      uses a default midbottom respawn like Level 1.
-    - base_width, floor_y: used only to compute a default respawn if respawn_pos is None.
+    - base_width: The BASE_WIDTH constant
+    - base_height: The BASE_HEIGHT constant
 
     Returns:
         "continue" if gameplay should resume (after restart),
-        "menu" if caller should exit to menu / chapter select.
+        "menu" if caller should exit to menu.
     """
     action = show_game_over(screen)
 
     if action == "restart":
-        # Reset player
+        # Reset player health
         player.health = 100
 
-        # Respawn position
-        if respawn_pos is not None:
-            # Treat as midbottom by default, which matches side-scroller feel
-            player.rect.midbottom = respawn_pos
-        elif base_width is not None and floor_y is not None:
-            # Fallback similar to ch1_lvl1
-            player.rect.midbottom = (int(base_width * 0.10), floor_y)
+        # HARDCODED RESPAWN POSITION
+        # Uses the exact initial position logic: 10% width, 48% height
+        player.rect.x = int(base_width * 0.10)
+        player.rect.y = int(base_height * 0.48)
 
         # Reset UI state
         ui_layer.hearts = ui_layer.max_hearts
@@ -179,8 +177,5 @@ def handle_game_over(screen, ui_layer, player, respawn_pos=None, base_width=None
 
         return "continue"
 
-    elif action == "menu":
-        return "menu"
-
-    # Safety fallback: treat anything else as “menu”
+    # Return "menu" for any other action (Exit or Escape key)
     return "menu"

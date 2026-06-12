@@ -486,9 +486,8 @@ def run_level(screen=None, chosen_character=None):
                 screen,
                 ui_layer,
                 player,
-                respawn_pos=(int(BASE_WIDTH * 0.10), floor_y),  # Level 3 respawn
-                base_width=BASE_WIDTH,
-                floor_y=floor_y,
+                BASE_WIDTH,
+                BASE_HEIGHT
             )
 
             if result == "continue":
