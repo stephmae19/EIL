@@ -143,13 +143,13 @@ class CharacterSelection:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = event.pos
             if self.girl_box.collidepoint(mouse_pos):
-                self.chosen_character = "girl"
+                self.chosen_character = "charlie"
                 self.warning_message = None
-                return "girl"
+                return "charlie"
             if self.boy_box.collidepoint(mouse_pos):
-                self.chosen_character = "boy"
+                self.chosen_character = "blake"
                 self.warning_message = None
-                return "boy"
+                return "blake"
             if self.back_btn_rect.collidepoint(mouse_pos):
                 if self.scene_manager:
                     self.scene_manager.set_scene(StartMenu(self.screen, self.scene_manager))

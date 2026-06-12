@@ -87,7 +87,7 @@ def main():
                 elif isinstance(scene_manager.current_scene, CharacterSelection):
                     if action == "back":
                         scene_manager.set_scene(StartMenu(game_surface))
-                    elif action in ["girl", "boy"]:
+                    elif action in ["charlie", "blake"]:
                         chosen_character = action
                         print(f"Character chosen: {chosen_character}")
                     elif action == "confirm":
@@ -105,7 +105,7 @@ def main():
                             from ch1_lvl1 import run_level
 
                             # ✅ Capture the result of the level execution
-                            level_result = run_level()
+                            level_result = run_level(chosen_character=chosen_character)
 
                             # ✅ If they clicked EXIT on Game Over, send them to the Start Menu
                             if level_result == "menu":

@@ -278,9 +278,8 @@ class ChapterSelect:
                     self.scene_manager.set_scene(CharacterSelection(self.screen, self.scene_manager))
                 return "back"
             if self.start_btn_rect.collidepoint(mouse_pos):
-                # Only run if Chapter 1 Level 1 is selected
                 if self.selected_chapter == "CHAPTER 1: THE BEGINNING":
-                    run_level()
+                    run_level(chosen_character=self.chosen_character)
                 return "start"
         return None
 

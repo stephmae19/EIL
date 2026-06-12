@@ -7,8 +7,9 @@ from ui_layer import UILayer
 
 # --- Filenames ---
 WALK_FILE = "Assets/Characters/player_walk.png"
-WALK2_FILE = "Assets/Characters/player_walk2.png"
+WALK_FILE2 = "Assets/Characters/player_walk2.png"
 IDLE_FILE = "Assets/Characters/player_idle.png"
+IDLE_FILE2 = "Assets/Characters/player_idle2.png"
 BG_FILE = "Assets/MAPS/chapter1/ch1_lvl1.png"
 MANUSCRIPT_FILE = "Assets/Objects-Items/manuscript.png"
 
@@ -68,13 +69,21 @@ class InteractiveObject:
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, floor_y, x=400, y=None, scale=0.45):
+    def __init__(self, floor_y, x=400, y=None, scale=0.45, chosen_character=None):
         super().__init__()
-        self.scale = scale  # ✅ adjustable scale factor
+        self.scale = scale
+
+        # Select files based on character
+        if chosen_character == "charlie":  # Charlie
+            walk_file = WALK_FILE2
+            idle_file = IDLE_FILE2
+        else:
+            walk_file = WALK_FILE
+            idle_file = IDLE_FILE
 
         # Load frames with transparency and scaling
-        self.walk_frames = self.load_frames(WALK_FILE, 5, 5)
-        self.idle_frames = self.load_frames(IDLE_FILE, 5, 5)
+        self.walk_frames = self.load_frames(walk_file, 5, 5)
+        self.idle_frames = self.load_frames(idle_file, 5, 5)
 
         self.current_frames = self.idle_frames
         self.frame_index = 0
@@ -181,7 +190,7 @@ class Player(pygame.sprite.Sprite):
 
 
 # --- Main Loop wrapped in a function ---
-def run_level():
+def run_level(chosen_character=None):
     pygame.init()
     pygame.font.init()
 
@@ -300,12 +309,13 @@ def run_level():
         )
     )
 
-    # ✨ FIX: Freshly instantiate player & ui layout values on each run
+    # ✨ FIX: Instantiate player once with the correct character choice
     player = Player(
         floor_y,
         x=int(BASE_WIDTH * 0.10),
         y=int(BASE_HEIGHT * 0.48),
-        scale=(BASE_HEIGHT / 1080) * 1.1
+        scale=(BASE_HEIGHT / 1080) * 1.1,
+        chosen_character=chosen_character
     )
 
     camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
