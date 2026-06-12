@@ -77,7 +77,8 @@ class UILayer:
 
         # --- Timer setup ---
         self.countdown_seconds = 300
-        self.start_time = time.time()  # ✅ this fixes the AttributeError
+        self.start_time = time.time()
+        self.is_game_over = False  # Add this new state flag
 
         # --- Insanity bar setup ---
         insanity_path = os.path.join("Assets", "Sprite", "gameplay", "insanity.png")
@@ -247,9 +248,8 @@ class UILayer:
             if self.hearts > 0:
                 self.insanity_level = len(self.insanity_frames) - 1
             else:
-                print("Game Over!")
-                pygame.quit()
-                sys.exit()
+                # Signal that health is depleted
+                self.is_game_over = True
 
     def draw_insanity_bar(self, padding=10):
         if not self.insanity_frames:
@@ -359,9 +359,11 @@ class UILayer:
         self.surface.blit(timer_text, text_rect)
 
         if remaining <= 0:
-            print("Time's up! Game Over!")
-            pygame.quit()
-            sys.exit()
+            # Signal that the timer ran out
+            self.is_game_over = True
+
+        self.drain_insanity()
+        self.draw_insanity_bar()
 
         self.drain_insanity()
         self.draw_insanity_bar()

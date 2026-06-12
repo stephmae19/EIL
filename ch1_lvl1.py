@@ -2,6 +2,7 @@
 import pygame
 import sys
 import os
+import gameover  # Add this import
 from ui_layer import UILayer
 
 # --- Filenames ---
@@ -430,6 +431,23 @@ def run_level():
 
         pygame.display.flip()
         clock.tick(60)
+
+        # ✅ Check for Game Over state triggered by UI
+        if ui_layer.is_game_over:
+            action = gameover.show_game_over(screen)
+
+            if action == "restart":
+                # Reset player and UI state, then continue the loop
+                player.health = 100
+                player.rect.midbottom = (int(BASE_WIDTH * 0.10), floor_y)
+                ui_layer.hearts = ui_layer.max_hearts
+                ui_layer.insanity_level = len(ui_layer.insanity_frames) - 1
+                ui_layer.reset_timer()
+                ui_layer.is_game_over = False
+                continue  # Restart the level loop seamlessly
+
+            elif action == "menu":
+                return  # Exit back to ChapterSelect exactly like the ESC key does
 
 # ✅ Allow standalone execution
 if __name__ == "__main__":
