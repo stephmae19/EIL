@@ -1,7 +1,8 @@
 # View/Scenes/ChapterSelect.py
 import pygame
 import os
-from ch1_lvl1 import run_level   # import the level
+from ch1_lvl1 import run_level
+import SaveManagement
 
 class ChapterSelect:
     # ✅ Signature updated to accept scene constraints gracefully
@@ -157,8 +158,22 @@ class ChapterSelect:
                 if isinstance(icon, pygame.Surface):
                     icon = pygame.transform.smoothscale(icon, (icon_size, icon_size))
 
-                # Unlock logic: only Chapter 1 Level 1 is unlocked
-                unlocked = (self.selected_chapter == "CHAPTER 1: THE BEGINNING" and level == "Level 1")
+                unlocked = False
+
+                if self.selected_chapter == "CHAPTER 1: THE BEGINNING":
+                    save = SaveManagement.load_save()
+                    current_ch, current_lv = save["current_chapter"], save["current_level"]
+                    # Unlock all levels up to current_level
+                    if current_ch >= 1:
+                        # Levels are "Level 1", "Level 2", ...
+                        try:
+                            level_num = int(level.split()[-1])
+                        except ValueError:
+                            level_num = 1
+                        unlocked = (level_num <= current_lv)
+                else:
+                    # For now, other chapters are locked
+                    unlocked = False
 
                 # Grey out locked icons (but still visible)
                 display_icon = icon
@@ -278,9 +293,8 @@ class ChapterSelect:
                     self.scene_manager.set_scene(CharacterSelection(self.screen, self.scene_manager))
                 return "back"
             if self.start_btn_rect.collidepoint(mouse_pos):
-                if self.selected_chapter == "CHAPTER 1: THE BEGINNING":
-                    run_level(chosen_character=self.chosen_character)
                 return "start"
+
         return None
 
     def update(self):

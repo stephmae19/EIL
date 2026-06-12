@@ -6,6 +6,7 @@ from ui_layer import UILayer
 import math
 from Model.Player import Player
 import gameover
+import SaveManagement
 
 # --- Filenames ---
 WALK_FILE = "Assets/Characters/player_walk.png"
@@ -480,6 +481,19 @@ def run_level(chosen_character=None):
                 continue
             elif result == "menu":
                 return "menu"
+
+        # --- Level completion: all manuscripts found ---
+        if player.manuscripts_found >= 1:
+            # Save progress for Chapter 1, Level 1
+            SaveManagement.save_progress(chapter=1, level=1)
+
+            # Fade out current level view
+            SaveManagement.fade_to_black(screen, duration_ms=1000)
+
+            # Import and start next level
+            from ch1_lvl2 import run_level as run_level2
+            return run_level2(chosen_character=chosen_character)
+
 
 
 
