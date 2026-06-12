@@ -180,169 +180,154 @@ class Player(pygame.sprite.Sprite):
         self.animate()
 
 
-# --- Initialization ---
-pygame.init()
-pygame.font.init()
-
-# --- Base Resolution (Design Target) ---
-BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-
-# --- Display Setup ---
-info = pygame.display.Info()
-native_width, native_height = info.current_w, info.current_h
-os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-# Start with resizable window
-screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-pygame.display.set_caption("Chapter 1 - Level 1")
-
-# Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
-game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
-
-clock = pygame.time.Clock()
-
-ui_font = pygame.font.SysFont("arial", 28, bold=True)
-feedback_font = pygame.font.SysFont("arial", 24, italic=True)
-
-# Background
-if not os.path.exists(BG_FILE):
-    bg_image = pygame.Surface((BASE_WIDTH * 2, BASE_HEIGHT))
-    bg_image.fill((50, 50, 80))
-else:
-    original_bg = pygame.image.load(BG_FILE).convert()
-    scale_factor = BASE_HEIGHT / original_bg.get_height()
-    new_bg_width = int(original_bg.get_width() * scale_factor)
-    bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
-
-MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
-floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
-
-# --- Scaling ratios based on design resolution ---
-DESIGN_WIDTH = 1920
-DESIGN_HEIGHT = 1080
-
-# Use BASE_WIDTH/BASE_HEIGHT instead of SCREEN_WIDTH/SCREEN_HEIGHT
-scale_x = BASE_WIDTH / DESIGN_WIDTH
-scale_y = BASE_HEIGHT / DESIGN_HEIGHT
-
-# Player-style scaling factor
-scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
-
-# --- Adaptive Interactive Objects (player-style scaling) ---
-interactive_objects = [
-    InteractiveObject(
-        x=int(180 * scale_factor),
-        y=int(floor_y - int(140 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="H",
-        prompt="I found a letter H."
-    ),
-    InteractiveObject(
-        x=int(490 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="L",
-        prompt="I found a letter L."
-    ),
-    InteractiveObject(
-        x=int(560 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="E",
-        prompt="I found a letter E."
-    ),
-    InteractiveObject(
-        x=int(1000 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="K",
-        prompt="I found a letter K."
-    ),
-    InteractiveObject(
-        x=int(1100 * scale_factor),
-        y=int(floor_y - int(200 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="M",
-        prompt="I found a letter M."
-    ),
-    InteractiveObject(
-        x=int(900 * scale_factor),
-        y=int(floor_y - int(120 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="C",
-        prompt="I found a letter C."
-    ),
-    InteractiveObject(
-        x=int(1400 * scale_factor),
-        y=int(floor_y - int(100 * scale_factor)),
-        width=int(5 * scale_factor),
-        height=int(40 * scale_factor),
-        has_manuscript=False,
-        inventory_item="O",
-        prompt="Oh, there's something on the floor. I found a letter O."
-    ),
-]
-
-interactive_objects.append(
-    InteractiveObject(
-        x=int(MAP_WIDTH * 0.78),  # right side
-        y=int(floor_y - int(BASE_HEIGHT * 0.25)),  # center vertically above floor
-        width=int(80 * scale_factor),
-        height=int(80 * scale_factor),
-        has_manuscript=True,
-        prompt="A mysterious manuscript lies here...",
-        image_file=MANUSCRIPT_FILE
-    )
-)
-
-# --- Adaptive Player Initialization ---
-player = Player(
-    floor_y,
-    x=int(BASE_WIDTH * 0.10),
-    y=int(BASE_HEIGHT * 0.48),
-    scale=(BASE_HEIGHT / 1080) * 1.1   # adaptive + manual multiplier
-)
-
-camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
-
-# ✅ UI Layer
-ui_layer = UILayer(game_surface)
-
 # --- Main Loop wrapped in a function ---
 def run_level():
+    pygame.init()
+    pygame.font.init()
+
+    # --- Base Resolution (Design Target) ---
+    BASE_WIDTH, BASE_HEIGHT = 1920, 1080
+
+    # ✨ FIX: Reuse main.py's window surface instead of executing set_mode globally upon module import
+    screen = pygame.display.get_surface()
+    if screen is None:
+        info = pygame.display.Info()
+        native_width, native_height = info.current_w, info.current_h
+        os.environ['SDL_VIDEO_CENTERED'] = '1'
+        screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+
+    pygame.display.set_caption("Chapter 1 - Level 1")
+
+    # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
+    game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
     clock = pygame.time.Clock()
 
+    ui_font = pygame.font.SysFont("arial", 28, bold=True)
+    feedback_font = pygame.font.SysFont("arial", 24, italic=True)
+
+    # Background Setup
+    if not os.path.exists(BG_FILE):
+        bg_image = pygame.Surface((BASE_WIDTH * 2, BASE_HEIGHT))
+        bg_image.fill((50, 50, 80))
+    else:
+        original_bg = pygame.image.load(BG_FILE).convert()
+        scale_factor = BASE_HEIGHT / original_bg.get_height()
+        new_bg_width = int(original_bg.get_width() * scale_factor)
+        bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
+
+    MAP_WIDTH, MAP_HEIGHT = bg_image.get_width(), bg_image.get_height()
+    floor_y = int(MAP_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
+
+    # --- Scaling factor ---
+    scale_factor = BASE_HEIGHT / 1080
+
+    # ✨ FIX: Moved interactive object creation inside run_level() so state resets fresh on every entry
+    interactive_objects = [
+        InteractiveObject(
+            x=int(180 * scale_factor),
+            y=int(floor_y - int(140 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="H",
+            prompt="I found a letter H."
+        ),
+        InteractiveObject(
+            x=int(490 * scale_factor),
+            y=int(floor_y - int(200 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="L",
+            prompt="I found a letter L."
+        ),
+        InteractiveObject(
+            x=int(560 * scale_factor),
+            y=int(floor_y - int(200 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="E",
+            prompt="I found a letter E."
+        ),
+        InteractiveObject(
+            x=int(1000 * scale_factor),
+            y=int(floor_y - int(200 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="K",
+            prompt="I found a letter K."
+        ),
+        InteractiveObject(
+            x=int(1100 * scale_factor),
+            y=int(floor_y - int(200 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="M",
+            prompt="I found a letter M."
+        ),
+        InteractiveObject(
+            x=int(900 * scale_factor),
+            y=int(floor_y - int(120 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="C",
+            prompt="I found a letter C."
+        ),
+        InteractiveObject(
+            x=int(1400 * scale_factor),
+            y=int(floor_y - int(100 * scale_factor)),
+            width=int(5 * scale_factor),
+            height=int(40 * scale_factor),
+            has_manuscript=False,
+            inventory_item="O",
+            prompt="Oh, there's something on the floor. I found a letter O."
+        ),
+    ]
+
+    interactive_objects.append(
+        InteractiveObject(
+            x=int(MAP_WIDTH * 0.78),
+            y=int(floor_y - int(BASE_HEIGHT * 0.25)),
+            width=int(80 * scale_factor),
+            height=int(80 * scale_factor),
+            has_manuscript=True,
+            prompt="A mysterious manuscript lies here...",
+            image_file=MANUSCRIPT_FILE
+        )
+    )
+
+    # ✨ FIX: Freshly instantiate player & ui layout values on each run
+    player = Player(
+        floor_y,
+        x=int(BASE_WIDTH * 0.10),
+        y=int(BASE_HEIGHT * 0.48),
+        scale=(BASE_HEIGHT / 1080) * 1.1
+    )
+
+    camera = Camera(MAP_WIDTH, MAP_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
+    ui_layer = UILayer(game_surface)
+
     while True:
-        now = pygame.time.get_ticks()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # ✅ Instead of quitting the whole program, return control to ChapterSelect
-                return
+                return "escape"
+
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
                 for obj in interactive_objects:
                     if player.rect.colliderect(obj.rect):
                         found = True
 
-                        # --- Manuscript object ---
                         if obj.has_manuscript:
                             if player.puzzle_solved:
-                                # ✅ Puzzle solved: change prompt permanently
                                 obj.prompt = "The manuscript has already been deciphered."
                                 ui_layer.show_subtitle(obj.prompt, 2000)
                             else:
@@ -351,34 +336,26 @@ def run_level():
                                 else:
                                     ui_layer.show_subtitle("You examine the manuscript again...", 2000)
 
-                                # Route to puzzle only if not solved yet
                                 import ch1_lvl1_puz
                                 ch1_lvl1_puz.run_puzzle(player, ui_layer, screen)
 
-                                # ✅ After puzzle closes, check if solved
                                 if player.puzzle_solved and not obj.already_searched:
                                     ui_layer.show_subtitle("You found a hidden manuscript!", 3000)
                                     obj.already_searched = True
-                                    # ✅ Update prompt permanently
                                     obj.prompt = "The manuscript has already been deciphered."
                             break
 
-                        # --- Inventory items ---
                         elif obj.inventory_item:
                             if not obj.already_searched:
                                 if len(player.inventory) < 6:
-                                    # ✅ Successfully pick up item
                                     player.inventory.append(obj.inventory_item)
                                     obj.already_searched = True
                                     ui_layer.show_subtitle(f"You picked up {obj.inventory_item}!")
                                 else:
-                                    # ✅ Inventory full, but item not yet picked up
                                     ui_layer.show_subtitle("My inventory is full.", 2000)
                             else:
-                                # ✅ Item was already picked up before
                                 ui_layer.show_subtitle("You already picked this up.", 2000)
 
-                        # --- Other prompts ---
                         else:
                             if not obj.already_searched:
                                 obj.already_searched = True
@@ -386,37 +363,33 @@ def run_level():
                             else:
                                 ui_layer.show_subtitle("You already searched this part.", 2000)
                         break
+
                 if not found:
                     ui_layer.show_subtitle("There is nothing to interact with here.", 1500)
 
-                # ✅ UI input handling
                 ui_layer.handle_input(event)
                 ui_layer.click_insanity_loss()
 
-        # Update
+        # Update Game Logic
         player.update(MAP_WIDTH)
         camera.update(player)
 
-        # --- Render everything to internal surface ---
+        # Render Game Surface
         game_surface.fill((0, 0, 0))
         game_surface.blit(bg_image, (camera.camera.x, camera.camera.y))
 
-        # ✅ Render object images if available
         for obj in interactive_objects:
             if obj.image:
                 game_surface.blit(obj.image, camera.apply_rect(obj.rect))
 
-        # Draw player
         game_surface.blit(player.image, camera.apply(player))
 
-        # Manuscripts UI text
         ui_text = ui_font.render(f"Manuscripts: {player.manuscripts_found} / 1", True, (255, 215, 0))
         game_surface.blit(ui_text, (BASE_WIDTH - 280, 20))
 
-        # ✅ Draw UI overlay last
         ui_layer.draw(player)
 
-        # --- Scale & Blit to window with aspect ratio preserved ---
+        # Scale & Preserving Aspect Ratio Blit
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
         scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
@@ -426,29 +399,35 @@ def run_level():
         x_offset = (window_width - scaled_w) // 2
         y_offset = (window_height - scaled_h) // 2
 
-        screen.fill((0, 0, 0))  # black padding
+        screen.fill((0, 0, 0))
         screen.blit(scaled_surface, (x_offset, y_offset))
-
         pygame.display.flip()
         clock.tick(60)
 
-        # ✅ Check for Game Over state triggered by UI
+        # ✅ Check for Game Over state
         if ui_layer.is_game_over:
             action = gameover.show_game_over(screen)
 
             if action == "restart":
-                # Reset player and UI state, then continue the loop
                 player.health = 100
                 player.rect.midbottom = (int(BASE_WIDTH * 0.10), floor_y)
                 ui_layer.hearts = ui_layer.max_hearts
                 ui_layer.insanity_level = len(ui_layer.insanity_frames) - 1
                 ui_layer.reset_timer()
                 ui_layer.is_game_over = False
-                continue  # Restart the level loop seamlessly
+                continue
 
             elif action == "menu":
-                return  # Exit back to ChapterSelect exactly like the ESC key does
+                return "menu"
 
-# ✅ Allow standalone execution
+
+# ✅ Allow standalone execution (safely hooks back into main loop if requested)
 if __name__ == "__main__":
-    run_level()
+    result = run_level()
+    if result == "menu":
+        try:
+            import main
+
+            main.main()
+        except ImportError:
+            pass

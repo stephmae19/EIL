@@ -103,8 +103,19 @@ def main():
                     elif action == "start" and chosen_chapter:
                         if "CHAPTER 1" in chosen_chapter and "Level 1" in chosen_chapter:
                             from ch1_lvl1 import run_level
-                            run_level()
-                            scene_manager.set_scene(ChapterSelect(game_surface))
+
+                            # ✅ Capture the result of the level execution
+                            level_result = run_level()
+
+                            # ✅ If they clicked EXIT on Game Over, send them to the Start Menu
+                            if level_result == "menu":
+                                scene_manager.set_scene(StartMenu(game_surface))
+                            else:
+                                # Hitting ESC mid-game still takes them safely to Chapter Select
+                                scene_manager.set_scene(ChapterSelect(game_surface))
+
+                            # ✨ FIX: Clear dangling clicks/releases to prevent menu misfires
+                            pygame.event.clear()
                         else:
                             scene_manager.set_scene(Level(game_surface, chapter_id=chosen_chapter, character=chosen_character))
                     elif action == "back":

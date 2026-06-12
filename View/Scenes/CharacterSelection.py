@@ -93,8 +93,8 @@ class CharacterSelection:
         self.screen.blit(header_surface, header_rect)
 
         for box, image, char_id, label_lines in [
-            (self.girl_box, self.girl_image_scaled, "girl", ["FEMALE", "EXPLORER"]),
-            (self.boy_box, self.boy_image_scaled, "boy", ["MALE", "EXPLORER"])
+            (self.girl_box, self.girl_image_scaled, "girl", ["CHARLIE"]),
+            (self.boy_box, self.boy_image_scaled, "boy", ["BLAKE"])
         ]:
             pygame.draw.rect(self.screen, (92, 64, 52), box)
             border_color = (255, 215, 0) if self.chosen_character == char_id else (0, 0, 0)
