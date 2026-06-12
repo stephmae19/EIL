@@ -1,6 +1,7 @@
 # main.py
 import pygame
 import os
+import SaveManagement
 from View.Scenes.StartMenu import StartMenu
 from View.Scenes.ChapterSelect import ChapterSelect
 from View.Scenes.CharacterSelection import CharacterSelection
@@ -8,14 +9,12 @@ from View.Scenes.Level import Level
 from Controller.SceneManager import SceneManager
 from Model.AssetLoader import AssetLoader
 
-# --- Base Resolution (Design Target) ---
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 
 def main():
     pygame.init()
     pygame.mixer.init()
 
-    # --- Display Setup ---
     info = pygame.display.Info()
     native_width, native_height = info.current_w, info.current_h
     os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -23,7 +22,6 @@ def main():
     screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
     pygame.display.set_caption("Echoes of Whispers")
 
-    # Internal fixed surface
     game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
 
     # --- Preload Assets ---
@@ -38,6 +36,7 @@ def main():
     game_font = pygame.font.Font(font_path, 48)
     assets.cache["game_font"] = game_font
 
+    # Characters
     assets.load("Assets/Characters/player_walk.png", (40, 40))
     assets.load("Assets/Characters/player_idle.png", (40, 40))
     assets.load("Assets/Characters/player_walk2.png", (40, 40))
@@ -46,7 +45,7 @@ def main():
 
     # --- Scene Manager ---
     scene_manager = SceneManager(game_surface)
-    scene_manager.set_scene(StartMenu(game_surface))
+    scene_manager.set_scene(StartMenu(game_surface, scene_manager))
 
     chosen_chapter = None
     chosen_character = None
@@ -74,11 +73,22 @@ def main():
                 # --- Scene Logic ---
                 if isinstance(scene_manager.current_scene, StartMenu):
                     if action == "start":
+                        # ✅ Reset save file before starting new game
+                        with open(SaveManagement.SAVE_FILE, "w", encoding="utf-8") as f:
+                            import json
+                            # Force reset to Level 1 only
+                            json.dump(SaveManagement._default_save(), f, indent=2)
+
                         scene_manager.set_scene(CharacterSelection(game_surface, scene_manager))
+
+                    elif action == "continue":
+                        # ✅ Load existing save without resetting
+                        save = SaveManagement.load_save()
+                        print(f"Continuing game at Chapter {save['current_chapter']} Level {save['current_level']}")
+                        scene_manager.set_scene(CharacterSelection(game_surface, scene_manager))
+
                     elif action == "exit":
                         running = False
-                    elif action == "continue":
-                        print("Continue game...")
                     elif action == "options":
                         print("Options menu...")
                     elif action == "credits":
@@ -86,13 +96,13 @@ def main():
 
                 elif isinstance(scene_manager.current_scene, CharacterSelection):
                     if action == "back":
-                        scene_manager.set_scene(StartMenu(game_surface))
+                        scene_manager.set_scene(StartMenu(game_surface, scene_manager))
                     elif action in ["charlie", "blake"]:
                         chosen_character = action
                         print(f"Character chosen: {chosen_character}")
                     elif action == "confirm":
                         if chosen_character:
-                            scene_manager.set_scene(ChapterSelect(game_surface))
+                            scene_manager.set_scene(ChapterSelect(game_surface, scene_manager, chosen_character))
                         else:
                             print("Confirm clicked but no character selected.")
 
@@ -104,12 +114,11 @@ def main():
                     elif action == "start" and chosen_chapter:
                         if "CHAPTER 1" in chosen_chapter:
                             try:
-                                level_str = chosen_chapter.split("-")[-1].strip()   # "Level 1"
-                                level_num = int(level_str.split()[-1])              # 1
+                                level_str = chosen_chapter.split("-")[-1].strip()
+                                level_num = int(level_str.split()[-1])
                             except (IndexError, ValueError):
                                 level_num = 1
 
-                            # Dispatch to the correct level file
                             if level_num == 1:
                                 from ch1_lvl1 import run_level
                                 level_result = run_level(chosen_character=chosen_character)
@@ -122,22 +131,19 @@ def main():
                             else:
                                 level_result = "menu"
 
-                            # Handle result
                             if level_result == "menu":
-                                scene_manager.set_scene(StartMenu(game_surface))
+                                scene_manager.set_scene(StartMenu(game_surface, scene_manager))
                             else:
-                                scene_manager.set_scene(ChapterSelect(game_surface))
+                                scene_manager.set_scene(ChapterSelect(game_surface, scene_manager, chosen_character))
 
                             pygame.event.clear()
-
                         else:
-                            # Other chapters fallback
                             scene_manager.set_scene(Level(game_surface, chapter_id=chosen_chapter, character=chosen_character))
 
                     elif action == "back":
                         scene_manager.set_scene(CharacterSelection(game_surface, scene_manager))
                     elif action == "menu":
-                        scene_manager.set_scene(StartMenu(game_surface))
+                        scene_manager.set_scene(StartMenu(game_surface, scene_manager))
 
         # --- Update & Render ---
         scene_manager.update()
