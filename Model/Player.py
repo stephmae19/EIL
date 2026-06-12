@@ -1,132 +1,192 @@
 # Model/Player.py
 import pygame
-import sys
+import os
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
 ROWS = 5
 COLS = 5
+JPG_BLACK_TOLERANCE = 25
+
+# Default sprite paths (you can override when creating the player)
+WALK_FILE = "Assets/Characters/player_walk.png"
+WALK_FILE2 = "Assets/Characters/player_walk2.png"
+IDLE_FILE = "Assets/Characters/player_idle.png"
+IDLE_FILE2 = "Assets/Characters/player_idle2.png"
+
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x=100, y=100, sprite_path="Assets/Characters/player_walk.jpeg", start_room=None):
+    def __init__(
+        self,
+        floor_y=None,
+        x=100,
+        y=None,
+        scale=0.45,
+        chosen_character=None,
+        walk_file=WALK_FILE,
+        walk_file2=WALK_FILE2,
+        idle_file=IDLE_FILE,
+        idle_file2=IDLE_FILE2,
+        map_width=800,
+    ):
         super().__init__()
 
-        try:
-            self.sprite_sheet = pygame.image.load(sprite_path).convert()
-        except pygame.error as e:
-            print(f"Error: Could not load sprite sheet {sprite_path}. {e}")
-            pygame.quit()
-            sys.exit()
+        self.scale = scale
+        self.map_width = map_width
 
-        self.sprite_sheet.set_colorkey((0, 0, 0))
+        # --- Select files based on character ---
+        # Adjust this condition to match how you name characters:
+        # e.g. "charlie"/"blake" or "girl"/"boy"
+        if chosen_character == "charlie" or chosen_character == "girl":
+            sprite_walk = walk_file2
+            sprite_idle = idle_file2
+        else:
+            sprite_walk = walk_file
+            sprite_idle = idle_file
 
-        sheet_rect = self.sprite_sheet.get_rect()
-        self.frame_width = sheet_rect.width // COLS
-        self.frame_height = sheet_rect.height // ROWS
+        # --- Load frames with transparency and scaling ---
+        self.walk_frames = self._load_frames(sprite_walk, ROWS, COLS)
+        self.idle_frames = self._load_frames(sprite_idle, ROWS, COLS)
 
-        self.walk_frames = []
-        for r in range(ROWS):
-            for c in range(COLS):
-                rect = pygame.Rect(c * self.frame_width, r * self.frame_height,
-                                   self.frame_width, self.frame_height)
-                frame = self.sprite_sheet.subsurface(rect)
-                self.walk_frames.append(frame)
+        self.current_frames = self.idle_frames
+        self.frame_index = 0
+        self.image = self.current_frames[self.frame_index]
 
-        self.current_frame = 0.0
-        self.image = self.walk_frames[0]
-        self.rect = self.image.get_rect(topleft=(x, y))
+        # Position
+        if y is None and floor_y is not None:
+            # Place at floor level
+            self.rect = self.image.get_rect(midbottom=(x, floor_y))
+        else:
+            self.rect = self.image.get_rect(topleft=(x, y if y is not None else 100))
 
-        # Movement state
-        self.speed = 5
-        self.animation_speed = 0.2
+        # Movement & animation
+        self.walk_speed = 4
+        self.run_speed = 9
+        self.speed = self.walk_speed
+
         self.facing_right = True
         self.is_moving = False
-        self.direction = 0
+        self.is_running = False
+
+        self.last_update = pygame.time.get_ticks()
+        self.frame_duration = 1000 // 12  # default 12 fps
 
         # Stats
         self.health = 100
         self.inventory = []
+        self.manuscripts_found = 0
+        self.puzzle_solved = False
 
-    # --- Method Overloading Examples ---
-    def move(self, speed=None, direction=None):
-        """Move with optional speed and direction overrides."""
-        if speed is not None:
-            self.speed = speed
-        if direction is not None:
-            self.direction = direction
-            self.is_moving = True
+    # ---------- SPRITE SHEET HELPERS ----------
+    def _load_frames(self, filename, rows, cols):
+        if not os.path.exists(filename):
+            surf = pygame.Surface((32, 32))
+            surf.fill((255, 0, 0))
+            return [surf]
 
-        if self.is_moving:
-            self.rect.x += self.direction * self.speed
-            if self.rect.left < 0:
-                self.rect.left = 0
-            if self.rect.right > SCREEN_WIDTH:
-                self.rect.right = SCREEN_WIDTH
+        sheet = pygame.image.load(filename).convert_alpha()
 
-    def interact(self, item=None):
-        """Interact with environment or optional item."""
-        if item:
-            print(f"Player interacts with {item}.")
-            if item in self.inventory:
-                print(f"{item} is already in inventory.")
-            else:
-                self.add_item(item)
-                print(f"{item} added to inventory.")
-        else:
-            print("Player interacts with the environment.")
+        # Apply transparency to almost-black pixels
+        sheet = sheet.copy()
+        width, height = sheet.get_size()
+        for x in range(width):
+            for y in range(height):
+                r, g, b, a = sheet.get_at((x, y))
+                if r < JPG_BLACK_TOLERANCE and g < JPG_BLACK_TOLERANCE and b < JPG_BLACK_TOLERANCE:
+                    sheet.set_at((x, y), (r, g, b, 0))
 
-    def examine(self, target=None):
-        """Examine surroundings or a specific target."""
-        if target:
-            print(f"Player examines {target}.")
-        else:
-            print("Player looks around the room.")
+        # Slice into frames
+        w = sheet.get_width() // cols
+        h = sheet.get_height() // rows
+        frames = []
+        for r in range(rows):
+            for c in range(cols):
+                frame = sheet.subsurface(pygame.Rect(c * w, r * h, w, h))
+                scaled_frame = pygame.transform.scale(
+                    frame,
+                    (int(w * self.scale), int(h * self.scale)),
+                )
+                frames.append(scaled_frame)
+        return frames
 
-    # --- Input Handling ---
+    # ---------- INPUT HANDLING ----------
     def handle_input(self, event):
+        """Optional per-event handler, if you want explicit keydown/keyup logic."""
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_LEFT, pygame.K_a):
-                self.direction = -1
                 self.facing_right = False
                 self.is_moving = True
             elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                self.direction = 1
                 self.facing_right = True
                 self.is_moving = True
+            elif event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
+                self.is_running = True
 
         elif event.type == pygame.KEYUP:
             if event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_a, pygame.K_d):
-                self.stop_movement()
+                self.is_moving = False
+            elif event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
+                self.is_running = False
 
-    def stop_movement(self):
+    # ---------- FRAME-BASED LOGIC (POLLED EACH TICK) ----------
+    def update_logic(self):
+        keys = pygame.key.get_pressed()
         self.is_moving = False
-        self.direction = 0
+
+        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+            self.is_running = True
+            self.speed = self.run_speed
+        else:
+            self.is_running = False
+            self.speed = self.walk_speed
+
+        # Movement: A/D and Arrow keys
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.rect.x -= self.speed
+            self.facing_right = False
+            self.is_moving = True
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.rect.x += self.speed
+            self.facing_right = True
+            self.is_moving = True
+
+        # Clamp horizontally
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > self.map_width:
+            self.rect.right = self.map_width
 
     def animate(self):
-        old_center = self.rect.center
-        if self.is_moving:
-            self.current_frame += self.animation_speed
-            if self.current_frame >= len(self.walk_frames):
-                self.current_frame = 0
-            new_image = self.walk_frames[int(self.current_frame)]
-        else:
-            new_image = self.walk_frames[0]
+        now = pygame.time.get_ticks()
+        target_frames = self.walk_frames if self.is_moving else self.idle_frames
 
-        if not self.facing_right:
-            self.image = pygame.transform.flip(new_image, True, False)
-        else:
-            self.image = new_image
+        # Adjust fps based on state
+        self.frame_duration = 1000 // (
+            36 if self.is_running else (20 if self.is_moving else 12)
+        )
 
-        self.rect = self.image.get_rect(center=old_center)
+        if self.current_frames != target_frames:
+            self.current_frames = target_frames
+            self.frame_index = 0
+            self.last_update = now
+
+        if now - self.last_update > self.frame_duration:
+            self.last_update = now
+            self.frame_index = (self.frame_index + 1) % len(self.current_frames)
+            raw_image = self.current_frames[self.frame_index]
+            self.image = (
+                pygame.transform.flip(raw_image, True, False)
+                if not self.facing_right
+                else raw_image
+            )
 
     def update(self):
-        self.move()
+        """Call once per frame from the level: does both logic + animation."""
+        self.update_logic()
         self.animate()
 
     def render(self, screen):
         screen.blit(self.image, self.rect)
 
-    # --- Inventory ---
+    # ---------- SIMPLE INVENTORY / STATS HELPERS ----------
     def add_item(self, item):
         self.inventory.append(item)
 
