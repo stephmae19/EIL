@@ -8,6 +8,7 @@ from View.Scenes.CharacterSelection import CharacterSelection
 from View.Scenes.Level import Level
 from Controller.SceneManager import SceneManager
 from Model.AssetLoader import AssetLoader
+import ch1_lvl1
 
 BASE_WIDTH, BASE_HEIGHT = 1920, 1080
 

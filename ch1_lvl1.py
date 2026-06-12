@@ -71,7 +71,6 @@ class InteractiveObject:
 
 # --- Main Loop wrapped in a function ---
 def run_level(chosen_character=None):
-    pygame.init()
     pygame.font.init()
 
     # --- Base Resolution (Design Target) ---
@@ -87,7 +86,6 @@ def run_level(chosen_character=None):
 
     pygame.display.set_caption("Chapter 1 - Level 1")
 
-    # Internal fixed surface (always BASE_WIDTH x BASE_HEIGHT)
     game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
     clock = pygame.time.Clock()
 
@@ -312,17 +310,13 @@ def run_level(chosen_character=None):
             elif result == "menu":
                 return "menu"
 
-        # --- Level completion: all manuscripts found ---
         if player.manuscripts_found >= 1:
-            # Save progress for Chapter 1, Level 1
             SaveManagement.save_progress(chapter=1, level=1)
-
-            # Fade out current level view
             SaveManagement.fade_to_black(screen, duration_ms=1000)
 
-            # Import and start next level
             from ch1_lvl2 import run_level as run_level2
-            return run_level2(chosen_character=chosen_character)
+            # ✅ Pass the screen to the next level!
+            return run_level2(screen, chosen_character=chosen_character)
 
 
 # ✅ Allow standalone execution (safely hooks back into main loop if requested)

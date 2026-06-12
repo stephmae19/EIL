@@ -4,6 +4,7 @@ from Game.Game import Game
 from Model.Player import Player
 from Model.RoomManager import RoomManager
 from View.Renderer import Renderer
+import ch1_lvl1
 
 class Level:
     def __init__(self, screen, chapter_id, character):
