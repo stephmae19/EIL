@@ -123,164 +123,170 @@ class InteractiveObject:
         self.rect.y = new_y
 
 
-# --- Everything below this line should be INSIDE run_level() ---
+# --- Initialization ---
+pygame.init()
+pygame.font.init()
+
+BASE_WIDTH, BASE_HEIGHT = 1920, 1080
+
+info = pygame.display.Info()
+native_width, native_height = info.current_w, info.current_h
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
+pygame.display.set_caption("Chapter 1 - Level 2")
+
+game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
+
+clock = pygame.time.Clock()
+
+ui_font = pygame.font.SysFont("arial", 28, bold=True)
+feedback_font = pygame.font.SysFont("arial", 24, italic=True)
+
+# Background
+if not os.path.exists(BG_FILE):
+    bg_image = pygame.Surface((BASE_WIDTH * 2, BASE_HEIGHT))
+    bg_image.fill((50, 50, 80))
+else:
+    original_bg = pygame.image.load(BG_FILE).convert()
+    scale_factor = BASE_HEIGHT / original_bg.get_height()
+    new_bg_width = int(original_bg.get_width() * scale_factor)
+    bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
+
+SCALE_WIDTH, SCALE_HEIGHT = bg_image.get_width(), bg_image.get_height()
+floor_y = int(SCALE_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
+
+DESIGN_WIDTH = 1920
+DESIGN_HEIGHT = 1080
+
+scale_x = BASE_WIDTH / DESIGN_WIDTH
+scale_y = BASE_HEIGHT / DESIGN_HEIGHT
+scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
+
+# --- Adaptive Interactive Objects ---
+interactive_objects = [
+    InteractiveObject(
+        x=int(350 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(5 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="An alchemy book."
+    ),
+    InteractiveObject(
+        x=int(680 * scale_factor),
+        y=int(floor_y - int(270 * scale_factor)),
+        width=int(80 * scale_factor),
+        height=int(80 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_BLUE",
+        prompt="A glowing blue orb.",
+        image_file=ORB_GLOW_BLUE
+    ),
+    InteractiveObject(
+        x=int(2925 * scale_factor),
+        y=int(floor_y - int(200 * scale_factor)),
+        width=int(50 * scale_factor),
+        height=int(50 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_GREEN",
+        prompt="A glowing green orb.",
+        image_file=ORB_GLOW_GREEN
+    ),
+    InteractiveObject(
+        x=int(1450 * scale_factor),
+        y=int(floor_y - int(240 * scale_factor)),
+        width=int(30 * scale_factor),
+        height=int(30 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_RED",
+        prompt="A glowing red orb.",
+        image_file=ORB_GLOW_RED
+    ),
+    InteractiveObject(
+        x=int(2085 * scale_factor),
+        y=int(floor_y - int(260 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="ORB_VIOLET",
+        prompt="A glowing violet orb.",
+        image_file=ORB_GLOW_VIOLET
+    ),
+    InteractiveObject(
+        x=int(2780 * scale_factor),
+        y=int(floor_y - int(285 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_BLUE",
+        prompt="A dusty blue book.",
+        image_file=BOOK_BLUE
+    ),
+    InteractiveObject(
+        x=int(3200 * scale_factor),
+        y=int(floor_y - int(195 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_RED",
+        prompt="A worn red book.",
+        image_file=BOOK_RED
+    ),
+    InteractiveObject(
+        x=int(3450 * scale_factor),
+        y=int(floor_y - int(288 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_GREEN",
+        prompt="A mossy green book.",
+        image_file=BOOK_GREEN
+    ),
+    InteractiveObject(
+        x=int(900 * scale_factor),
+        y=int(floor_y - int(190 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        inventory_item="BOOK_BROWN",
+        prompt="An ancient brown book.",
+        image_file=BOOK_BROWN
+    ),
+    InteractiveObject(
+        x=int(2210 * scale_factor),
+        y=int(floor_y - int(280 * scale_factor)),
+        width=int(40 * scale_factor),
+        height=int(40 * scale_factor),
+        has_manuscript=False,
+        prompt="The scales weigh not gold nor silver, but wisdom and light. Balance the spheres of power with the tomes of truth, and the hidden way shall open."
+    ),
+]
+
+interactive_objects.append(
+    InteractiveObject(
+        x=int(SCALE_WIDTH * 0.68),
+        y=int(floor_y - int(BASE_HEIGHT * 0.22)),
+        width=int(91 * scale_factor),
+        height=int(138 * scale_factor),
+        has_scale=True,
+        prompt="An antique scale...",
+        image_file=SCALE_FILE
+    )
+)
+
+camera = Camera(SCALE_WIDTH, SCALE_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
+ui_layer = UILayer(game_surface)
+
+# Fix for AttributeError: Pre-initialize health_rect so early event handling doesn't crash
+ui_layer.health_rect = pygame.Rect(20, 20, 200, 30)
+
 
 def run_level(chosen_character=None):
-    pygame.init()
-    pygame.font.init()
-
-    # ✅ Exclusively inherit the existing screen established by main.py / ch1_lvl1.py
-    screen = pygame.display.get_surface()
-
-    # Minimal fallback ONLY for standalone testing (won't run during normal flow)
-    if screen is None:
-        info = pygame.display.Info()
-        native_width, native_height = info.current_w, info.current_h
-        screen = pygame.display.set_mode((native_width, native_height - 50), pygame.RESIZABLE)
-
-    pygame.display.set_caption("Chapter 1 - Level 2")
-
-    BASE_WIDTH, BASE_HEIGHT = 1920, 1080
-    game_surface = pygame.Surface((BASE_WIDTH, BASE_HEIGHT))
     clock = pygame.time.Clock()
 
-    ui_font = pygame.font.SysFont("arial", 28, bold=True)
-    feedback_font = pygame.font.SysFont("arial", 24, italic=True)
-
-    # Background
-    if not os.path.exists(BG_FILE):
-        bg_image = pygame.Surface((BASE_WIDTH * 2, BASE_HEIGHT))
-        bg_image.fill((50, 50, 80))
-    else:
-        original_bg = pygame.image.load(BG_FILE).convert()
-        scale_factor = BASE_HEIGHT / original_bg.get_height()
-        new_bg_width = int(original_bg.get_width() * scale_factor)
-        bg_image = pygame.transform.scale(original_bg, (new_bg_width, BASE_HEIGHT))
-
-    SCALE_WIDTH, SCALE_HEIGHT = bg_image.get_width(), bg_image.get_height()
-    floor_y = int(SCALE_HEIGHT * FLOOR_HEIGHT_PERCENTAGE)
-
-    DESIGN_WIDTH = 1920
-    DESIGN_HEIGHT = 1080
-    scale_factor = BASE_HEIGHT / DESIGN_HEIGHT
-
-    # --- Adaptive Interactive Objects ---
-    interactive_objects = [
-        InteractiveObject(
-            x=int(350 * scale_factor),
-            y=int(floor_y - int(200 * scale_factor)),
-            width=int(5 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            prompt="An alchemy book."
-        ),
-        InteractiveObject(
-            x=int(680 * scale_factor),
-            y=int(floor_y - int(270 * scale_factor)),
-            width=int(80 * scale_factor),
-            height=int(80 * scale_factor),
-            has_manuscript=False,
-            inventory_item="ORB_BLUE",
-            prompt="A glowing blue orb.",
-            image_file=ORB_GLOW_BLUE
-        ),
-        InteractiveObject(
-            x=int(2925 * scale_factor),
-            y=int(floor_y - int(200 * scale_factor)),
-            width=int(50 * scale_factor),
-            height=int(50 * scale_factor),
-            has_manuscript=False,
-            inventory_item="ORB_GREEN",
-            prompt="A glowing green orb.",
-            image_file=ORB_GLOW_GREEN
-        ),
-        InteractiveObject(
-            x=int(1450 * scale_factor),
-            y=int(floor_y - int(240 * scale_factor)),
-            width=int(30 * scale_factor),
-            height=int(30 * scale_factor),
-            has_manuscript=False,
-            inventory_item="ORB_RED",
-            prompt="A glowing red orb.",
-            image_file=ORB_GLOW_RED
-        ),
-        InteractiveObject(
-            x=int(2085 * scale_factor),
-            y=int(floor_y - int(260 * scale_factor)),
-            width=int(40 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            inventory_item="ORB_VIOLET",
-            prompt="A glowing violet orb.",
-            image_file=ORB_GLOW_VIOLET
-        ),
-        InteractiveObject(
-            x=int(2780 * scale_factor),
-            y=int(floor_y - int(285 * scale_factor)),
-            width=int(40 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            inventory_item="BOOK_BLUE",
-            prompt="A dusty blue book.",
-            image_file=BOOK_BLUE
-        ),
-        InteractiveObject(
-            x=int(3200 * scale_factor),
-            y=int(floor_y - int(195 * scale_factor)),
-            width=int(40 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            inventory_item="BOOK_RED",
-            prompt="A worn red book.",
-            image_file=BOOK_RED
-        ),
-        InteractiveObject(
-            x=int(3450 * scale_factor),
-            y=int(floor_y - int(288 * scale_factor)),
-            width=int(40 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            inventory_item="BOOK_GREEN",
-            prompt="A mossy green book.",
-            image_file=BOOK_GREEN
-        ),
-        InteractiveObject(
-            x=int(900 * scale_factor),
-            y=int(floor_y - int(190 * scale_factor)),
-            width=int(40 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            inventory_item="BOOK_BROWN",
-            prompt="An ancient brown book.",
-            image_file=BOOK_BROWN
-        ),
-        InteractiveObject(
-            x=int(2210 * scale_factor),
-            y=int(floor_y - int(280 * scale_factor)),
-            width=int(40 * scale_factor),
-            height=int(40 * scale_factor),
-            has_manuscript=False,
-            prompt="The scales weigh not gold nor silver, but wisdom and light.\nBalance the spheres of power with the tomes of truth, and the hidden way shall open."
-        ),
-    ]
-
-    interactive_objects.append(
-        InteractiveObject(
-            x=int(SCALE_WIDTH * 0.68),
-            y=int(floor_y - int(BASE_HEIGHT * 0.22)),
-            width=int(91 * scale_factor),
-            height=int(138 * scale_factor),
-            has_scale=True,
-            prompt="An antique scale...",
-            image_file=SCALE_FILE
-        )
-    )
-
-    camera = Camera(SCALE_WIDTH, SCALE_HEIGHT, BASE_WIDTH, BASE_HEIGHT)
-    ui_layer = UILayer(game_surface)
-    ui_layer.health_rect = pygame.Rect(20, 20, 200, 30)
-
-    # Create a fresh Player each time you start the level
+    # Create a fresh Player each time you start the level,
+    # now using the shared Model.Player
     player = Player(
         floor_y=floor_y,
         x=int(BASE_WIDTH * 0.10),
@@ -291,13 +297,13 @@ def run_level(chosen_character=None):
     )
 
     while True:
+        now = pygame.time.get_ticks()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
-
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 found = False
                 for obj in interactive_objects:
@@ -419,6 +425,7 @@ def run_level(chosen_character=None):
                 ui_layer.handle_input(event)
                 ui_layer.click_insanity_loss()
 
+        # shared Player behavior from Model/Player
         player.update(SCALE_WIDTH)
         camera.update(player)
         for obj in interactive_objects:
@@ -438,7 +445,6 @@ def run_level(chosen_character=None):
 
         ui_layer.draw(player)
 
-        # ✅ Scales natively based on the size inherited by the active window
         window_width, window_height = screen.get_size()
         scale = min(window_width / BASE_WIDTH, window_height / BASE_HEIGHT)
         scaled_w, scaled_h = int(BASE_WIDTH * scale), int(BASE_HEIGHT * scale)
@@ -453,28 +459,36 @@ def run_level(chosen_character=None):
 
         pygame.display.flip()
         clock.tick(60)
-
-        # Game over tracking block
+        # ✅ Shared game-over handling (same behavior as Level 1)
         if ui_layer.is_game_over:
             result = gameover.handle_game_over(
                 screen,
                 ui_layer,
                 player,
-                respawn_pos=(int(BASE_WIDTH * 0.10), floor_y),
+                respawn_pos=(int(BASE_WIDTH * 0.10), floor_y),  # Level 2 respawn
                 base_width=BASE_WIDTH,
                 floor_y=floor_y,
             )
 
             if result == "continue":
+                # Restarted: loop continues with reset state
                 continue
             elif result == "menu":
                 return "menu"
 
-        # --- Level completion ---
+        # --- Level completion: all manuscripts found ---
         if player.manuscripts_found >= 1:
-            SaveManagement.save_progress(chapter=1, level=2)  # Update level logging to 2
+            # Save progress for Chapter 1, Level 2
+            SaveManagement.save_progress(chapter=1, level=2)
+
+            # Fade out current level view
             SaveManagement.fade_to_black(screen, duration_ms=1000)
-            return "menu"
+
+            # Import and start next level
+            from ch1_lvl3 import run_level as run_level3
+            return run_level3(chosen_character=chosen_character)
+
+
 
 
 if __name__ == "__main__":
