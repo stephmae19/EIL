@@ -503,6 +503,6 @@ def run_level(screen, chosen_character=None):
 
 
 
-
 if __name__ == "__main__":
-    run_level()
+    # Pass the 'screen' variable defined earlier in the script
+    run_level(screen)
