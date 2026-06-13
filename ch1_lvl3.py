@@ -281,7 +281,7 @@ ui_layer = UILayer(game_surface)
 
 
 # --- Main Loop wrapped in a function ---
-def run_level(chosen_character=None):
+def run_level(screen, chosen_character=None):
     clock = pygame.time.Clock()
     # --- Adaptive Player Initialization ---
     player = Player(
